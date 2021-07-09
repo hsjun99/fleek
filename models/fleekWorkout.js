@@ -1,10 +1,12 @@
 const pool = require('../modules/pool');
 const asyncForEach = require('../modules/function/asyncForEach');
+const moment = require('moment');
 
 const table_workout = 'workout';
 const table_equation = 'equation';
 const table_workoutlog = 'workoutlog';
 const table_session = 'session';
+const table_userinfo = 'userinfo';
 
 const workout = {
     getWorkoutById: async (workout_id, sex, age, weight) => {
@@ -52,10 +54,10 @@ const workout = {
             return data;
         } catch (err) {
             if (err.errno == 1062) {
-                console.log('WorkoutRecordById ERROR: ', err.errno, err.code);
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
                 return -1;
             }
-            console.log("WorkoutRecordById ERROR: ", err);
+            console.log("getWorkoutRecordById ERROR: ", err);
             throw err;
         }
     },
@@ -74,6 +76,48 @@ const workout = {
             console.log('checkWorkout Error : ', err);
             throw err;
         }
+    },
+    getUsersWorkoutRecordById: async (workout_id) => {
+        const fields = `${table_userinfo}.name, ${table_session}.session_id, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_session}.created_at`;
+        const query = `SELECT ${fields} FROM ${table_workoutlog}
+                        INNER JOIN ${table_session} ON ${table_workoutlog}.session_session_id = ${table_session}.session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}
+                        INNER JOIN ${table_userinfo} ON ${table_session}.userinfo_uid = ${table_userinfo}.uid
+                        ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
+        try {
+            let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
+            // Time Difference Calculation Required
+            const now = moment();
+            const currenttime = await now.format("YYYY-MM-DD HH:mm:ss");
+            const restructure = async() => {
+                let data = [];
+                await asyncForEach(result, async(rowdata) => {
+                    console.log(moment(currenttime).diff(rowdata.created_at));
+                    if (data.length == 0){
+                        data.push({name: rowdata.name, session_id: rowdata.session_id, time: rowdata.created_at, log: [{reps:rowdata.reps, weight:rowdata.weight}]});
+                    }
+                    else if (data[data.length-1].session_id == rowdata.session_id){
+                        data[data.length-1].log.push({reps:rowdata.reps, weight:rowdata.weight});
+                    }
+                    else {
+                        data.push({name: rowdata.name, session_id: rowdata.session_id, time: rowdata.created_at, log: [{reps:rowdata.reps, weight:rowdata.weight}]});
+                    }
+                });
+                return data;
+            }
+            const data = await restructure();
+            return data;
+            
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    getFollowsWorkoutRecordById: async (workout_id, uid) => {
+
     }
 }
 
