@@ -16,6 +16,7 @@
     "http-errors": "~1.6.3",
     "jade": "~1.11.0",
     "moment": "^2.29.1",
+    "moment-duration-format": "^2.3.2",
     "morgan": "~1.9.1",
     "promise-mysql": "^4.1.4"
   }
