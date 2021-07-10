@@ -14,6 +14,7 @@ module.exports = {
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
         // *****Error Handling Required*****
+        console.log(req.uid, req.body);
         const newIdx = await User.postData(uid, name, sex, age, height, weight, created_at, goal);
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, {uid: uid}));
     },

@@ -5,7 +5,7 @@ const resMessage = require("../modules/responseMessage");
 
 const authUser = {
     checkToken: async(req, res, next) => {
-        /*
+        
         var idToken = req.headers.authorization;
         if (!idToken){}
          //Invalid idToken
@@ -14,8 +14,7 @@ const authUser = {
             return;
         }
         const uid = await getUid(idToken);
-        */
-        req.uid = 111;
+        req.uid = uid;
         next();
     }
 }

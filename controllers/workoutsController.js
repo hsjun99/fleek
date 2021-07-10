@@ -59,6 +59,7 @@ module.exports = {
     getEachUsersRecords: async (req, res) => {
       const id = req.params.id;
       const uid = req.uid;
+      console.log(id, uid);
       const usersRecords = await Workout.getUsersWorkoutRecordById(id, uid);
       const followsRecords = await Workout.getFollowsWorkoutRecordById(id, uid);
       res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, {users_records: usersRecords, friends_records: followsRecords}));

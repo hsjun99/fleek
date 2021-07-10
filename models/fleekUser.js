@@ -66,7 +66,7 @@ const fleekUser = {
     },
     checkFollow: async (uid, follow_uid) => {
         const fields = 'follows_id'
-        const query = `SELECT ${fields} FROM ${table3} WHERE userinfo_uid=${uid} AND follow_uid="${follow_uid}"`;
+        const query = `SELECT ${fields} FROM ${table3} WHERE userinfo_uid='${uid}' AND follow_uid='${follow_uid}'`;
         try {
             const result = await pool.queryParamSlave(query);
             if (result.length == 0) return false; // Not Following

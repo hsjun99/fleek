@@ -33,7 +33,7 @@ const workout = {
     getWorkoutRecordById: async (workout_id, uid) => {
         const fields = 'reps, weight, session_session_id, created_at';
         const query = `SELECT ${fields} FROM ${table_workoutlog}
-                        INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = ${uid} AND ${table_workoutlog}.workout_workout_id = ${workout_id}
+                        INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${workout_id}
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
@@ -92,7 +92,7 @@ const workout = {
                         (SELECT DISTINCT ${table_session}.session_id, ${table_session}.created_at, ${table_session}.userinfo_uid
                         FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_workoutlog}.session_session_id = ${table_session}.session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}
-                        WHERE ${table_session}.userinfo_uid != ${uid}
+                        WHERE ${table_session}.userinfo_uid != '${uid}'
                         ORDER BY ${table_workoutlog}.session_session_id DESC
                         LIMIT 5) AS DISTINCT_SESSION
                         ON DISTINCT_SESSION.session_id = ${table_workoutlog}.session_session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}
@@ -143,8 +143,8 @@ const workout = {
                         (SELECT DISTINCT ${table_session}.session_id, ${table_session}.created_at, ${table_session}.userinfo_uid
                         FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_workoutlog}.session_session_id = ${table_session}.session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}
-                        INNER JOIN ${table_follows} ON ${table_follows}.follow_uid = ${table_session}.userinfo_uid AND ${table_follows}.userinfo_uid = ${uid}
-                        WHERE ${table_session}.userinfo_uid != ${uid}
+                        INNER JOIN ${table_follows} ON ${table_follows}.follow_uid = ${table_session}.userinfo_uid AND ${table_follows}.userinfo_uid = '${uid}'
+                        WHERE ${table_session}.userinfo_uid != '${uid}'
                         ORDER BY ${table_workoutlog}.session_session_id DESC
                         LIMIT 5) AS DISTINCT_SESSION
                         ON DISTINCT_SESSION.session_id = ${table_workoutlog}.session_session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}

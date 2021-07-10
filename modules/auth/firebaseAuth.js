@@ -13,8 +13,8 @@ module.exports = {
     //Get UID
     getUid: async (idToken) => {
         try {
-            await admin.auth().verifyIdToken(idToken);
-            return true;
+            const decodedToken = await admin.auth().verifyIdToken(idToken);
+            return decodedToken.uid;
         } catch (error) {
             return false;
         }
