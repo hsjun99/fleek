@@ -6,7 +6,7 @@ const signupController = require('../controllers/signupController');
 
 // SignUp
 router.post('/', AuthUser.checkToken, signupController.signup);
-// 
+// Redundancy Check
 router.get('/checkunique/:name', signupController.checkunique);
 // Kakao
 router.get('/callbacks/kakao/sign_in', signupController.kakaosignin);

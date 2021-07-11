@@ -11,17 +11,21 @@ module.exports = {
     signup: async(req, res) => {
         const uid = req.uid;
         const {name, sex, age, height, weight, goal} = req.body;
+        if (!name || !sex || !age || !height || !weight || goal.length == 0){
+            return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.NULL_VALUE));
+        }
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
-        // *****Error Handling Required*****
-        console.log(req.uid, req.body);
-        const newIdx = await User.postData(uid, name, sex, age, height, weight, created_at, goal);
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, {uid: uid}));
+        const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, goal);
+        if (acceptedUid == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+        }
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, {uid: acceptedUid}));
     },
     kakaosignin: async (req, res) => {
         //Authentication Code 받아 돌려줄 api 
         const redirect = `webauthcallback://success?${new URLSearchParams(req.query).toString()}`;
-        console.log(`Redirecting to ${redirect}`);
+        //console.log(`Redirecting to ${redirect}`);
         res.redirect(307, redirect);
     },
     kakaotoken: async (req, res) => {
@@ -33,10 +37,12 @@ module.exports = {
     checkunique: async (req, res) => {
         const name = req.params.name;
         if (!name) {
-            res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.NULL_VALUE));
-            return;
+            return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.NULL_VALUE));
         }
         const unique = await User.checkName(name);
+        if (unique == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+        }
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.CHECK_UNIQUE_SUCCESS, {unique: unique}));
     }
 }

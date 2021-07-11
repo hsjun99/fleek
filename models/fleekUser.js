@@ -115,6 +115,20 @@ const fleekUser = {
             console.log("getProfile ERROR: ", err);
             throw err;
         }
+    },
+    updateProfile: async (uid, name, sex, age, height, weight, goal) => {
+        const query1 = `UPDATE ${table1} SET name="${name}", sex="${sex}", age="${age}", height="${height}", weight="${weight}" WHERE uid="${uid}"`;
+        try {
+            const result1 = await pool.queryParamMaster(query1);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
     }
 }
 

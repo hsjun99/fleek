@@ -10,11 +10,12 @@ module.exports = {
     savesession: async (req, res) => {
         const uid = req.uid;
         const data = req.body;
-        console.log(data);
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
         const sessionIdx = await Session.postSessionData(uid, data, created_at);
-        // *****Error Handling Required*****
+        if (sessionIdx == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+        }
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, {sessionIdx: sessionIdx}));
     }
 }
