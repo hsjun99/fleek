@@ -11,12 +11,13 @@ module.exports = {
     signup: async(req, res) => {
         const uid = req.uid;
         const {name, sex, age, height, weight, goal} = req.body;
-        if (!name || !sex || !age || !height || !weight || goal.length == 0){
+        if (!name || !String(sex) || !age || !height || !weight || goal.length == 0){
             return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.NULL_VALUE));
         }
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
         const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, goal);
+        console.log(req.body, req.uid);
         if (acceptedUid == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
         }

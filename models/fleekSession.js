@@ -3,8 +3,9 @@ const asyncForEach = require('../modules/function/asyncForEach');
 
 const table_workoutlog = 'workoutlog';
 const table_session = 'session';
+const table_favworkout = 'favworkout';
 
-const workout = {
+const session = {
     postData: async (uid, name, sex, age, height, weight, created_at, goal=1) => {
         const fields1 = 'uid, name, sex, age, height, weight, created_at';
         const fields2 = 'goal, userinfo_uid'
@@ -61,8 +62,33 @@ const workout = {
             console.log("postSessionData ERROR: ", err);
             throw err;
         }
+    },
+    updateFavworkout: async (uid, fav_workout_ids) => {
+        let string_fav_workout_ids = '(' + fav_workout_ids.toString() + ')';
+        if (fav_workout_ids.length == 0) string_fav_workout_ids = '(-1)'
+
+        const fields1 = 'userinfo_uid, workout_workout_id';
+        const questions1 = `?, ?`;
+        const query1 = `INSERT IGNORE INTO ${table_favworkout}(${fields1}) VALUES(${questions1})`;
+        const query2 = `DELETE FROM ${table_favworkout} WHERE workout_workout_id NOT IN ${string_fav_workout_ids} AND userinfo_uid = '${uid}'`;
+        try {
+            const addFavs = async() => {
+                await asyncForEach(fav_workout_ids, async(workout_id) => {
+                    await pool.queryParamArrMaster(query1, [uid, workout_id]);
+                });
+            }
+            await addFavs();
+            await pool.queryParamMaster(query2);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateFavworkout ERROR : ', err.errno, err.code);
+                return -1;
+            }
+            console.log('updateFavworkout ERROR : ', err);
+            throw err;
+        }
     }
-    
 }
 
-module.exports = workout;
+module.exports = session;

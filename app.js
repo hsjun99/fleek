@@ -9,6 +9,7 @@ var signupRouter = require('./routes/signup');
 var workoutsRouter = require('./routes/workouts');
 var sessionRouter = require('./routes/session');
 var followRouter = require('./routes/follow');
+var templateRouter = require('./routes/template');
 
 var admin = require('firebase-admin');
 
@@ -36,6 +37,7 @@ app.use('/signup', signupRouter);
 app.use('/workouts', workoutsRouter);
 app.use('/session', sessionRouter);
 app.use('/follow', followRouter);
+app.use('/template', templateRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

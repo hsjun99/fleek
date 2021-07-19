@@ -20,6 +20,7 @@ const workout = {
                                     OR (${table_equation}.sex="${sex}" AND (${table_equation}.age="${age}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weight}"))`;
         try {
             const result = await pool.queryParamSlave(query);
+            if (result.length==0) return -1;
             return result[0];
         } catch (err) {
             if (err.errno == 1062) {
@@ -60,6 +61,20 @@ const workout = {
                 return -1;
             }
             console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    updateWorkoutPopularity: async (workout_id) => {
+        const query = `UPDATE ${table_workout} SET popularity = popularity+1 WHERE workout_id="${workout_id}"`;
+        try {
+            const result = await pool.queryParamMaster(query);
+            return true;
+        } catch (error) {
+            if (err.errno == 1062) {
+                console.log('checkWorkout Error : ', err.errno, err.code);
+                return -1;
+            }
+            console.log('checkWorkout Error : ', err);
             throw err;
         }
     },

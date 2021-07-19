@@ -9,29 +9,9 @@ let WorkoutEquation = require("../models/workoutEquation")
 const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
 const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');
 
+const defaultIntensity = require('../modules/algorithm/defaultIntensity');
 
-//plan
-const plan = {
-  "sets": 5,
-  "reps": 12,
-  "weight": 100
-}
-
-//detailplan
-const detail_plan = [
-  {
-      "reps": 12,
-      "weight": 100
-  },
-  {
-      "reps": 12,
-      "weight": 110
-  },
-  {
-      "reps": 12,
-      "weight": 100
-  }
-]
+const asyncForEach = require('../modules/function/asyncForEach');
 
 module.exports = {
     getEach: async (req, res) => {
@@ -61,6 +41,7 @@ module.exports = {
         if (data == -1 || recentRecords == -1) {
           return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
         }
+        //console.log(data);
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, {basic_info: {workout_id: Number(id), english: data.english, korean: data.korean, category: data.category, muscle_primary: data.muscle_p, muscle_secondary: [data.muscle_s1, data.muscle_s2, data.muscle_s3, data.muscle_s4, data.muscle_s5, data.muscle_s6], equipment: data.equipment, record_type: data.record_type}, equation: {inclination: data.inclination, intercept: data.intercept}, recent_records: recentRecords, plan: plan, detail_plan: detail_plan}));
     },
     getEachUsersRecords: async (req, res) => {
@@ -74,10 +55,14 @@ module.exports = {
       res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, {users_records: usersRecords, friends_records: followsRecords}));
     },
     getall: async (req, res) => {
-      /*
-      const ids = [1, 2, 3, 4];
+      let ids = req.query.ids;
+      if (typeof req.query.ids == "string") ids = [ids];
       const uid = req.uid;
-      const {sex, age, height, weight} = await User.getProfile(uid);
+      const profileResult = await User.getProfile(uid);
+      if (profileResult == -1){
+        return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+      }
+      const {sex, age, height, weight} = profileResult;
       const ageGroup = await ageGroupClassifier(age);
       const weightGroup = await weightGroupClassifier(weight, sex);
       // NULL Value Error Handling
@@ -93,7 +78,6 @@ module.exports = {
         }
         return result;
       }));
-      console.log(checkWorkoutIndex);
       if (!checkWorkoutIndex.reduce((a, b)=>a*b)){
         res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.READ_WORKOUT_FAIL));
         return;
@@ -101,10 +85,14 @@ module.exports = {
       const result = await Promise.all(ids.map(async id => {
         const data = await Workout.getWorkoutById(id, sex, ageGroup, weightGroup);
         const recentRecords = await Workout.getWorkoutRecordById(id, uid);
-        return {data, recentRecords};
+        const updateResult = await Workout.updateWorkoutPopularity(id);
+        if (data == -1 || recentRecords == -1 || updateResult == -1) {
+          return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+        }
+        
+        const {plan, detail_plan} = await defaultIntensity(data.inclination, data.intercept);
+        return {basic_info: {workout_id: Number(id), english: data.english, korean: data.korean, category: data.category, muscle_primary: data.muscle_p, muscle_secondary: [data.muscle_s1, data.muscle_s2, data.muscle_s3, data.muscle_s4, data.muscle_s5, data.muscle_s6], equipment: data.equipment, record_type: data.record_type}, equation: {inclination: data.inclination, intercept: data.intercept}, recent_records: recentRecords, plan: plan, detail_plan: detail_plan};
       }));
-      console.log(result);
-      res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, {basic_info: {workout_id: Number(id), english: data.english, korean: data.korean, category: data.category, muscle_primary: data.muscle_p, muscle_secondary: [data.muscle_s1, data.muscle_s2, data.muscle_s3, data.muscle_s4, data.muscle_s5, data.muscle_s6], equipment: data.equipment, record_type: data.record_type}, equation: {inclination: data.inclination, intercept: data.intercept}, recent_records: recentRecords, plan: plan, detail_plan: detail_plan}));
-    */
+      res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, result));
     }
 }

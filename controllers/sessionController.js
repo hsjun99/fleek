@@ -6,6 +6,8 @@ var moment = require("moment");
 
 let Session = require("../models/fleekSession");
 
+const asyncForEach = require('../modules/function/asyncForEach');
+
 module.exports = {
     savesession: async (req, res) => {
         const uid = req.uid;
@@ -16,6 +18,11 @@ module.exports = {
         if (sessionIdx == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
         }
+        
+        const fav_workout_list = [];
+        
+        await Session.updateFavworkout(uid, fav_workout_list);
+    
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, {sessionIdx: sessionIdx}));
     }
 }
