@@ -18,8 +18,38 @@ module.exports = {
         }
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, {templateIdx: templateIdx}));
     },
-    getTemplate: async(req, res) => {
+    getUserTemplate: async(req, res) => {
         const uid = req.uid;
-        await Template.getUserTemplate(uid);
+        const templateData = await Template.getUserTemplate(uid);
+        if (templateData == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+        }
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, templateData));
+    },
+    getDefaultTemplate: async(req, res) => {
+        const templateData = await Template.getDefaultTemplate();
+        if (templateData == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+        }
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, templateData));
+    },
+    updateUserTemplate: async(req, res) => {
+        const uid = req.uid;
+        const template_id = req.params.template_id;
+        const data = req.body;
+        const result = await Template.updateUserTemplate(uid, template_id, data.name, data.detail);
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+        }
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, {updated_template_id: template_id}));
+    },
+    deleteUserTemplate: async(req, res) => {
+        const uid = req.uid;
+        const template_id = req.params.template_id;
+        const result = await Template.deleteUserTemplate(uid, template_id);
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+        }
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, {deleted_template_id: template_id}));
     }
 }

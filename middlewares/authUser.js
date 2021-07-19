@@ -9,6 +9,7 @@ const authUser = {
             req.uid = 'duDgKLOM3igB18tDAjsqmtJOSXe2';
             next();
         }
+        else{
         var idToken = req.headers.authorization;
         if (!idToken){}
          //Invalid idToken
@@ -21,6 +22,7 @@ const authUser = {
         req.uid = uid;
         //req.uid = 'duDgKLOM3igB18tDAjsqmtJOSXe2';
         next();
+        }
     }
 }
 

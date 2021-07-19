@@ -80,6 +80,30 @@ const fleekUser = {
             throw err;
         }
     },
+    getFollows: async (uid) => {
+        const fields = "name";
+        const query = `SELECT ${fields} FROM ${table3}
+                        INNER JOIN ${table1} ON ${table3}.follow_uid = ${table1}.uid AND ${table3}.userinfo_uid='${uid}'`;
+        try {
+            const result = await pool.queryParamSlave(query);
+            const restructure = async() => {
+                let data = [];
+                await asyncForEach(result, async(rowdata) => {
+                    data.push(rowdata.name);
+                });
+                return data;
+            }
+            const data = await restructure();
+            return data;
+        } catch (error) {
+            if (err.errno == 1062) {
+                console.log('getFollows ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getFollows ERROR: ", err);
+            throw err;
+        }
+    },
     checkName: async (name) => {
         const field = 'name';
         const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.name="${name}"`;

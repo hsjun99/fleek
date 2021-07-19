@@ -5,8 +5,14 @@ const AuthUser = require('../middlewares/authUser');
 const templateController = require('../controllers/templateController');
 
 
-router.post('/save', AuthUser.checkToken, templateController.savetemplate);
+router.post('/user', AuthUser.checkToken, templateController.savetemplate);
 
-router.get('/getall', AuthUser.checkToken, templateController.getTemplate);
+router.get('/user', AuthUser.checkToken, templateController.getUserTemplate);
+
+router.get('/default', AuthUser.checkToken, templateController.getDefaultTemplate);
+
+router.put('/user/:template_id', AuthUser.checkToken, templateController.updateUserTemplate);
+
+router.delete('/user/:template_id', AuthUser.checkToken, templateController.deleteUserTemplate);
 
 module.exports = router;

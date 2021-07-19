@@ -17,7 +17,6 @@ module.exports = {
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
         const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, goal);
-        console.log(req.body, req.uid);
         if (acceptedUid == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
         }
