@@ -37,6 +37,13 @@ module.exports = {
         const uid = req.uid;
         const template_id = req.params.template_id;
         const data = req.body;
+        const flag = await Template.checkTemplate(uid, template_id);
+        if (flag == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+        }
+        if (flag == false) {
+            return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.INVALID_USER));
+        }
         const result = await Template.updateUserTemplate(uid, template_id, data.name, data.detail);
         if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
@@ -46,6 +53,13 @@ module.exports = {
     deleteUserTemplate: async(req, res) => {
         const uid = req.uid;
         const template_id = req.params.template_id;
+        const flag = await Template.checkTemplate(uid, template_id);
+        if (flag == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+        }
+        if (flag == false) {
+            return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.INVALID_USER));
+        }
         const result = await Template.deleteUserTemplate(uid, template_id);
         if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));

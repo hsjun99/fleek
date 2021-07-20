@@ -32,12 +32,13 @@ const workout = {
         }
     },
     getWorkoutRecordById: async (workout_id, uid) => {
-        const fields = 'reps, weight, session_session_id, created_at';
+        const fields = 'reps, weight, rest_time, session_session_id, created_at';
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${workout_id}
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
+            let rest_time = 0; // default;
             const restructure = async() => {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
@@ -53,8 +54,9 @@ const workout = {
                 });
                 return data;
             }
-            const data = await restructure();
-            return data;
+            const recentRecords = await restructure();
+            if (result.length > 0) rest_time = result[0].rest_time;
+            return {recentRecords, rest_time};
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);

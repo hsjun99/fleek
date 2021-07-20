@@ -11,4 +11,6 @@ router.get('/geteachrecords/:id', AuthUser.checkToken, workoutsController.getEac
 
 router.get('/getall', AuthUser.checkToken, workoutsController.getall);
 
+router.get('/algorithm/:name/:intensity/:workout_id', AuthUser.checkToken, workoutsController.getAlgoWorkoutPlan);
+
 module.exports = router;

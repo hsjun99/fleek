@@ -3,6 +3,7 @@ const asyncForEach = require('../modules/function/asyncForEach');
 const table1 = 'userinfo';
 const table2 = 'usergoal';
 const table3 = 'follows';
+const table4 = 'workoutAbility';
 
 const fleekUser = {
     postData: async (uid, name, sex, age, height, weight, created_at, goal) => {
@@ -151,6 +152,26 @@ const fleekUser = {
                 return -1;
             }
             console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
+    getWorkoutMaxOneRm: async(uid, workout_id) => {
+        const fields = 'max_one_rm';
+        const query = `SELECT ${fields} FROM ${table4} 
+                        WHERE ${table4}.userinfo_uid="${uid}" AND ${table4}.workout_workout_id="${workout_id}"
+                        ORDER BY workoutAbility_id DESC
+                        LIMIT 1`;
+        try {
+            const result = await pool.queryParamSlave(query);
+            let max_one_rm = 0;
+            if (result.length > 0) max_one_rm = result[0].max_one_rm;
+            return max_one_rm;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutMaxOneRm ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutMaxOneRm ERROR: ", err);
             throw err;
         }
     }
