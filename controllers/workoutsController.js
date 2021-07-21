@@ -5,6 +5,7 @@ let resMessage = require('../modules/responseMessage');
 let User = require("../models/fleekUser");
 let Workout = require("../models/fleekWorkout")
 let WorkoutEquation = require("../models/workoutEquation")
+let WorkoutAbility = require('../models/fleekWorkoutAbility');
 
 const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
 const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');
@@ -13,8 +14,12 @@ const defaultIntensity = require('../modules/algorithm/defaultIntensity');
 const fleekIntensity = require('../modules/algorithm/fleekIntensity');
 
 const asyncForEach = require('../modules/function/asyncForEach');
+const roundNumber = require('../modules/function/roundNumber');
+
+const jsonFormatter = require('../modules/function/jsonFormatter');
 
 module.exports = {
+  /*
     getEach: async (req, res) => {
         const id = req.params.id;
         const uid = req.uid;
@@ -44,7 +49,7 @@ module.exports = {
         }
         //console.log(data);
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, {basic_info: {workout_id: Number(id), english: data.english, korean: data.korean, category: data.category, muscle_primary: data.muscle_p, muscle_secondary: [data.muscle_s1, data.muscle_s2, data.muscle_s3, data.muscle_s4, data.muscle_s5, data.muscle_s6], equipment: data.equipment, record_type: data.record_type}, equation: {inclination: data.inclination, intercept: data.intercept}, recent_records: recentRecords, plan: plan, detail_plan: detail_plan}));
-    },
+    },*/
     getEachUsersRecords: async (req, res) => {
       const id = req.params.id;
       const uid = req.uid;
@@ -53,7 +58,7 @@ module.exports = {
       if (usersRecords == -1 || followsRecords == -1){
         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
       }
-      res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, {users_records: usersRecords, friends_records: followsRecords}));
+      res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, jsonFormatter.getOthersRecords(usersRecords, followsRecords)));
     },
     getall: async (req, res) => {
       let ids = req.query.ids;
@@ -87,30 +92,30 @@ module.exports = {
         const data = await Workout.getWorkoutById(id, sex, ageGroup, weightGroup);
         const {recentRecords, rest_time} = await Workout.getWorkoutRecordById(id, uid);
         const updateResult = await Workout.updateWorkoutPopularity(id);
-        if (data == -1 || recentRecords == -1 || updateResult == -1) {
+        const workout_ability = await WorkoutAbility.getAllWorkoutAbilityHistory(uid, id);
+        const {plan, detail_plan} = await defaultIntensity(data.inclination, data.intercept);
+        if (data == -1 || recentRecords == -1 || updateResult == -1 || workout_ability == -1 || plan == -1 || detail_plan == -1) {
           return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
         }
-        const {plan, detail_plan} = await defaultIntensity(data.inclination, data.intercept);
-        return {basic_info: {workout_id: Number(id), english: data.english, korean: data.korean, category: data.category, muscle_primary: data.muscle_p, muscle_secondary: [data.muscle_s1, data.muscle_s2, data.muscle_s3, data.muscle_s4, data.muscle_s5, data.muscle_s6], equipment: data.equipment, record_type: data.record_type}, rest_time: rest_time, equation: {inclination: data.inclination, intercept: data.intercept}, recent_records: recentRecords, plan: plan, detail_plan: detail_plan};
+        return jsonFormatter.getWorkout(id, data.english, data.korean, data.category, data.muscle_p, [data.muscle_s1, data.muscle_s2, data.muscle_s3, data.muscle_s4, data.muscle_s5, data.muscle_s6], data.equipment, data.record_type, rest_time, data.inclination, data.intercept, recentRecords, workout_ability, plan, detail_plan);
       }));
       res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, result));
     },
     getAlgoWorkoutPlan: async (req, res) => {
       const uid = req.uid;
       const workout_id = req.params.workout_id;
-      const max_one_rm = await User.getWorkoutMaxOneRm(uid, workout_id);
+      const max_one_rm = await WorkoutAbility.getRecentWorkoutMaxOneRm(uid, workout_id);
       const algoName = req.params.name;
       const intensity = req.params.intensity;
       const restructure = async() => {
         let data = [];
         let index = 0;
         await asyncForEach(fleekIntensity[algoName][intensity].weights, async(weight_param) => {
-          data.push({reps: fleekIntensity[algoName][intensity].reps[index++], weight: weight_param * max_one_rm})
+          data.push({reps: fleekIntensity[algoName][intensity].reps[index++], weight: roundNumber.roundToNearest5(weight_param * max_one_rm)})
         })
         return data;
       }
       const data = await restructure();
-      console.log(data)
       res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, data));
     }
 }

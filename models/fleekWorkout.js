@@ -1,7 +1,6 @@
 const pool = require('../modules/pool');
 const asyncForEach = require('../modules/function/asyncForEach');
-const moment = require('moment');
-var momentDurationFormatSetup = require("moment-duration-format");
+const timeFunction = require('../modules/function/timeFunction');
 
 const table_workout = 'workout';
 const table_equation = 'equation';
@@ -84,6 +83,7 @@ const workout = {
         const query = `SELECT * FROM ${table_workout} WHERE workout_id="${workout_id}"`;
         try {
             const result = await pool.queryParamSlave(query);
+            console.log(await timeFunction.currentTime())
             if (result.length === 0) {
                 return false;
             } else return true
@@ -117,17 +117,10 @@ const workout = {
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
-            const now = moment();
-            const currenttime = await now.format("YYYY-MM-DD HH:mm:ss");
-
             const restructure = async() => {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
-                    const timeDiffArr = await moment.duration(moment(currenttime,"YYYY-MM-DD HH:mm:ss").diff(moment(rowdata.created_at,"YYYY-MM-DD HH:mm:ss"))).format("d,h,m").split(',');
-                    await timeDiffArr.forEach((part, index, theArray)=>{theArray[index]=Number(part)});
-                    if (timeDiffArr.length==1) timeDiffArr.unshift(0, 0);
-                    else if (timeDiffArr.length==2) timeDiffArr.unshift(0);
-
+                    const timeDiffArr = await timeFunction.timeDiff_DHM(rowdata.created_at);
                     if (data.length == 0){
                         data.push({name: rowdata.name, session_id: rowdata.session_id, time: timeDiffArr, log: [{reps:rowdata.reps, weight:rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]});
                     }
@@ -169,17 +162,10 @@ const workout = {
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`; // INNER JOIN ${table_follows} ON ${table_userinfo}.uid = ${table_follows}.follow_uid AND ${table_follows}.userinfo_uid = ${uid}
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
-            const now = moment();
-            const currenttime = await now.format("YYYY-MM-DD HH:mm:ss");
-
             const restructure = async() => {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
-                    const timeDiffArr = await moment.duration(moment(currenttime,"YYYY-MM-DD HH:mm:ss").diff(moment(rowdata.created_at,"YYYY-MM-DD HH:mm:ss"))).format("d,h,m").split(',');
-                    await timeDiffArr.forEach((part, index, theArray)=>{theArray[index]=Number(part)});
-                    if (timeDiffArr.length==1) timeDiffArr.unshift(0, 0);
-                    else if (timeDiffArr.length==2) timeDiffArr.unshift(0);
-
+                    const timeDiffArr = await timeFunction.timeDiff_DHM(rowdata.created_at);
                     if (data.length == 0){
                         data.push({name: rowdata.name, session_id: rowdata.session_id, time: timeDiffArr, log: [{reps:rowdata.reps, weight:rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]});
                     }
@@ -205,5 +191,6 @@ const workout = {
         }
     }
 }
+
 
 module.exports = workout;

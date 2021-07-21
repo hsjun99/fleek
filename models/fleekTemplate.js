@@ -40,7 +40,6 @@ const template = {
                         INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
         try {
             const result = await pool.queryParamSlave(query);
-            console.log(result);
             const restructure = async() => {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
@@ -92,7 +91,6 @@ const template = {
                 return data;
             }
             const data = await restructure();
-            console.log(data)
             return data;
         } catch (err) {
             if (err.errno == 1062) {

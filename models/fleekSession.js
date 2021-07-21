@@ -10,40 +10,13 @@ const table_templateUsers = 'templateUsers';
 const table_workoutAbility = 'workoutAbility';
 
 const session = {
-    postData: async (uid, name, sex, age, height, weight, created_at, goal=1) => {
-        const fields1 = 'uid, name, sex, age, height, weight, created_at';
-        const fields2 = 'goal, userinfo_uid'
-        const questions1 = `?, ?, ?, ?, ?, ?, ?`;
-        const questions2 = `?,?`
-        const values1 = [uid, name, sex, age, height, weight, created_at];
-
-        const query1 = `INSERT INTO ${table1}(${fields1}) VALUES(${questions1})`;
-        const query2 = `INSERT INTO ${table2}(${fields2}) VALUES(${questions2})`;
-        try {
-            const result = await pool.queryParamArrMaster(query1, values1);
-            const addGoals = async() => {
-                await asyncForEach(goal, async(elem) => {
-                    await pool.queryParamArrMaster(query2, [elem, uid]);
-                });
-            }
-            await addGoals();
-            return uid;
-        } catch (err) {
-            if (err.errno == 1062) {
-                console.log('postData ERROR : ', err.errno, err.code);
-                return -1;
-            }
-            console.log('postData ERROR : ', err);
-            throw err;
-        }
-    },
     postSessionData: async (uid, data, created_at, template_id=null) => {
         const fields1 = 'userinfo_uid, created_at';
         const fields2 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, workout_workout_id, session_session_id';
-        const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, workout_workout_id, userinfo_uid';
+        const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, workout_workout_id, userinfo_uid, created_at';
         const questions1 = '?, ?';
         const questions2 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
-        const questions4 = '?, ?, ?, ?, ?, ?, ?';
+        const questions4 = '?, ?, ?, ?, ?, ?, ?, ?';
         const values1 = [uid, created_at];
         const query1 = `INSERT INTO ${table_session}(${fields1}) VALUES(${questions1})`;
         const query2 = `INSERT INTO ${table_workoutlog}(${fields2}) VALUES(${questions2})`;
@@ -63,7 +36,7 @@ const session = {
                         total_reps += sets.reps;
                         max_weight = Math.max(max_weight, sets.weight);
                     })
-                    await pool.queryParamArrMaster(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, workouts.workout_id, uid]);
+                    await pool.queryParamArrMaster(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, workouts.workout_id, uid, created_at]);
                 });
             }
             await addWorkoutlog();
