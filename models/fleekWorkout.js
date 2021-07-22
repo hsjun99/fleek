@@ -8,8 +8,49 @@ const table_workoutlog = 'workoutlog';
 const table_session = 'session';
 const table_userinfo = 'userinfo';
 const table_follows = 'follows';
+const table_workoutAbility = 'workoutAbility';
 
 const workout = {
+    getCalendarData: async(uid) => {
+        const fields = `reps, weight, duration, distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at`;
+        const query = `SELECT ${fields} FROM ${table_workoutlog}
+                        INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}'
+                        LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = ${table_session}.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
+                        ORDER BY ${table_workoutlog}.session_session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
+        try {
+            let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
+            const restructure = async() => {
+                let data = [];
+                await asyncForEach(result, async(rowdata) => {
+                    if (data.length == 0){
+                        data.push({session_id: rowdata.session_session_id, session_detail: {date: rowdata.created_at, total_workout_time: null, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
+                    }
+                    else if (data[data.length-1].session_id == rowdata.session_session_id){
+                        const L = data[data.length-1].session_detail.content.length
+                        if (data[data.length-1].session_detail.content[L-1].workout_id == rowdata.workout_workout_id) {
+                            data[data.length-1].session_detail.content[L-1].sets.push({reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance});
+                        }
+                        else {
+                            data[data.length-1].session_detail.content.push({workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}});
+                        }
+                    }
+                    else {
+                        data.push({session_id: rowdata.session_session_id, session_detail: {date: rowdata.created_at, total_workout_time: null, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
+                    }
+                });
+                return data;
+            }
+            const data = await restructure();
+            return data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
     getWorkoutById: async (workout_id, sex, age, weight) => {
         const fields = 'english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, inclination, intercept';
         const query = `SELECT ${fields} FROM ${table_workout} 
@@ -83,7 +124,6 @@ const workout = {
         const query = `SELECT * FROM ${table_workout} WHERE workout_id="${workout_id}"`;
         try {
             const result = await pool.queryParamSlave(query);
-            console.log(await timeFunction.currentTime())
             if (result.length === 0) {
                 return false;
             } else return true

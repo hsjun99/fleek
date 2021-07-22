@@ -79,8 +79,7 @@ const template = {
                 await asyncForEach(result, async(rowdata) => {
                     if (data.length == 0){
                         data.push({name: rowdata.name, default_template_id: rowdata.templateDefault_id, detail: [rowdata.workout_workout_id]});
-                    }
-                    
+                    }   
                     else if (data[data.length-1].default_template_id == rowdata.templateDefault_id){
                         data[data.length-1].detail.push(rowdata.workout_workout_id);
                     }

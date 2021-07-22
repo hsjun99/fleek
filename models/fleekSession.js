@@ -13,10 +13,10 @@ const session = {
     postSessionData: async (uid, data, created_at, template_id=null) => {
         const fields1 = 'userinfo_uid, created_at';
         const fields2 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, workout_workout_id, session_session_id';
-        const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, workout_workout_id, userinfo_uid, created_at';
+        const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, workout_workout_id, userinfo_uid, session_session_id, created_at';
         const questions1 = '?, ?';
         const questions2 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
-        const questions4 = '?, ?, ?, ?, ?, ?, ?, ?';
+        const questions4 = '?, ?, ?, ?, ?, ?, ?, ?, ?';
         const values1 = [uid, created_at];
         const query1 = `INSERT INTO ${table_session}(${fields1}) VALUES(${questions1})`;
         const query2 = `INSERT INTO ${table_workoutlog}(${fields2}) VALUES(${questions2})`;
@@ -36,7 +36,7 @@ const session = {
                         total_reps += sets.reps;
                         max_weight = Math.max(max_weight, sets.weight);
                     })
-                    await pool.queryParamArrMaster(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, workouts.workout_id, uid, created_at]);
+                    await pool.queryParamArrMaster(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, workouts.workout_id, uid, result1.insertId, created_at]);
                 });
             }
             await addWorkoutlog();
