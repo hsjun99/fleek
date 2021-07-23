@@ -11,14 +11,14 @@ module.exports = {
     signup: async(req, res) => {
         const uid = req.uid;
         const {name, sex, age, height, weight, goal} = req.body;
-        if (!name || !String(sex) || !age || !height || !weight || goal.length == 0){
+        if (!String(name) || !String(sex) || !String(age) || !String(height) || !String(weight) || goal.length == 0){
             return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.NULL_VALUE));
         }
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
         const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, goal);
         if (acceptedUid == -1) {
-            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.SIGNUP_FAIL));
         }
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, {uid: acceptedUid}));
     },
@@ -41,7 +41,7 @@ module.exports = {
         }
         const unique = await User.checkName(name);
         if (unique == -1) {
-            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.CHECK_UNIQUE_FAIL));
         }
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.CHECK_UNIQUE_SUCCESS, {unique: unique}));
     }

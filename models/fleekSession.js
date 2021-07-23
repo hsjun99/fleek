@@ -8,6 +8,7 @@ const table_session = 'session';
 const table_favworkout = 'favworkout';
 const table_templateUsers = 'templateUsers';
 const table_workoutAbility = 'workoutAbility';
+const table_userWorkoutHistory = 'userWorkoutHistory';
 
 const session = {
     postSessionData: async (uid, data, created_at, template_id=null) => {
@@ -37,6 +38,8 @@ const session = {
                         max_weight = Math.max(max_weight, sets.weight);
                     })
                     await pool.queryParamArrMaster(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, workouts.workout_id, uid, result1.insertId, created_at]);
+                    const query5 = `UPDATE ${table_userWorkoutHistory} SET finish_num = finish_num+1 WHERE userinfo_uid = "${uid}" AND workout_workout_id="${workouts.workout_id}"`;
+                    await pool.queryParamMaster(query5);
                 });
             }
             await addWorkoutlog();
@@ -51,6 +54,21 @@ const session = {
             throw err;
         }
     },
+    deleteSession: async(uid, session_id) => {
+        const query = `UPDATE ${table_session} SET is_deleted=1
+                        WHERE ${table_session}.session_id = ${session_id} AND ${table_session}.userinfo_uid = "${uid}"`;
+        try {
+            await pool.queryParamMaster(query);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('deleteSession ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("deleteSession ERROR: ", err);
+            throw err;
+        }
+    }/*
     updateFavworkout: async (uid, fav_workout_ids) => {
         let string_fav_workout_ids = '(' + fav_workout_ids.toString() + ')';
         if (fav_workout_ids.length == 0) string_fav_workout_ids = '(-1)'
@@ -76,7 +94,7 @@ const session = {
             console.log('updateFavworkout ERROR : ', err);
             throw err;
         }
-    }
+    }*/
 }
 
 module.exports = session;

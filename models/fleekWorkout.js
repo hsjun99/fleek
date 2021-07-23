@@ -9,12 +9,13 @@ const table_session = 'session';
 const table_userinfo = 'userinfo';
 const table_follows = 'follows';
 const table_workoutAbility = 'workoutAbility';
+const table_userWorkoutHistory = 'userWorkoutHistory';
 
 const workout = {
     getCalendarData: async(uid) => {
         const fields = `reps, weight, duration, distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
-                        INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}'
+                        INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
                         LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = ${table_session}.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
                         ORDER BY ${table_workoutlog}.session_session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {
@@ -74,7 +75,7 @@ const workout = {
     getWorkoutRecordById: async (workout_id, uid) => {
         const fields = 'reps, weight, rest_time, session_session_id, created_at';
         const query = `SELECT ${fields} FROM ${table_workoutlog}
-                        INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${workout_id}
+                        INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${workout_id} AND ${table_session}.is_deleted != 1
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
@@ -148,7 +149,7 @@ const workout = {
                         INNER JOIN
                         (SELECT DISTINCT ${table_session}.session_id, ${table_session}.created_at, ${table_session}.userinfo_uid
                         FROM ${table_session}
-                        INNER JOIN ${table_workoutlog} ON ${table_workoutlog}.session_session_id = ${table_session}.session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}
+                        INNER JOIN ${table_workoutlog} ON ${table_workoutlog}.session_session_id = ${table_session}.session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id} AND ${table_session}.is_deleted != 1
                         WHERE ${table_session}.userinfo_uid != '${uid}'
                         ORDER BY ${table_workoutlog}.session_session_id DESC
                         LIMIT 5) AS DISTINCT_SESSION
@@ -192,7 +193,7 @@ const workout = {
                         INNER JOIN
                         (SELECT DISTINCT ${table_session}.session_id, ${table_session}.created_at, ${table_session}.userinfo_uid
                         FROM ${table_session}
-                        INNER JOIN ${table_workoutlog} ON ${table_workoutlog}.session_session_id = ${table_session}.session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}
+                        INNER JOIN ${table_workoutlog} ON ${table_workoutlog}.session_session_id = ${table_session}.session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id} AND ${table_session}.is_deleted != 1
                         INNER JOIN ${table_follows} ON ${table_follows}.follow_uid = ${table_session}.userinfo_uid AND ${table_follows}.userinfo_uid = '${uid}'
                         WHERE ${table_session}.userinfo_uid != '${uid}'
                         ORDER BY ${table_workoutlog}.session_session_id DESC
@@ -227,6 +228,39 @@ const workout = {
                 return -1;
             }
             console.log("getFollowsWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    updateUserWorkoutHistoryAdd: async(uid, workout_id) => {
+        const fields1 = 'add_num, finish_num, userinfo_uid, workout_workout_id';
+        const questions1 = `?, ?, ?, ?`;
+        const values1 = [0, 0, uid, workout_id];
+        const query1 = `INSERT IGNORE INTO ${table_userWorkoutHistory}(${fields1}) VALUES(${questions1})`;
+        const query2 = `UPDATE ${table_userWorkoutHistory} SET add_num = add_num+1 WHERE userinfo_uid = "${uid}" AND workout_workout_id="${workout_id}"`;
+        try {
+            const result1 = await pool.queryParamArrMaster(query1, values1);
+            const result2 = await pool.queryParamMaster(query2);
+            return true;
+        } catch (error) {
+            if (err.errno == 1062) {
+                console.log('updateUserWorkoutHistoryAdd Error : ', err.errno, err.code);
+                return -1;
+            }
+            console.log('updateUserWorkoutHistoryAdd Error : ', err);
+            throw err;
+        }
+    },
+    updateUserWorkoutHistoryFinish: async(uid, workout_id) => {
+        const query = `UPDATE ${table_userWorkoutHistory} SET finish_num = finish_num+1 WHERE userinfo_uid = "${uid}" AND workout_workout_id="${workout_id}"`;
+        try {
+            const result = await pool.queryParamMaster(query);
+            return true;
+        } catch (error) {
+            if (err.errno == 1062) {
+                console.log('updateUserWorkoutHistoryFinish Error : ', err.errno, err.code);
+                return -1;
+            }
+            console.log('updateUserWorkoutHistoryFinish Error : ', err);
             throw err;
         }
     }

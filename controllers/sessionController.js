@@ -6,23 +6,35 @@ var moment = require("moment");
 
 let Session = require("../models/fleekSession");
 
-const asyncForEach = require('../modules/function/asyncForEach');
-
 module.exports = {
-    savesession: async (req, res) => {
+    saveSession: async (req, res) => {
         const uid = req.uid;
         const data = req.body;
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
+
+        // Post Session
         const sessionIdx = await Session.postSessionData(uid, data.session, created_at, data.template_id);
+        // DB Error Handling
         if (sessionIdx == -1) {
-            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DB_ERROR));
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
         }
-        
-        const fav_workout_list = [];
-        
-        await Session.updateFavworkout(uid, fav_workout_list);
-    
+
+        // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, {sessionIdx: sessionIdx}));
+    },
+    deleteSession: async (req, res) => {
+        const uid = req.uid;
+        const session_id = req.params.session_id;
+
+        // Delete Session
+        const result = await Session.deleteSession(uid, session_id);
+        // DB Error Handling
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DELETE_SESSION_FAIL));
+        }
+
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_SESSION_SUCCESS, {session_id: session_id}));
     }
 }

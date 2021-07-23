@@ -3,11 +3,13 @@ const asyncForEach = require('../modules/function/asyncForEach');
 const timeFunction = require('../modules/function/timeFunction');
 
 const table_workoutAbility = 'workoutAbility';
+const table_session = 'session';
 
 const workoutAbility = {
     getRecentWorkoutMaxOneRm: async(uid, workout_id) => {
         const fields = 'max_one_rm';
-        const query = `SELECT ${fields} FROM ${table_workoutAbility} 
+        const query = `SELECT ${fields} FROM ${table_workoutAbility}
+                        INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutAbility}.session_session_id AND ${table_session}.is_deleted != 1
                         WHERE ${table_workoutAbility}.userinfo_uid="${uid}" AND ${table_workoutAbility}.workout_workout_id="${workout_id}"
                         ORDER BY workoutAbility_id DESC
                         LIMIT 1`;
@@ -26,8 +28,9 @@ const workoutAbility = {
         }
     },
     getAllWorkoutAbilityHistory: async(uid, workout_id) => {
-        const fields = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, created_at';
+        const fields = `max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_workoutAbility}.created_at`;
         const query = `SELECT ${fields} FROM ${table_workoutAbility}
+                        INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutAbility}.session_session_id AND ${table_session}.is_deleted != 1
                         WHERE ${table_workoutAbility}.userinfo_uid="${uid}" AND ${table_workoutAbility}.workout_workout_id="${workout_id}"
                         ORDER BY ${table_workoutAbility}.workoutAbility_id DESC`;
         try {
