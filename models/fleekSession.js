@@ -2,30 +2,35 @@ const pool = require('../modules/pool');
 const asyncForEach = require('../modules/function/asyncForEach');
 
 const oneRmCalculator = require('../modules/algorithm/oneRmCalculator');
+const alphaProgram = require('../modules/algorithm/alphaProgram');
 
 const table_workoutlog = 'workoutlog';
 const table_session = 'session';
-const table_favworkout = 'favworkout';
 const table_templateUsers = 'templateUsers';
 const table_workoutAbility = 'workoutAbility';
 const table_userWorkoutHistory = 'userWorkoutHistory';
+const table_alphaProgramUsers = 'alphaProgramUsers';
 
 const session = {
-    postSessionData: async (uid, data, created_at, template_id=null) => {
-        const fields1 = 'userinfo_uid, created_at';
+    postSessionData: async (uid, data, created_at, template_id, total_time) => {
+        const fields1 = 'userinfo_uid, created_at, templateUsers_template_id, total_time';
         const fields2 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, workout_workout_id, session_session_id';
         const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, workout_workout_id, userinfo_uid, session_session_id, created_at';
-        const questions1 = '?, ?';
+        const questions1 = '?, ?, ?, ?';
         const questions2 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
         const questions4 = '?, ?, ?, ?, ?, ?, ?, ?, ?';
-        const values1 = [uid, created_at];
+        const values1 = [uid, created_at, template_id, total_time];
         const query1 = `INSERT INTO ${table_session}(${fields1}) VALUES(${questions1})`;
         const query2 = `INSERT INTO ${table_workoutlog}(${fields2}) VALUES(${questions2})`;
         const query3 = `UPDATE ${table_templateUsers} SET lastdate='${created_at}'
                         WHERE ${table_templateUsers}.templateUsers_id = ${template_id}`;
         const query4 = `INSERT INTO ${table_workoutAbility}(${fields4}) VALUES(${questions4})`;
+        //const query5 = `UPDATE ${table_alphaProgramUsers} SET progress=${alphaProgram_progress}
+         //               WHERE ${table_alphaProgramUsers}.userinfo_uid = '${uid}' AND ${table_alphaProgramUsers}.alphaProgramUsers_id = ${alphaProgramUsers_id} AND ${table_alphaProgramUsers}.is_done = 0`;
         try {
             const result1 = await pool.queryParamArrMaster(query1, values1);
+            console.log(result1)
+            let session_total_volume=0, session_total_sets=0, session_total_reps=0;
             const addWorkoutlog = async() => {
                 await asyncForEach(data, async(workouts) => {
                     let max_one_rm=0, total_volume=0, max_volume=0, total_reps=0, max_weight=0;
@@ -39,11 +44,20 @@ const session = {
                     })
                     await pool.queryParamArrMaster(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, workouts.workout_id, uid, result1.insertId, created_at]);
                     const query5 = `UPDATE ${table_userWorkoutHistory} SET finish_num = finish_num+1 WHERE userinfo_uid = "${uid}" AND workout_workout_id="${workouts.workout_id}"`;
-                    await pool.queryParamMaster(query5);
+                    await pool.queryParamMaster(query5)
+                    session_total_volume += total_volume;
+                    session_total_sets += workouts.detail.length;
+                    session_total_reps += total_reps;
                 });
             }
             await addWorkoutlog();
             await pool.queryParamMaster(query3);
+            //await pool.queryParamMaster(query5);
+
+            const fields6 = 'total_volume, total_sets, total_reps';
+            const query6 = `UPDATE ${table_session} SET session_total_volume = ${session_total_volume}, session_total_sets = ${session_total_sets}, session_total_reps = ${session_total_reps}
+                            WHERE ${table_session}.session_id = ${result1.insertId}`;
+            await pool.queryParamMaster(query6);
             return result1.insertId;
         } catch (err) {
             if (err.errno == 1062) {

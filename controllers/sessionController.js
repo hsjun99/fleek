@@ -12,9 +12,8 @@ module.exports = {
         const data = req.body;
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
-
         // Post Session
-        const sessionIdx = await Session.postSessionData(uid, data.session, created_at, data.template_id);
+        const sessionIdx = await Session.postSessionData(uid, data.session, created_at, data.template_id, data.total_time);
         // DB Error Handling
         if (sessionIdx == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
