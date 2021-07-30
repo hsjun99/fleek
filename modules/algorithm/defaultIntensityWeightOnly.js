@@ -1,3 +1,5 @@
+const User = require('../../models/fleekUser');
+
 module.exports = async(inclination, intercept, experience=2) => {
     let expPercentage;
     switch (experience) {

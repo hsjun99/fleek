@@ -13,12 +13,11 @@ module.exports = {
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
         // Post Session
-        const sessionIdx = await Session.postSessionData(uid, data.session, created_at, data.template_id, data.total_time);
+        const sessionIdx = await Session.postSessionData(uid, data.session, created_at, data.template_id, data.total_time, data.alphaProgramUsers_id, data.alphaProgram_progress);
         // DB Error Handling
         if (sessionIdx == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
         }
-
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, {sessionIdx: sessionIdx}));
     },

@@ -13,7 +13,7 @@ const table_userWorkoutHistory = 'userWorkoutHistory';
 
 const workout = {
     getCalendarData: async(uid) => {
-        const fields = `reps, weight, duration, distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at`;
+        const fields = `reps, weight, duration, distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
                         LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = ${table_session}.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
@@ -24,7 +24,7 @@ const workout = {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
                     if (data.length == 0){
-                        data.push({session_id: rowdata.session_session_id, session_detail: {date: rowdata.created_at, total_workout_time: null, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
+                        data.push({session_id: rowdata.session_session_id, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
                     }
                     else if (data[data.length-1].session_id == rowdata.session_session_id){
                         const L = data[data.length-1].session_detail.content.length
@@ -36,7 +36,7 @@ const workout = {
                         }
                     }
                     else {
-                        data.push({session_id: rowdata.session_session_id, session_detail: {date: rowdata.created_at, total_workout_time: null, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
+                        data.push({session_id: rowdata.session_session_id, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
                     }
                 });
                 return data;
@@ -53,7 +53,7 @@ const workout = {
         }
     },
     getWorkoutById: async (workout_id, sex, age, weight) => {
-        const fields = 'english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, inclination, intercept';
+        const fields = 'english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, inclination, intercept, url';
         const query = `SELECT ${fields} FROM ${table_workout} 
                         LEFT JOIN ${table_equation} ON ${table_workout}.workout_id = ${table_equation}.workout_workout_id
                         WHERE ${table_workout}.workout_id="${workout_id}" 
@@ -263,8 +263,72 @@ const workout = {
             console.log('updateUserWorkoutHistoryFinish Error : ', err);
             throw err;
         }
-    }
+    },
+    getWorkoutsPreviewData: async (uid, workout_id) => {
+        const fields1 = 'finish_num';
+        const fields2 = 'MAX(max_one_rm) AS one_rm_MAX';
+        const fields3 = 'SUM(reps) AS reps_SUM';
+        const query1 = `SELECT ${fields1} FROM ${table_userWorkoutHistory}
+                        WHERE ${table_userWorkoutHistory}.userinfo_uid = '${uid}' AND ${table_userWorkoutHistory}.workout_workout_id=${workout_id}`;
+        const query2 = `SELECT ${fields2} FROM ${table_workoutAbility}
+                        INNER JOIN ${table_session}
+                        ON ${table_session}.session_id = ${table_workoutAbility}.session_session_id AND ${table_workoutAbility}.userinfo_uid = '${uid}' AND ${table_workoutAbility}.workout_workout_id = ${workout_id} AND ${table_session}.is_deleted != 1`;
+        const query3 = `SELECT ${fields3} FROM ${table_workoutlog}
+                        INNER JOIN ${table_session}
+                        ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${workout_id} AND ${table_session}.is_deleted != 1`;
+        try {
+            const result1 = await pool.queryParamSlave(query1);
+            const result2 = await pool.queryParamSlave(query2);
+            const result3 = await pool.queryParamSlave(query3);
+            const data = {
+                workout_id: workout_id,
+                one_rm: null,
+                total_days: null,
+                total_reps: null
+            }
+            if (result1.length > 0) data.total_days = result1[0].finish_num;
+            if (result2.length > 0) data.one_rm = Math.round(result2[0].one_rm_MAX);
+            if (result3.length > 0) data.total_reps = result3[0].reps_SUM;
+            return data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getDashboardRecords ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("ggetDashboardRecords ERROR: ", err);
+            throw err;
+        }
+    },
+    getSubstituteWorkout: async (workout_id) => {
+        const fields1 = 'category, muscle_p, muscle_s1, tier';
+        const query1 = `SELECT ${fields1} FROM ${table_workout}
+                        WHERE workout_id = ${workout_id}`;
+        try{
+            const result1 = await pool.queryParamSlave(query1);
+            const fields2 = `workout_id, (0.6*("${result1[0].category}"=category) + 0.2*(${result1[0].muscle_p}=muscle_p) + 0.15*(${result1[0].muscle_s1}=muscle_s1) + ${Math.random()*2-1}*(${result1[0].tier}=tier)) AS SCORE`;
+            const query2 = `SELECT ${fields2} FROM ${table_workout}
+                            WHERE workout_id != ${workout_id}
+                            ORDER BY SCORE DESC
+                            LIMIT 10`;
+            const result2 = await pool.queryParamSlave(query2);
+            const restructure = async() => {
+                let data = [];
+                await asyncForEach(result2, async(rowdata) => {
+                    data.push(rowdata.workout_id);
+                });
+                return data;
+            }
+            const data = await restructure();
+            return data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutById ERROR: ", err);
+            throw err;
+        }
+    },
 }
-
 
 module.exports = workout;

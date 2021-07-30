@@ -10,13 +10,13 @@ let User = require("../models/fleekUser");
 module.exports = {
     signup: async(req, res) => {
         const uid = req.uid;
-        const {name, sex, age, height, weight, goal} = req.body;
+        const {name, sex, age, height, weight, squat1RM, experience, goal} = req.body;
         if (!String(name) || !String(sex) || !String(age) || !String(height) || !String(weight) || goal.length == 0){
             return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.NULL_VALUE));
         }
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
-        const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, goal);
+        const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, squat1RM, experience, goal);
         if (acceptedUid == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.SIGNUP_FAIL));
         }

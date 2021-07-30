@@ -13,4 +13,8 @@ router.get('/getall', AuthUser.checkToken, workoutsController.getall);
 
 router.get('/algorithm/:name/:intensity/:workout_id', AuthUser.checkToken, workoutsController.getAlgoWorkoutPlan);
 
+//router.get('/previewdata/:workout_id', AuthUser.checkToken, workoutsController.getWorkoutsPreviewData);
+
+router.get('/substitute/:workout_id', AuthUser.checkToken, workoutsController.getSubstituteWorkout);
+
 module.exports = router;

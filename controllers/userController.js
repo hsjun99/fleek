@@ -66,5 +66,61 @@ module.exports = {
 
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, following));
+    },
+    getProfile: async(req, res) => {
+        const uid = req.uid;
+        
+        const profileData = await User.getProfile(uid);
+
+        // DB Error Handling
+        if (profileData == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+        console.log(profileData)
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, {name: profileData.name, age: profileData.age, height: profileData.height, weight: profileData.weight}));
+    },
+    updateName: async(req, res) => {
+        const uid = req.uid;
+        const newName = req.params.modified_name;
+
+        const unique = await User.checkName(newName);
+        if (unique == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        } else if (unique == false) {
+            return res.status(statusCode.CONFLICT).send(util.fail(statusCode.CONFLICT, resMessage.READ_FOLLOWING_FAIL));
+        }
+        const result = await User.updateName(uid, modifiedName);
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
+    },
+    updateHeightWeight: async(req, res) => {
+        const uid = req.uid;
+        const height = req.params.height;
+        const weight = req.params.weight;
+
+        const result = await User.updateHeightWeight(uid, height, weight);
+        if (result== -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
+
+    },
+    postSuggestion: async(req, res) => {
+        const uid = req.uid;
+        const content = req.body;
+
+        const result = await User.postSuggestion(uid, content);
+
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, {insertId: result.insertId}));
     }
 }

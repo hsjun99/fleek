@@ -6,7 +6,7 @@ const resMessage = require("../modules/responseMessage");
 const authUser = {
     checkToken: async(req, res, next) => {
         if (!req.headers.authorization){
-            req.uid = 'kakao:1811099151';
+            req.uid = 'K1vDAkC8BoNAz1Uw5ax4iaD7SAm2';
             next();
         }
         else{

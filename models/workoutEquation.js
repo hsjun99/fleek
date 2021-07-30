@@ -7,8 +7,14 @@ const workoutEquation = {
         const query = `SELECT ${fields} FROM ${table} WHERE workout_workout_id="${workout_id}" AND sex="${sex}" AND age="${age}" AND weight="${weight}"`;
         try {
             const result = await pool.queryParamSlave(query);
-            const inclination = result[0].inclination;
-            const intercept = result[0].intercept;
+            let inclination, intercept;
+            if (result.length == 0) {
+                inclination = null;
+                intercept = null;
+            } else {
+                inclination = result[0].inclination;
+                intercept = result[0].intercept;
+            }
             return {inclination, intercept};
         } catch (err) {
             if (err.errno == 1062) {

@@ -13,6 +13,7 @@ var templateRouter = require('./routes/template');
 var calendarRouter = require('./routes/calendar');
 var programRouter = require('./routes/program');
 var dashboardRouter = require('./routes/dashboard');
+var userRouter = require('./routes/user');
 
 var admin = require('firebase-admin');
 
@@ -44,6 +45,7 @@ app.use('/template', templateRouter);
 app.use('/calendar', calendarRouter);
 app.use('/program', programRouter);
 app.use('/dashboard', dashboardRouter);
+app.use('/user', userRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -15,7 +15,7 @@ const template = {
     getDashboardRecords: async (uid) => {
         const fields1 = 'AVG(total_time) AS time_AVG, AVG(session_total_volume) AS volume_AVG, AVG(session_total_reps) AS reps_AVG, AVG(session_total_sets) AS sets_AVG';
         const query1 = `SELECT ${fields1} FROM ${table_session}
-                        WHERE ${table_session}.is_deleted=0 AND ${table_session}.userinfo_uid = '${uid}'`;
+                        WHERE ${table_session}.is_deleted = 0 AND ${table_session}.userinfo_uid = '${uid}'`;
         try {
             const result1 = await pool.queryParamSlave(query1);
             if (result1.length == 0){
@@ -47,7 +47,7 @@ const template = {
         const fields2 = 'MAX(max_one_rm) AS one_rm_MAX';
         const fields3 = 'SUM(reps) AS reps_SUM';
         const query1 = `SELECT ${fields1} FROM ${table_userWorkoutHistory}
-                        WHERE ${table_userWorkoutHistory}.userinfo_uid = '${uid}'
+                        WHERE ${table_userWorkoutHistory}.userinfo_uid = '${uid}' AND ${table_userWorkoutHistory}.finish_num != 0
                         ORDER BY ${table_userWorkoutHistory}.finish_num DESC
                         LIMIT 5`;
         try {
@@ -56,11 +56,11 @@ const template = {
                 let data = [];
                 await asyncForEach(result1, async(rowdata) => {
                     const query2 = `SELECT ${fields2} FROM ${table_workoutAbility}
-                        INNER JOIN ${table_session}
-                        ON ${table_session}.session_id = ${table_workoutAbility}.session_session_id AND ${table_workoutAbility}.userinfo_uid = '${uid}' AND ${table_workoutAbility}.workout_workout_id = ${rowdata.workout_workout_id} AND ${table_session}.is_deleted != 1`;
+                                    INNER JOIN ${table_session}
+                                    ON ${table_session}.session_id = ${table_workoutAbility}.session_session_id AND ${table_workoutAbility}.userinfo_uid = '${uid}' AND ${table_workoutAbility}.workout_workout_id = ${rowdata.workout_workout_id} AND ${table_session}.is_deleted != 1`;
                     const query3 = `SELECT ${fields3} FROM ${table_workoutlog}
-                        INNER JOIN ${table_session}
-                        ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${rowdata.workout_workout_id} AND ${table_session}.is_deleted != 1`;
+                                    INNER JOIN ${table_session}
+                                    ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${rowdata.workout_workout_id} AND ${table_session}.is_deleted != 1`;
                     const oneRmData = await pool.queryParamSlave(query2);
                     const totalRepsData = await pool.queryParamSlave(query3);
                     data.push({workout_id: rowdata.workout_workout_id, one_rm: Math.round(oneRmData[0].one_rm_MAX), total_days: rowdata.finish_num, total_reps: totalRepsData[0].reps_SUM});

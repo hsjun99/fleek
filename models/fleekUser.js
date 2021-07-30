@@ -4,17 +4,35 @@ const table1 = 'userinfo';
 const table2 = 'usergoal';
 const table3 = 'follows';
 const table4 = 'workoutAbility';
+const table5 = 'suggestionBoard';
+const table6 = 'userBodyInfoTracking';
+
+const workoutEquation = require('./workoutEquation');
+
+const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
+const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');
+const experienceClassifier = require('../modules/classifier/experienceClassifier');
+
+const timeFunction = require('../modules/function/timeFunction');
 
 const fleekUser = {
-    postData: async (uid, name, sex, age, height, weight, created_at, goal) => {
-        const fields1 = 'uid, name, sex, age, height, weight, created_at';
+    postData: async (uid, name, sex, age, height, weight, created_at, squat1RM, experience, goal) => {
+        const fields1 = 'uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at';
         const fields2 = 'goal, userinfo_uid'
-        const questions1 = `?, ?, ?, ?, ?, ?, ?`;
-        const questions2 = `?,?`
-        const values1 = [uid, name, sex, age, height, weight, created_at];
+        const questions1 = `?, ?, ?, ?, ?, ?, ?, ?, ?, ?`;
+        const questions2 = `?, ?`
         const query1 = `INSERT INTO ${table1}(${fields1}) VALUES(${questions1})`;
         const query2 = `INSERT INTO ${table2}(${fields2}) VALUES(${questions2})`;
         try {
+            let percentage;
+            if (squat1RM != null){
+                const {inclination, intercept} = await workoutEquation.getEquation(200, sex, await ageGroupClassifier(age), await weightGroupClassifier(weight));
+                percentage = Math.round(inclination * Math.log(squat1RM) + intercept);
+                if (percentage < -100) percentage = -100;
+            } else {
+                percentage = await experienceClassifier(experience);
+            }
+            const values1 = [uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at];
             const result = await pool.queryParamArrMaster(query1, values1);
             const addGoals = async() => {
                 await asyncForEach(goal, async(elem) => {
@@ -122,7 +140,7 @@ const fleekUser = {
         }
     },
     getProfile: async (uid) => {
-        const fields = 'sex, age, height, weight';
+        const fields = 'sex, age, height, weight, percentage, name';
         const query = `SELECT ${fields} FROM ${table1} 
                         WHERE ${table1}.uid="${uid}"`;
         try {
@@ -131,7 +149,9 @@ const fleekUser = {
             const age = result[0].age;
             const height = result[0].height;
             const weight = result[0].weight;
-            return {sex, age, height, weight};
+            const percentage = result[0].percentage;
+            const name = result[0].name;
+            return {sex, age, height, weight, percentage, name};
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('getProfile ERROR: ', err.errno, err.code);
@@ -145,6 +165,39 @@ const fleekUser = {
         const query1 = `UPDATE ${table1} SET name="${name}", sex="${sex}", age="${age}", height="${height}", weight="${weight}" WHERE uid="${uid}"`;
         try {
             const result1 = await pool.queryParamMaster(query1);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
+    updateName: async(uid, modifiedName) => {
+        const query1 = `UPDATE ${table1} SET name="${modifiedName}" WHERE uid="${uid}"`;
+        try {
+            const result1 = await pool.queryParamMaster(query1);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
+    updateHeightWeight: async(uid, height, weight) => {
+        const fields2 = 'height, weight, userinfo_uid, created_at';
+        const questions2 = `?, ?, ?, ?`;
+        const values2 = [height, weight, uid, await timeFunction.currentTime()];
+        const query1 = `UPDATE ${table1} SET height="${height}", weight="${weight}" WHERE uid="${uid}"`;
+        const query2 = `INSERT INTO ${table6}(${fields2}) VALUES(${questions2})`;
+        try {
+            const result1 = await pool.queryParamMaster(query1);
+            const result2 = await pool.queryParamArrMaster(query2, values2);
             return true;
         } catch (err) {
             if (err.errno == 1062) {
@@ -172,6 +225,23 @@ const fleekUser = {
                 return -1;
             }
             console.log("getWorkoutMaxOneRm ERROR: ", err);
+            throw err;
+        }
+    },
+    postSuggestion: async(uid, content) => {
+        const fields = 'content, userinfo_uid';
+        const questions = `?, ?`;
+        const values = [content, uid];
+        const query = `INSERT INTO ${table5}(${fields}) VALUES(${questions})`;
+        try {
+            const result = await pool.queryParamArrMaster(query, values);
+            return result[0];
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('addFollow ERROR : ', err.errno, err.code);
+                return -1;
+            }
+            console.log('addFollow ERROR : ', err);
             throw err;
         }
     }

@@ -43,7 +43,7 @@ module.exports = {
       if (profileResult == -1){
         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
       }
-      const {sex, age, height, weight} = profileResult;
+      const {sex, age, height, weight, percentage} = profileResult;
       const ageGroup = await ageGroupClassifier(age); // Conversion to group
       const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
 
@@ -74,12 +74,12 @@ module.exports = {
         const updateResultPopularity = await Workout.updateWorkoutPopularity(id);
         const updateResultAddNum = await Workout.updateUserWorkoutHistoryAdd(uid, id);
         const workout_ability = await WorkoutAbility.getAllWorkoutAbilityHistory(uid, id);
-        const {plan, detail_plan} = await defaultIntensity(data.inclination, data.intercept);
+        const {plan, detail_plan} = await defaultIntensity(data.inclination, data.intercept, percentage);
         // DB Error Handling
         if (data == -1 || recentRecords == -1 || updateResultPopularity == -1 || workout_ability == -1 || updateResultAddNum == -1) {
           return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
         }
-        return jsonFormatter.getWorkout(id, data.english, data.korean, data.category, data.muscle_p, [data.muscle_s1, data.muscle_s2, data.muscle_s3, data.muscle_s4, data.muscle_s5, data.muscle_s6], data.equipment, data.record_type, rest_time, data.inclination, data.intercept, recentRecords, workout_ability, plan, detail_plan);
+        return jsonFormatter.getWorkout(id, data.url, data.english, data.korean, data.category, data.muscle_p, [data.muscle_s1, data.muscle_s2, data.muscle_s3, data.muscle_s4, data.muscle_s5, data.muscle_s6], data.equipment, data.record_type, rest_time, data.inclination, data.intercept, recentRecords, workout_ability, plan, detail_plan);
       }));
 
       // Success
@@ -110,6 +110,29 @@ module.exports = {
       const data = await restructure();
 
       // Success
+      res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, data));
+    },
+    getWorkoutsPreviewData: async (req, res) => {
+      const uid = req.uid;
+      const workout_id = req.params.workout_id;
+
+      const data = await Workout.getWorkoutsPreviewData(uid, workout_id);
+
+      if (data == -1) {
+        return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUTALGORITHM_FAIL));
+      }
+      res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, data));
+   
+    },
+    getSubstituteWorkout: async (req, res) => {
+      const uid = req.uid;
+      const workout_id = req.params.workout_id;
+
+      const data = await Workout.getSubstituteWorkout(workout_id);
+
+      if (data == -1) {
+        return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUTALGORITHM_FAIL));
+      }
       res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, data));
     }
     /*
