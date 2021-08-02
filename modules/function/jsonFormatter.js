@@ -1,11 +1,11 @@
 //const { getEachUsersRecords } = require("../../controllers/workoutsController");
 
 module.exports = {
-    getWorkout: (id, url, english, korean, category, muscle_p, muscle_s, equipment, record_type, rest_time, inclination, intercept, recent_records, workout_ability, plan, detail_plan) => {
+    getWorkout: (id, video_url, english, korean, category, muscle_p, muscle_s, equipment, record_type, rest_time, inclination, intercept, recent_records, workout_ability, plan, detail_plan) => {
         return {
             basic_info: {
                 workout_id: Number(id),
-                video_url: url,
+                video_url: video_url,
                 english: english,
                 korean: korean,
                 category: category,

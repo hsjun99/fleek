@@ -4,6 +4,9 @@ const asyncForEach = require('../modules/function/asyncForEach');
 const oneRmCalculator = require('../modules/algorithm/oneRmCalculator');
 const alphaProgram = require('../modules/algorithm/alphaProgram');
 
+const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
+const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');
+
 const table_workout = 'workout';
 const table_workoutlog = 'workoutlog';
 const table_session = 'session';
@@ -11,6 +14,11 @@ const table_templateUsers = 'templateUsers';
 const table_workoutAbility = 'workoutAbility';
 const table_userWorkoutHistory = 'userWorkoutHistory';
 const table_alphaProgramUsers = 'alphaProgramUsers';
+
+
+const WorkoutAbility = require('./fleekWorkoutAbility');
+const WorkoutEquation = require('./workoutEquation');
+const User = require('./fleekUser');
 
 const session = {
     postSessionData: async (uid, data, created_at, template_id, total_time, alphaProgramUsers_id, alphaProgram_progress) => {
@@ -62,7 +70,7 @@ const session = {
                     session_total_volume += total_volume;
                     session_total_sets += workouts.detail.length;
                     session_total_reps += total_reps;
-                    if (workouts.workouts_index != null) one_rms_index[workouts.workouts_index-1] = max_one_rm.toFixed(2);
+                    one_rms_index[workouts.workouts_index-1] = max_one_rm.toFixed(2);
                 });
             }
             await addWorkoutlog();
@@ -75,6 +83,24 @@ const session = {
                             WHERE ${table_session}.session_id = ${result1.insertId}`;
             await pool.queryParamMaster(query6);
             if (alphaProgramUsers_id != null && alphaProgram_progress == 0) {
+                const fields10 = 'workouts_index';
+                const query10 = `SELECT ${fields10} FROM ${table_alphaProgramUsers}
+                                WHERE ${table_alphaProgramUsers}.alphaProgramUsers_id = ${alphaProgramUsers_id}`;
+                const result10 = await pool.queryParamSlave(query10);
+                const workouts_index = JSON.parse(result10[0].workouts_index).workouts_index;
+                await Promise.all(one_rms_index.map(async (elem, index) => {
+                    if (workouts_index[index] != 0 && Math.round(elem) == 0) {
+                        let oneRmPastData = await WorkoutAbility.getWorkoutMaxOneRm(uid, workouts_index[index]);
+                        if (Math.round(oneRmPastData) == 0) {
+                            const {sex, age, weight, percentage} = await User.getProfile(uid);
+                            const ageGroup = await ageGroupClassifier(age);
+                            const weightGroup = await weightGroupClassifier(weight);
+                            const {inclination, intercept} = await WorkoutEquation.getEquation(workouts_index[index], sex, ageGroup, weightGroup);
+                            oneRmPastData = Math.exp((percentage-intercept)/inclination);
+                        }
+                        one_rms_index[index] = oneRmPastData.toFixed(2);
+                    }
+                }))
                 const one_rms_index_String = JSON.stringify({one_rms_index: one_rms_index});
                 // Update AlphaProgramUsers Table - one_rms_by_tier
                 const query8 = `UPDATE ${table_alphaProgramUsers} SET one_rms_index='${one_rms_index_String}'

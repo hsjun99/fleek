@@ -234,8 +234,9 @@ const fleekUser = {
         const values = [content, uid];
         const query = `INSERT INTO ${table5}(${fields}) VALUES(${questions})`;
         try {
+            console.log(query)
             const result = await pool.queryParamArrMaster(query, values);
-            return result[0];
+            return result;
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('addFollow ERROR : ', err.errno, err.code);

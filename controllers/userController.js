@@ -76,13 +76,13 @@ module.exports = {
         if (profileData == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
         }
-        console.log(profileData)
+
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, {name: profileData.name, age: profileData.age, height: profileData.height, weight: profileData.weight}));
     },
     updateName: async(req, res) => {
         const uid = req.uid;
-        const newName = req.params.modified_name;
+        const newName = req.params.new_name;
 
         const unique = await User.checkName(newName);
         if (unique == -1) {
@@ -90,7 +90,7 @@ module.exports = {
         } else if (unique == false) {
             return res.status(statusCode.CONFLICT).send(util.fail(statusCode.CONFLICT, resMessage.READ_FOLLOWING_FAIL));
         }
-        const result = await User.updateName(uid, modifiedName);
+        const result = await User.updateName(uid, newName);
         if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
         }
@@ -112,7 +112,9 @@ module.exports = {
     },
     postSuggestion: async(req, res) => {
         const uid = req.uid;
-        const content = req.body;
+        const content = req.body.data;
+
+        console.log(content, req.body)
 
         const result = await User.postSuggestion(uid, content);
 
@@ -121,6 +123,6 @@ module.exports = {
         }
 
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, {insertId: result.insertId}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
     }
 }

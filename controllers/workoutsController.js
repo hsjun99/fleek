@@ -4,7 +4,6 @@ let resMessage = require('../modules/responseMessage');
 
 let User = require("../models/fleekUser");
 let Workout = require("../models/fleekWorkout")
-//let WorkoutEquation = require("../models/workoutEquation")
 let WorkoutAbility = require('../models/fleekWorkoutAbility');
 
 const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
@@ -19,6 +18,14 @@ const roundNumber = require('../modules/function/roundNumber');
 const jsonFormatter = require('../modules/function/jsonFormatter');
 
 module.exports = {
+    getWorkoutTableData: async (req, res) => {
+      const data = await Workout.getWorkoutTable();
+      if (data == -1){
+        return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
+      }
+      // Success
+      res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
+    },
     getEachUsersRecords: async (req, res) => {
       const id = req.params.id;
       const uid = req.uid;
@@ -79,7 +86,7 @@ module.exports = {
         if (data == -1 || recentRecords == -1 || updateResultPopularity == -1 || workout_ability == -1 || updateResultAddNum == -1) {
           return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
         }
-        return jsonFormatter.getWorkout(id, data.url, data.english, data.korean, data.category, data.muscle_p, [data.muscle_s1, data.muscle_s2, data.muscle_s3, data.muscle_s4, data.muscle_s5, data.muscle_s6], data.equipment, data.record_type, rest_time, data.inclination, data.intercept, recentRecords, workout_ability, plan, detail_plan);
+        return jsonFormatter.getWorkout(id, data.video_url, data.english, data.korean, data.category, data.muscle_p, [data.muscle_s1, data.muscle_s2, data.muscle_s3, data.muscle_s4, data.muscle_s5, data.muscle_s6], data.equipment, data.record_type, rest_time, data.inclination, data.intercept, recentRecords, workout_ability, plan, detail_plan);
       }));
 
       // Success
@@ -92,18 +99,26 @@ module.exports = {
       const intensity = req.params.intensity;
 
       // Get Max 1RM
-      const max_one_rm = await WorkoutAbility.getRecentWorkoutMaxOneRm(uid, workout_id);
+      const max_one_rm = await WorkoutAbility.getWorkoutMaxOneRm(uid, workout_id);
+      
       // DB Error Handling
       if (max_one_rm == -1) {
         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUTALGORITHM_FAIL));
       }
+      
+      const workoutData = await Workout.getWorkoutInfo(workout_id);
+
+      if (workoutData == -1) {
+        return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUTALGORITHM_FAIL));
+      }
+      const {min_step} = workoutData;
 
       // Workout Plan Restructure in JSON
       const restructure = async() => {
         let data = [];
         let index = 0;
         await asyncForEach(fleekIntensity[algoName][intensity].weights, async(weight_param) => {
-          data.push({reps: fleekIntensity[algoName][intensity].reps[index++], weight: roundNumber.roundToNearest5(weight_param * max_one_rm)})
+          data.push({reps: fleekIntensity[algoName][intensity].reps[index++], weight: roundNumber.roundNum(weight_param * max_one_rm, min_step)});
         })
         return data;
       }
@@ -118,9 +133,12 @@ module.exports = {
 
       const data = await Workout.getWorkoutsPreviewData(uid, workout_id);
 
+      // DB Error Handling
       if (data == -1) {
         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUTALGORITHM_FAIL));
       }
+
+      // Success
       res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, data));
    
     },
@@ -130,9 +148,12 @@ module.exports = {
 
       const data = await Workout.getSubstituteWorkout(workout_id);
 
+      //DB Error Handling
       if (data == -1) {
         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUTALGORITHM_FAIL));
       }
+
+      // Success
       res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, data));
     }
     /*

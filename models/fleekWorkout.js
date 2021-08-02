@@ -12,6 +12,75 @@ const table_workoutAbility = 'workoutAbility';
 const table_userWorkoutHistory = 'userWorkoutHistory';
 
 const workout = {
+    getWorkoutInfo: async(workout_id) => {
+        const query = `SELECT * FROM ${table_workout}
+                        WHERE ${table_workout}.workout_id = ${workout_id}`;
+                            
+        try {
+            const data = await pool.queryParamSlave(query);
+            return {
+                english: data[0].english,
+                korean: data[0].korean,
+                category: data[0].category,
+                muscle_primary: data[0].muscle_p,
+                muscle_secondary: [data[0].muscle_s1, data[0].muscle_s2, data[0].muscle_s3, data[0].muscle_s4, data[0].muscle_s5, data[0].muscle_s6],
+                equipment: data[0].equipment,
+                record_type: data[0].record_type,
+                multiplier: data[0].multiplier,
+                popularity: data[0].popularity,
+                video_url: data[0].video_url,
+                video_url_substitute: data[0].video_url_substitute,
+                reference_num: data[0].reference_num,
+                min_step: data[0].min_step,
+                tier: data[0].tier
+            }
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    getWorkoutTable: async() => {
+        const fields = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, video_url, video_url_substitute, reference_num`;
+        const query = `SELECT ${fields} FROM ${table_workout}`;
+        try {
+            const result = await pool.queryParamSlave(query);
+            const restructure = async() => {
+                let data = [];
+                await asyncForEach(result, async(rowdata) => {
+                    data.push({
+                        workout_id: Number(rowdata.workout_id),
+                        english: rowdata.english,
+                        korean: rowdata.korean,
+                        category: rowdata.category,
+                        muscle_primary: rowdata.muscle_p,
+                        muscle_secondary: [rowdata.muscle_s1, rowdata.muscle_s2, rowdata.muscle_s3, rowdata.muscle_s4, rowdata.muscle_s5, rowdata.muscle_s6],
+                        equipment: rowdata.equipment,
+                        record_type: rowdata.record_type,
+                        multiplier: rowdata.multiplier,
+                        min_step: rowdata.min_step,
+                        tier: rowdata.tier,
+                        video_url: rowdata.video_url,
+                        video_url_substitute: rowdata.video_url_substitute,
+                        reference_num: rowdata.reference_num
+                    });
+                });
+                return data;
+            }
+            const data = await restructure();
+            return data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
     getCalendarData: async(uid) => {
         const fields = `reps, weight, duration, distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
@@ -53,7 +122,7 @@ const workout = {
         }
     },
     getWorkoutById: async (workout_id, sex, age, weight) => {
-        const fields = 'english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, inclination, intercept, url';
+        const fields = 'english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, inclination, intercept, video_url, min_step';
         const query = `SELECT ${fields} FROM ${table_workout} 
                         LEFT JOIN ${table_equation} ON ${table_workout}.workout_id = ${table_equation}.workout_workout_id
                         WHERE ${table_workout}.workout_id="${workout_id}" 

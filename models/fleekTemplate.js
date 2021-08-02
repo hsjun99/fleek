@@ -6,21 +6,34 @@ const table_templateUsersDetails = 'templateUsersDetails';
 const table_templateDefault = 'templateDefault';
 const table_templateDefaultDetails = 'templateDefaultDetails';
 
+const WorkoutEquation = require('./workoutEquation');
+const Workout = require('./fleekWorkout');
+
+const defaultIntensity = require('../modules/algorithm/defaultIntensity');
+
+const getUserInfo = require('../modules/functionFleek/getUserInfo');
+const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation');
+
 const template = {
     postTemplateData: async (uid, name, data) => {
         const fields1 = 'name, userinfo_uid';
-        const fields2 = 'workout_order, workout_workout_id, templateUsers_template_id';
+        const fields2 = 'workout_order, workout_workout_id, templateUsers_template_id, workout_detail';
         const questions1 = '?, ?';
-        const questions2 = '?, ?, ?'
+        const questions2 = '?, ?, ?, ?'
         const values1 = [name, uid];
         const query1 = `INSERT INTO ${table_templateUsers}(${fields1}) VALUES(${questions1})`;
         const query2 = `INSERT INTO ${table_templateUsersDetails}(${fields2}) VALUES(${questions2})`;
         try {
             const result1 = await pool.queryParamArrMaster(query1, values1);
+
+            const {sex, percentage, ageGroup, weightGroup} = await getUserInfo(uid);
+
             const addTemplateDetails = async() => {
                 let cnt = 1;
                 await asyncForEach(data, async(workout) => {
-                    await pool.queryParamArrMaster(query2, [cnt++, workout, result1.insertId]);
+                    const {min_step, inclination, intercept} =  await Workout.getWorkoutById(workout, sex, ageGroup, weightGroup);
+                    const {detail_plan} = await defaultIntensity(inclination, intercept, percentage, min_step);
+                    await pool.queryParamArrMaster(query2, [cnt++, workout, result1.insertId, JSON.stringify(detail_plan)]);
                 });
             }
             await addTemplateDetails();
@@ -35,7 +48,7 @@ const template = {
         }
     },
     getUserTemplate: async(uid) => {
-        const fields = 'name, templateUsers_id, workout_workout_id';
+        const fields = 'name, templateUsers_id, workout_workout_id, lastdate, workout_detail';
         const query = `SELECT ${fields} FROM ${table_templateUsers}
                         INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.userinfo_uid = '${uid}' AND ${table_templateUsers}.is_deleted != 1`;
         try {
@@ -45,14 +58,14 @@ const template = {
                 await asyncForEach(result, async(rowdata) => {
                     
                     if (data.length == 0){
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [rowdata.workout_workout_id]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, workout_detail: JSON.parse(rowdata.workout_detail)}]});
                     }
                     
                     else if (data[data.length-1].template_id == rowdata.templateUsers_id){
-                        data[data.length-1].detail.push(rowdata.workout_workout_id);
+                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, workout_detail: JSON.parse(rowdata.workout_detail)});
                     }
                     else {
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [rowdata.workout_workout_id]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, workout_detail: JSON.parse(rowdata.workout_detail)}]});
                     }
                 });
                 return data;
@@ -69,7 +82,7 @@ const template = {
         }
     },
     getDefaultTemplate: async() => {
-        const fields = 'name, templateDefault_id, workout_workout_id';
+        const fields = 'name, target, templateDefault_id, workout_workout_id';
         const query = `SELECT ${fields} FROM ${table_templateDefault}
                         INNER JOIN ${table_templateDefaultDetails} ON ${table_templateDefault}.templateDefault_id = ${table_templateDefaultDetails}.templateDefault_template_id`;
         try {
@@ -78,13 +91,13 @@ const template = {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
                     if (data.length == 0){
-                        data.push({name: rowdata.name, default_template_id: rowdata.templateDefault_id, detail: [rowdata.workout_workout_id]});
+                        data.push({name: rowdata.name, target: rowdata.target, default_template_id: rowdata.templateDefault_id, detail: [rowdata.workout_workout_id]});
                     }   
                     else if (data[data.length-1].default_template_id == rowdata.templateDefault_id){
                         data[data.length-1].detail.push(rowdata.workout_workout_id);
                     }
                     else {
-                        data.push({name: rowdata.name, default_template_id: rowdata.templateDefault_id, detail: [rowdata.workout_workout_id]});
+                        data.push({name: rowdata.name, target: rowdata.target, default_template_id: rowdata.templateDefault_id, detail: [rowdata.workout_workout_id]});
                     }
                 });
                 return data;
@@ -101,8 +114,8 @@ const template = {
         }
     },
     updateUserTemplate: async(uid, template_id, name, data) => {
-        const fields2 = 'workout_order, workout_workout_id, templateUsers_template_id';
-        const questions2 = '?, ?, ?'
+        const fields2 = 'workout_order, workout_workout_id, templateUsers_template_id, workout_detail';
+        const questions2 = '?, ?, ?, ?'
 
         const query1 = `DELETE T_details
                         FROM ${table_templateUsersDetails} T_details
@@ -116,7 +129,7 @@ const template = {
             const addTemplateDetails = async() => {
                 let cnt = 1;
                 await asyncForEach(data, async(workout) => {
-                    await pool.queryParamArrMaster(query2, [cnt++, workout, template_id]);
+                    await pool.queryParamArrMaster(query2, [cnt++, workout.workout_id, template_id, JSON.stringify(workout.workout_detail)]);
                 });
             }
             await addTemplateDetails();

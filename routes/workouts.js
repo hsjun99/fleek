@@ -17,4 +17,6 @@ router.get('/algorithm/:name/:intensity/:workout_id', AuthUser.checkToken, worko
 
 router.get('/substitute/:workout_id', AuthUser.checkToken, workoutsController.getSubstituteWorkout);
 
+router.get('/table', AuthUser.checkToken, workoutsController.getWorkoutTableData);
+
 module.exports = router;

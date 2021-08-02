@@ -9,6 +9,8 @@ let User = require("../models/fleekUser");
 const ageGroupClassifier = require("../modules/classifier/ageGroupClassifier")
 const weightGroupClassifier =  require("../modules/classifier/weightGroupClassifier");
 
+const getUserInfo = require('../modules/functionFleek/getUserInfo');
+
 module.exports = {
     getAllPrograms: async(req, res) => {
         const uid = req.uid;
@@ -33,18 +35,24 @@ module.exports = {
         }
         else if (status == 0) { // Initialization Required
             // Get Profile
-            const profileResult = await User.getProfile(uid);
-            if (profileResult == -1){
+            const {sex, age, weight, percentage, ageGroup, weightGroup} = await getUserInfo(uid);
+           
+            const programWorkoutData = await Program.getProgramWorkoutsDataByIndex(uid, program_id, sex, ageGroup, weightGroup, percentage, workoutEquation);
+            if (programWorkoutData == -1) {
                 return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
             }
-            const {sex, age, height, weight, percentage} = profileResult;
-            const ageGroup = await ageGroupClassifier(age); // Conversion to group
-            const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
-            const programWorkoutData = await Program.getProgramWorkoutsDataByTier(uid, program_id, sex, ageGroup, weightGroup, percentage, workoutEquation);
             const {workouts_index_default, one_rms_index} = programWorkoutData;
-            await Program.initializeProgram(uid, program_id, workouts_index_default, one_rms_index);
+            const result = await Program.initializeProgram(uid, program_id, workouts_index_default, one_rms_index);
+            if (result == -1) {
+                return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+            }
         }
         const data = await Program.getProgramData(uid, program_id);
+
+        if (data == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+        }
+
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, data));
     }
 }
