@@ -10,15 +10,21 @@ module.exports = async(inclination, intercept, percentage, min_step) => {
     const detail_plan = [
         {
             "reps": 10,
-            "weight": calibratedWeight
+            "weight": calibratedWeight,
+            "duration": 0,
+            "distance": 0
         },
         {
             "reps": 10,
-            "weight": calibratedWeight
+            "weight": calibratedWeight,
+            "duration": 0,
+            "distance": 0
         },
         {
             "reps": 10,
-            "weight": calibratedWeight
+            "weight": calibratedWeight,
+            "duration": 0,
+            "distance": 0
         }
     ]
     return {plan, detail_plan};

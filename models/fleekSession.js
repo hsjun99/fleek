@@ -2,7 +2,7 @@ const pool = require('../modules/pool');
 const asyncForEach = require('../modules/function/asyncForEach');
 
 const oneRmCalculator = require('../modules/algorithm/oneRmCalculator');
-const alphaProgram = require('../modules/algorithm/alphaProgram');
+//const alphaProgram = require('../modules/algorithm/alphaProgram');
 
 const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
 const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');

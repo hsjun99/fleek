@@ -3,6 +3,9 @@ const {DB_master, DB_slave} = require('../config/database');
 const poolPromise_master = DB_master();
 const poolPromise_slave = DB_slave();
 
+
+const asyncForEach = require('./function/asyncForEach');
+
 module.exports = { 
     queryParamMaster: async (query) => {
         return new Promise ( async (resolve, reject) => {
@@ -76,6 +79,35 @@ module.exports = {
             }
         });
     },
+    Transaction: async (args) => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const pool = await poolPromise_master;
+                const connection = await pool.getConnection();
+                let result = [];
+                try {
+                    await connection.beginTransaction();
+                    await asyncForEach(args, async(it) => {
+                        await console.log(it)
+                        if (it.value != null){
+                            result.push(await connection.query(it.query, it.value));
+                        } else {
+                            result.push(await connection.query(it.query));
+                        }
+                    })
+                    await connection.commit();
+                    pool.releaseConnection(connection);
+                    resolve(result);
+                } catch (err) {
+                    await connection.rollback()
+                    pool.releaseConnection(connection);
+                    reject(err);
+                }
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },/*
     Transaction: async (...args) => {
         return new Promise(async (resolve, reject) => {
             try {
@@ -96,5 +128,5 @@ module.exports = {
                 reject(err);
             }
         });
-    }
+    }*/
 }

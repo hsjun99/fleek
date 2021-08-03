@@ -142,7 +142,7 @@ const workout = {
         }
     },
     getWorkoutRecordById: async (workout_id, uid) => {
-        const fields = 'reps, weight, rest_time, session_session_id, created_at';
+        const fields = 'reps, weight, duration, distance, rest_time, session_session_id, created_at';
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${workout_id} AND ${table_session}.is_deleted != 1
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
@@ -153,13 +153,13 @@ const workout = {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
                     if (data.length == 0){
-                        data.push([{reps:rowdata.reps, weight:rowdata.weight, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
+                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
                     }
                     else if (data[data.length-1][0].session_id == rowdata.session_session_id){
-                        data[data.length-1].push({reps:rowdata.reps, weight:rowdata.weight, session_id: rowdata.session_session_id, created_at: rowdata.created_at});
+                        data[data.length-1].push({reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, session_id: rowdata.session_session_id, created_at: rowdata.created_at});
                     }
                     else {
-                        data.push([{reps:rowdata.reps, weight:rowdata.weight, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
+                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
                     }
                 });
                 return data;
@@ -203,6 +203,47 @@ const workout = {
                 return -1;
             }
             console.log('checkWorkout Error : ', err);
+            throw err;
+        }
+    },
+    getMostRecentWorkoutRecordById: async (workout_id, uid) => {
+        const fields = `${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance`;
+        const query = `SELECT ${fields} FROM ${table_workoutlog}
+        INNER JOIN
+        (SELECT DISTINCT ${table_session}.session_id, ${table_session}.created_at, ${table_session}.userinfo_uid
+        FROM ${table_session}
+        INNER JOIN ${table_workoutlog} ON ${table_workoutlog}.session_session_id = ${table_session}.session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id} AND ${table_session}.is_deleted != 1
+        WHERE ${table_session}.userinfo_uid = '${uid}'
+        ORDER BY ${table_workoutlog}.session_session_id DESC
+        LIMIT 1) AS DISTINCT_SESSION
+        ON DISTINCT_SESSION.session_id = ${table_workoutlog}.session_session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}
+        INNER JOIN ${table_userinfo} ON DISTINCT_SESSION.userinfo_uid = ${table_userinfo}.uid
+        ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
+        try {
+            let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
+            const restructure = async() => {
+                let data = [];
+                await asyncForEach(result, async(rowdata) => {
+                    if (data.length == 0){
+                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance}]);
+                    }
+                    else if (data[data.length-1][0].session_id == rowdata.session_session_id){
+                        data[data.length-1].push({reps:rowdata.reps, weight:rowdata.weigh, duration:rowdata.duration, distance:rowdata.distance});
+                    }
+                    else {
+                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance}]);
+                    }
+                });
+                return data;
+            }
+            const recentRecords = await restructure();
+            return recentRecords;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
             throw err;
         }
     },

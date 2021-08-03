@@ -1,5 +1,6 @@
 const pool = require('../modules/pool');
 const asyncForEach = require('../modules/function/asyncForEach');
+
 const table1 = 'userinfo';
 const table2 = 'usergoal';
 const table3 = 'follows';
@@ -7,7 +8,7 @@ const table4 = 'workoutAbility';
 const table5 = 'suggestionBoard';
 const table6 = 'userBodyInfoTracking';
 
-const workoutEquation = require('./workoutEquation');
+const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation');
 
 const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
 const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');
@@ -26,7 +27,8 @@ const fleekUser = {
         try {
             let percentage;
             if (squat1RM != null){
-                const {inclination, intercept} = await workoutEquation.getEquation(200, sex, await ageGroupClassifier(age), await weightGroupClassifier(weight));
+                const {inclination, intercept} = await getWorkoutEquation(200, sex, await ageGroupClassifier(age), await weightGroupClassifier(weight))
+                //const {inclination, intercept} = await workoutEquation.getEquation(200, sex, await ageGroupClassifier(age), await weightGroupClassifier(weight));
                 percentage = Math.round(inclination * Math.log(squat1RM) + intercept);
                 if (percentage < -100) percentage = -100;
             } else {
@@ -234,7 +236,6 @@ const fleekUser = {
         const values = [content, uid];
         const query = `INSERT INTO ${table5}(${fields}) VALUES(${questions})`;
         try {
-            console.log(query)
             const result = await pool.queryParamArrMaster(query, values);
             return result;
         } catch (err) {
