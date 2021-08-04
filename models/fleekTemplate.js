@@ -119,6 +119,7 @@ const template = {
                 return data;
             }
             const data = await restructure();
+            console.log(data)
             return data;
         } catch (err) {
             if (err.errno == 1062) {

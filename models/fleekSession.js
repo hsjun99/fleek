@@ -14,6 +14,7 @@ const table_templateUsers = 'templateUsers';
 const table_workoutAbility = 'workoutAbility';
 const table_userWorkoutHistory = 'userWorkoutHistory';
 const table_alphaProgramUsers = 'alphaProgramUsers';
+const table_alphaProgram = 'alphaProgram';
 
 
 const WorkoutAbility = require('./fleekWorkoutAbility');
@@ -82,11 +83,12 @@ const session = {
             const query6 = `UPDATE ${table_session} SET session_total_volume = ${session_total_volume}, session_total_sets = ${session_total_sets}, session_total_reps = ${session_total_reps}
                             WHERE ${table_session}.session_id = ${result1.insertId}`;
             await pool.queryParamMaster(query6);
+
+            const fields10 = 'workouts_index, total_days';
+            const query10 = `SELECT ${fields10} FROM ${table_alphaProgramUsers}
+                            INNER JOIN ${table_alphaProgram} ON ${table_alphaProgram}.alphaProgram_id = ${table_alphaProgramUsers}.alphaProgram_alphaProgram_id AND ${table_alphaProgramUsers}.alphaProgramUsers_id = ${alphaProgramUsers_id}`;
+            const result10 = await pool.queryParamSlave(query10);
             if (alphaProgramUsers_id != null && alphaProgram_progress == 0) {
-                const fields10 = 'workouts_index';
-                const query10 = `SELECT ${fields10} FROM ${table_alphaProgramUsers}
-                                WHERE ${table_alphaProgramUsers}.alphaProgramUsers_id = ${alphaProgramUsers_id}`;
-                const result10 = await pool.queryParamSlave(query10);
                 const workouts_index = JSON.parse(result10[0].workouts_index).workouts_index;
                 await Promise.all(one_rms_index.map(async (elem, index) => {
                     if (workouts_index[index] != 0 && Math.round(elem) == 0) {
@@ -106,6 +108,12 @@ const session = {
                 const query8 = `UPDATE ${table_alphaProgramUsers} SET one_rms_index='${one_rms_index_String}'
                                 WHERE ${table_alphaProgramUsers}.userinfo_uid = '${uid}' AND ${table_alphaProgramUsers}.alphaProgramUsers_id = ${alphaProgramUsers_id} AND ${table_alphaProgramUsers}.is_done = 0`;
                 await pool.queryParamMaster(query8);
+            } else if (alphaProgramUsers_id != null && alphaProgram_progress > 0) {
+                if (result10[0].total_days == alphaProgram_progress) {
+                    const query8 = `UPDATE ${table_alphaProgramUsers} SET is_done = 1
+                                    WHERE ${table_alphaProgramUsers}.userinfo_uid = '${uid}' AND ${table_alphaProgramUsers}.alphaProgramUsers_id = ${alphaProgramUsers_id} AND ${table_alphaProgramUsers}.is_done = 0`;
+                    await pool.queryParamMaster(query8);
+                }
             }
             return result1.insertId;
         } catch (err) {
@@ -133,5 +141,8 @@ const session = {
         }
     }
 }
+
+const query = 'SHOW SLAVE STATUS';
+//await pool.queryParamSlave(query)
 
 module.exports = session;
