@@ -81,7 +81,7 @@ module.exports = {
         const updateResultPopularity = await Workout.updateWorkoutPopularity(id);
         const updateResultAddNum = await Workout.updateUserWorkoutHistoryAdd(uid, id);
         const workout_ability = await WorkoutAbility.getAllWorkoutAbilityHistory(uid, id);
-        const {plan, detail_plan} = await defaultIntensity(data.inclination, data.intercept, percentage);
+        const {plan, detail_plan} = await defaultIntensity(data.inclination, data.intercept, percentage, data.min_step);
         // DB Error Handling
         if (data == -1 || recentRecords == -1 || updateResultPopularity == -1 || workout_ability == -1 || updateResultAddNum == -1) {
           return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));

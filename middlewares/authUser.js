@@ -5,12 +5,6 @@ const resMessage = require("../modules/responseMessage");
 
 const authUser = {
     checkToken: async(req, res, next) => {
-        /*
-        if (!req.headers.authorization){
-            req.uid = 'mfzqxMb0RTUZmv8ZkGANFD6wdRx1';
-            next();
-        }
-        else{*/
         var idToken = req.headers.authorization;
         if (!idToken){}
          //Invalid idToken
@@ -19,7 +13,6 @@ const authUser = {
             return;
         }
         const uid = await getUid(idToken);
-        console.log(uid);
         req.uid = uid;
         next();
         
