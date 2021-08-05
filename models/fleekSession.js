@@ -126,10 +126,37 @@ const session = {
         }
     },
     deleteSession: async(uid, session_id) => {
+        const fields0 = 'workout_workout_id';
+        const query0 = `SELECT DISTINCT ${fields0} FROM ${table_workoutlog}
+                        WHERE ${table_workoutlog}.session_session_id = ${session_id}`;
         const query = `UPDATE ${table_session} SET is_deleted=1
                         WHERE ${table_session}.session_id = ${session_id} AND ${table_session}.userinfo_uid = "${uid}"`;
+        
+
+        
+        // Transactions
+        let transactionArr = new Array();
+
+        let workoutsString;
+
+        const ts1 = async (connection) => {
+            const result0 = await pool.queryParamArrSlave(query0);
+            let data = [];
+            await asyncForEach(result0, async(rowdata) => {
+                data.push(rowdata.workout_workout_id);
+            });
+            workoutsString = '(' + data.toString(',') + ')';
+            connection.query(query);
+        }
+        const ts2 = async (connection) => {
+            const query1 = `UPDATE ${table_userWorkoutHistory} SET finish_num = finish_num - 1
+                            WHERE ${table_userWorkoutHistory}.userinfo_uid = '${uid}' AND ${table_userWorkoutHistory}.workout_workout_id IN ${workoutsString}`;
+            await connection.query(query1);
+        }
         try {
-            await pool.queryParamMaster(query);
+            transactionArr.push(ts1);
+            transactionArr.push(ts2);
+            await pool.Transaction(transactionArr);
             return true;
         } catch (err) {
             if (err.errno == 1062) {
@@ -141,8 +168,5 @@ const session = {
         }
     }
 }
-
-const query = 'SHOW SLAVE STATUS';
-//await pool.queryParamSlave(query)
 
 module.exports = session;

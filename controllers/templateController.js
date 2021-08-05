@@ -21,9 +21,9 @@ module.exports = {
     },
     getUserTemplate: async(req, res) => {
         const uid = req.uid;
-
+        let templateData;
         // Get User Template Data
-        const templateData = await Template.getUserTemplate(uid);
+        templateData = await Template.getUserTemplate(uid);
         // DB Error Handling
         if (templateData == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERTEMPLATE_FAIL));

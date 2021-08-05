@@ -88,7 +88,7 @@ const workout = {
                         LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = ${table_session}.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
                         ORDER BY ${table_workoutlog}.session_session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {
-            let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
+            let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
             const restructure = async() => {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {

@@ -78,7 +78,7 @@ module.exports = {
                 reject(err);
             }
         });
-    },
+    },/*
     Transaction: async (args) => {
         return new Promise(async (resolve, reject) => {
             try {
@@ -88,7 +88,7 @@ module.exports = {
                 try {
                     await connection.beginTransaction();
                     await asyncForEach(args, async(it) => {
-                        await console.log(it)
+    
                         if (it.value != null){
                             result.push(await connection.query(it.query, it.value));
                         } else {
@@ -107,19 +107,22 @@ module.exports = {
                 reject(err);
             }
         });
-    },/*
-    Transaction: async (...args) => {
+    },*/
+    Transaction: async (args) => {
         return new Promise(async (resolve, reject) => {
             try {
                 const pool = await poolPromise_master;
                 const connection = await pool.getConnection();
                 try {
                     await connection.beginTransaction();
-                    args.forEach(async (it) => await it(connection));
+                    await asyncForEach(args, async (it) => {
+                        await it(connection);
+                    });
                     await connection.commit();
                     pool.releaseConnection(connection);
-                    resolve(result);
+                    resolve();
                 } catch (err) {
+                    await console.log("rollback succeeded")
                     await connection.rollback()
                     pool.releaseConnection(connection);
                     reject(err);
@@ -128,5 +131,5 @@ module.exports = {
                 reject(err);
             }
         });
-    }*/
+    }
 }

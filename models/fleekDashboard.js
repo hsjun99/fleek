@@ -52,10 +52,10 @@ const template = {
             await asyncForEach(result1, async(rowdata) => {
                 const query2 = `SELECT ${fields2} FROM ${table_workoutAbility}
                                 INNER JOIN ${table_session}
-                                ON ${table_session}.session_id = ${table_workoutAbility}.session_session_id AND ${table_workoutAbility}.userinfo_uid = '${uid}' AND ${table_workoutAbility}.workout_workout_id = ${rowdata.workout_workout_id} AND ${table_session}.is_deleted != 1`;
+                                ON ${table_session}.session_id = ${table_workoutAbility}.session_session_id AND ${table_workoutAbility}.userinfo_uid = '${uid}' AND ${table_workoutAbility}.workout_workout_id = ${rowdata.workout_workout_id} AND ${table_session}.is_deleted = 0`;
                 const query3 = `SELECT ${fields3} FROM ${table_workoutlog}
                                 INNER JOIN ${table_session}
-                                ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${rowdata.workout_workout_id} AND ${table_session}.is_deleted != 1`;
+                                ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${rowdata.workout_workout_id} AND ${table_session}.is_deleted = 0`;
                 const oneRmData = await pool.queryParamSlave(query2);
                 const totalRepsData = await pool.queryParamSlave(query3);
                 data.push({workout_id: rowdata.workout_workout_id, one_rm: Math.round(oneRmData[0].one_rm_MAX), total_days: rowdata.finish_num, total_reps: totalRepsData[0].reps_SUM});
