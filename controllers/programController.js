@@ -18,11 +18,11 @@ module.exports = {
 
         // DB Error Handling
         if (programData == -1) {
-            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERTEMPLATE_FAIL));
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_ALLPROGRAM_SUCCESS));
         }
 
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERTEMPLATE_SUCCESS, programData));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_ALLPROGRAM_FAIL, programData));
     },
     getProgramData: async(req, res) => {
         const uid = req.uid;
@@ -31,28 +31,33 @@ module.exports = {
 
         // DB Error Handling
         if (status == - 1) {
-            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_EACHPROGRAM_FAIL));
         }
         else if (status == 0) { // Initialization Required
             // Get Profile
             const {sex, age, weight, percentage, ageGroup, weightGroup} = await getUserInfo(uid);
-           
             const programWorkoutData = await Program.getProgramWorkoutsDataByIndex(uid, program_id, sex, ageGroup, weightGroup, percentage, workoutEquation);
+            
+            // DB Error Handling
             if (programWorkoutData == -1) {
-                return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+                return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_EACHPROGRAM_FAIL));
             }
             const {workouts_index_default, one_rms_index} = programWorkoutData;
             const result = await Program.initializeProgram(uid, program_id, workouts_index_default, one_rms_index);
+            
+            // DB Error Handling
             if (result == -1) {
-                return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+                return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_EACHPROGRAM_FAIL));
             }
         }
         const data = await Program.getProgramData(uid, program_id);
 
+        // DB Error Handling
         if (data == -1) {
-            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_EACHPROGRAM_FAIL));
         }
 
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, data));
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_EACHPROGRAM_SUCCESS, data));
     }
 }

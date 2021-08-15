@@ -17,6 +17,22 @@ const experienceClassifier = require('../modules/classifier/experienceClassifier
 const timeFunction = require('../modules/function/timeFunction');
 
 const fleekUser = {
+    checkUser: async(uid) => {
+        const field = 'uid';
+        const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.uid="${uid}"`;
+        try {
+            const result = await pool.queryParamSlave(query);
+            if (result.length == 0) return false;
+            return true;
+        } catch (err){
+            if (err.errno == 1062) {
+                console.log('checkName ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("checkName ERROR: ", err);
+            throw err;
+        }
+    },
     postData: async (uid, name, sex, age, height, weight, created_at, squat1RM, experience, goal) => {
         const fields1 = 'uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at';
         const fields2 = 'goal, userinfo_uid'

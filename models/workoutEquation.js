@@ -1,4 +1,5 @@
 const pool = require('../modules/pool');
+
 const table = 'equation';
 
 const workoutEquation = {

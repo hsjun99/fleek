@@ -16,10 +16,10 @@ module.exports = {
 
         // DB Error Handling
         if (myRecord == -1 || myFavoriteWorkouts == -1) {
-            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERTEMPLATE_FAIL));
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_DASHBOARD_FAIL));
         }
 
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERTEMPLATE_SUCCESS, {my_record: myRecord, my_favorite_workouts: myFavoriteWorkouts}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS, {my_record: myRecord, my_favorite_workouts: myFavoriteWorkouts}));
     }
 }

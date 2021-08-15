@@ -45,7 +45,8 @@ const workout = {
     },
     getWorkoutTable: async() => {
         const fields = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, video_url, video_url_substitute, reference_num`;
-        const query = `SELECT ${fields} FROM ${table_workout}`;
+        const query = `SELECT ${fields} FROM ${table_workout}
+                        WHERE ${table_workout}.workout_id != 135`;
         try {
             const result = await pool.queryParamSlave(query);
             const restructure = async() => {

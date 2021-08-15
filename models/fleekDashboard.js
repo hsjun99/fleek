@@ -12,7 +12,7 @@ const template = {
         const query1 = `SELECT ${fields1} FROM ${table_session}
                         WHERE ${table_session}.is_deleted = 0 AND ${table_session}.userinfo_uid = '${uid}'`;
         try {
-            const result1 = await pool.queryParamSlave(query1);
+            const result1 = await pool.queryParamMaster(query1);
             // No Record
             if (result1.length == 0){
                 return {
@@ -56,15 +56,15 @@ const template = {
                 const query3 = `SELECT ${fields3} FROM ${table_workoutlog}
                                 INNER JOIN ${table_session}
                                 ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${rowdata.workout_workout_id} AND ${table_session}.is_deleted = 0`;
-                const oneRmData = await pool.queryParamSlave(query2);
-                const totalRepsData = await pool.queryParamSlave(query3);
+                const oneRmData = await pool.queryParamMaster(query2);
+                const totalRepsData = await pool.queryParamMaster(query3);
                 data.push({workout_id: rowdata.workout_workout_id, one_rm: Math.round(oneRmData[0].one_rm_MAX), total_days: rowdata.finish_num, total_reps: totalRepsData[0].reps_SUM});
             });
             return data;
         }
 
         try {
-            const result1 = await pool.queryParamSlave(query1);
+            const result1 = await pool.queryParamMaster(query1);
             const data = await restructure(result1);
             return data;
         } catch (err) {

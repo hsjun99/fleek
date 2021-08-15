@@ -8,6 +8,14 @@ var moment = require("moment");
 let User = require("../models/fleekUser");
 
 module.exports = {
+    checkuser: async(req, res) => {
+        const uid = req.uid;
+        const exist = await User.checkUser(uid);
+        if (exist == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.SIGNUP_FAIL));
+        }
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, {user: exist}));
+    },
     signup: async(req, res) => {
         const uid = req.uid;
         const {name, sex, age, height, weight, squat1RM, experience, goal} = req.body;

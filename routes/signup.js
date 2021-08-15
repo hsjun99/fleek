@@ -4,6 +4,7 @@ var router = express.Router();
 const AuthUser = require('../middlewares/authUser');
 const signupController = require('../controllers/signupController');
 
+router.get('/checkuser/', AuthUser.checkToken, signupController.checkuser);
 // SignUp
 router.post('/', AuthUser.checkToken, signupController.signup);
 // Redundancy Check
