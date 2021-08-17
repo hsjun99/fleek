@@ -1,26 +1,20 @@
 module.exports = async(experience) => {
     let expPercentage;
-    switch (experience) {
-        case experience < 3:
-            expPercentage = -50;
-            break;
-        case experience < 7:
-            expPercentage = -25;
-            break;
-        case experience < 11:
-            expPercentage = 0;
-            break;
-        case experience < 18:
-            expPercentage = 10;
-            break;   
-        case experience < 25:
-            expPercentage = 20;
-            break;
-        case 3:
-            expPercentage = 70;
-            break;
-        default:
-            expPercentage = 30;
+    console.log(experience);
+    if (experience < 3) {
+        expPercentage = -50;
+    } else if (experience < 7) {
+        expPercentage = -25;
+    } else if (experience < 11) {
+        expPercentage = 0;
+    } else if (experience < 18) {
+        expPercentage = 20
+    } else if (experience < 25) {
+        expPercentage = 40;
+    } else if (experience < 32) {
+        expPercentage = 50;
+    } else {
+        expPercentage = 60;
     }
     return expPercentage;
 }

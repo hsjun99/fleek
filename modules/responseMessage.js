@@ -99,7 +99,10 @@ module.exports = {
     //***********************************************
     //****************Program Controller*************
     //***********************************************
-    READ_DASHBOARD_SUCCESS: "대시보드 데이터 조회 성공",
-    READ_DASHBOARD_FAIL: "대시보드 데이터 조회 실패",
+    READ_ALLPROGRAM_SUCCESS: "전체 프로그램 데이터 조회 성공",
+    READ_ALLPROGRAM_FAIL: "전체 프로그램 데이터 조회 실패",
+
+    READ_EACHPROGRAM_SUCCESS: "개별 프로그램 데이터 조회 성공",
+    READ_EACHPROGRAM_FAIL: "개별 프로그램 데이터 조회 실패"
 
 };

@@ -20,7 +20,7 @@ var admin = require('firebase-admin');
 
 (async () => {
   var serviceAccount = await require('./config/firebase');
-  admin.initializeApp({
+  await admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
   });
 })();
