@@ -8,7 +8,7 @@ module.exports = async(experience) => {
     } else if (experience < 11) {
         expPercentage = 0;
     } else if (experience < 18) {
-        expPercentage = 20
+        expPercentage = 30
     } else if (experience < 25) {
         expPercentage = 40;
     } else if (experience < 32) {
