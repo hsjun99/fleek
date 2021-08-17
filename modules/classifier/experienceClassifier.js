@@ -1,6 +1,5 @@
 module.exports = async(experience) => {
     let expPercentage;
-    console.log(experience);
     if (experience < 3) {
         expPercentage = -50;
     } else if (experience < 7) {
