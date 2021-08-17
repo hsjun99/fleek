@@ -15,7 +15,6 @@ const authUser = {
         const uid = await getUid(idToken);
         req.uid = uid;
         next();
-        
     }
 }
 
