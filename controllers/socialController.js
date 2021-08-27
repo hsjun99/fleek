@@ -29,6 +29,20 @@ module.exports = {
         await Session.sessionStart(uid, name, followers_list);
 
     },
+    sessionStop: async(req, res) => {
+        const uid = req.uid;
+        
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS));
+
+        const followers = await User.getFollowers(uid);
+        const followers_list = await Promise.all(followers.map(async follower => {
+            return follower.uid;
+        }));
+
+        const {name} = await User.getProfile(uid);
+        await Session.sessionStop(uid, name, followers_list);
+
+    },
     sessionFinish: async(req, res) => {
         const uid = req.uid;
 

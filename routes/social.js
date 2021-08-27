@@ -10,6 +10,8 @@ router.get('/alluser', AuthUser.checkToken, socialController.getAllUser);
 
 router.post('/startsession', AuthUser.checkToken, socialController.sessionStart);
 
+router.post('/stopsession', AuthUser.checkToken, socialController.sessionStop);
+
 router.post('/sessionlike/:session_id/:emoji_type', AuthUser.checkToken, socialController.sessionLikeResponse);
 
 router.get('/followers', AuthUser.checkToken, socialController.getFollowers);

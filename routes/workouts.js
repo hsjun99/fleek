@@ -19,4 +19,6 @@ router.get('/substitute/:workout_id', AuthUser.checkToken, workoutsController.ge
 
 router.get('/table', AuthUser.checkToken, workoutsController.getWorkoutTableData);
 
+//router.get('/table/:other_uid', AuthUser.checkToken, workoutsController.getOthersWorkoutData);
+
 module.exports = router;

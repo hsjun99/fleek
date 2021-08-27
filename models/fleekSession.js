@@ -25,9 +25,15 @@ const User = require('./fleekUser');
 
 var admin = require('firebase-admin');
 
+const firebaseCM = require('../modules/firebase/firebaseCloudMessaging');
+
 const session = {
     sessionLike: async(uid, session_id, emoji_type) => {
         const table_sessionLike = await admin.database().ref('sessionLike');
+
+        const fields1 = 'userinfo_uid'
+        const query1 = `SELECT ${fields1} FROM ${table_session}
+                        WHERE ${table_session}.session_id = ${session_id}`;
         try {
             if (await (await admin.database().ref('sessionLike').child(session_id).once('value')).val() == null) {
                 await table_sessionLike.update({[session_id]: {0: {cnt:0, users:['null']}, 1: {cnt:0, users:['null']}, 2: {cnt:0, users:['null']}, 3: {cnt:0, users:['null']}, 4: {cnt:0, users:['null']}}});
@@ -60,6 +66,25 @@ const session = {
                     })
                 }
             }
+            const result1 = await pool.queryParamSlave(query1);
+            const liked_uid = result1.userinfo_uid;
+
+            const fields2 = 'token_value';
+            const query2 = `SELECT ${fields2} FROM ${table_fcmToken}
+                            WHERE ${table_fcmToken}.userinfo_uid = '${liked_uid}'`;
+            const result2 = await pool.queryParamSlave(query2);
+            const token_list = await Promise.all(result2.map(async data => {
+                return data.token_value;
+            }));
+            const message = {
+                notification: {
+                  title: '플릭(Fleek)',
+                  body: `좋아요를 받았습니다! 확인해보세요!!`
+                }
+            }
+            if (token_list.length != 0){
+                await firebaseCM(token_list, message)
+            }
             return true;
         } catch (err) {
             if (err.errno == 1062) {
@@ -74,7 +99,7 @@ const session = {
         const table_usersOnline = await admin.database().ref('usersOnline');
         try {
             table_usersOnline.update({[uid]: 1});
-
+            /*
             const followersString = '(' + followers_list.toString(',') + ')';
             const fields1 = 'token_value';
             const query1 = `SELECT ${fields1} FROM ${table_fcmToken}
@@ -83,21 +108,45 @@ const session = {
             const token_list = await Promise.all(result1.map(async data => {
                 return data.token_value;
             }));
-            await admin.messaging().sendToDevice(
-                token_list, // ['token_1', 'token_2', ...]
-                {
-                  notification: {
-                    title: '플릭(Fleek)',
-                    body: `${name}님이 운동을 시작하셨습니다!`
-                  }
-                },
-                {
-                  // Required for background/quit data-only messages on iOS
-                  contentAvailable: true,
-                  // Required for background/quit data-only messages on Android
-                  priority: "high",
+            const message = {
+                notification: {
+                  title: '플릭(Fleek)',
+                  body: `${name}님이 운동을 시작하셨습니다!`
                 }
-              );
+              }
+            await firebaseCM(token_list, message);
+*/
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('deleteSession ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("deleteSession ERROR: ", err);
+            throw err;
+        }
+    },
+    sessionStop: async(uid, name, followers_list) => {
+        const table_usersOnline = await admin.database().ref('usersOnline');
+        try {
+            table_usersOnline.update({[uid]: 0});
+            /*
+            const followersString = '(' + followers_list.toString(',') + ')';
+            const fields1 = 'token_value';
+            const query1 = `SELECT ${fields1} FROM ${table_fcmToken}
+                            WHERE ${table_fcmToken}.userinfo_uid IN ${followersString}`;
+            const result1 = await pool.queryParamSlave(query1);
+            const token_list = await Promise.all(result1.map(async data => {
+                return data.token_value;
+            }));
+            const message = {
+                notification: {
+                  title: '플릭(Fleek)',
+                  body: `${name}님이 운동을 시작하셨습니다!`
+                }
+              }
+            await firebaseCM(token_list, message);
+*/
             return true;
         } catch (err) {
             if (err.errno == 1062) {
@@ -128,24 +177,18 @@ const session = {
             const query1 = `SELECT ${fields1} FROM ${table_fcmToken}
                             WHERE ${table_fcmToken}.userinfo_uid IN ${followersString}`;
             const result1 = await pool.queryParamSlave(query1);
+            /*
             const token_list = await Promise.all(result1.map(async data => {
                 return data.token_value;
             }));
-            await admin.messaging().sendToDevice(
-                token_list, // ['token_1', 'token_2', ...]
-                {
-                  notification: {
-                    title: '플릭(Fleek)',
-                    body: `${name}님이 운동을 완료했습니다!!!가야돼가야돼~~`
-                  }
-                },
-                {
-                  // Required for background/quit data-only messages on iOS
-                  contentAvailable: true,
-                  // Required for background/quit data-only messages on Android
-                  priority: "high",
+            const message = {
+                notification: {
+                  title: '플릭(Fleek)',
+                  body: `${name}님이 운동을 완료했습니다!!!가야돼가야돼~~`
                 }
-            );
+            }
+            await firebaseCM(token_list, message);
+            */
             return true;
         } catch (err) {
             if (err.errno == 1062) {

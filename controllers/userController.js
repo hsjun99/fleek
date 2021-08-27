@@ -6,6 +6,10 @@ let User = require("../models/fleekUser");
 let Template = require("../models/fleekTemplate");
 let Workout = require("../models/fleekWorkout");
 let Dashboard = require("../models/fleekDashboard");
+let WorkoutAbility = require('../models/fleekWorkoutAbility');
+
+const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
+const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');
 
 const code_follow = {
     success: 0,
@@ -145,8 +149,36 @@ module.exports = {
     getOthersFleekData: async(req, res) => {
         const other_uid = req.params.other_uid;
 
-        let data = {uid: other_uid, template: null, calendar_data: null, dashboard:{record:null, favorite_workouts:null}};
-        [data.template, data.calendar_data, data.dashboard.record, data.dashboard.favorite_workouts] = await Promise.all([Template.getUserTemplate(other_uid), Workout.getCalendarData(other_uid), Dashboard.getDashboardRecords(other_uid), Dashboard.getFavoriteWorkouts(other_uid)]);
+        const getOthersWorkoutData = async() => {
+            const profileResult = await User.getProfile(other_uid);
+            if (profileResult == -1){
+                return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+            }
+            const {sex, age, height, weight, percentage} = profileResult;
+            const ageGroup = await ageGroupClassifier(age); // Conversion to group
+            const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
+            const result = await Workout.getWorkoutTable(other_uid, sex, ageGroup, weightGroup);
+            if (result == -1){
+                return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
+            }
+            const workout_data = await Promise.all(result.map(async rowdata => {
+                const temp = await Promise.all([Workout.getWorkoutRecordById(rowdata.workout_id, other_uid), WorkoutAbility.getAllWorkoutAbilityHistory(other_uid, rowdata.workout_id)]);
+                const info =  {
+                workout_id: Number(rowdata.workout_id),
+                equation: {
+                    inclination: rowdata.inclination,
+                    intercept: rowdata.intercept
+                },
+                recent_records: temp[0].recentRecords,
+                workout_ability: temp[1]
+                }
+                return info;
+            }));
+            return workout_data;
+        }
+
+        let data = {uid: other_uid, template: null, calendar_data: null, dashboard:{record:null, favorite_workouts:null}, workout_data:null};
+        [data.template, data.calendar_data, data.dashboard.record, data.dashboard.favorite_workouts, data.workout_data] = await Promise.all([Template.getUserTemplate(other_uid), Workout.getCalendarData(other_uid), Dashboard.getDashboardRecords(other_uid), Dashboard.getFavoriteWorkouts(other_uid), getOthersWorkoutData()]);
    
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));

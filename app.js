@@ -19,64 +19,19 @@ var socialRouter = require('./routes/social');
 
 var admin = require('firebase-admin');
 
+const ssmPromise = require("./modules/auth/awsparamStore.js");
+
 (async () => {
   var serviceAccount = await require('./config/firebase');
+  const configAWS = await ssmPromise;
   await admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://fleek-df27e-default-rtdb.asia-southeast1.firebasedatabase.app"
+    databaseURL: configAWS.databaseURL
   });
-  //console.log(await admin.auth().getUser('LVIAkJINHFWG8CoG52Ah1QYfYac2'))
-
-  /*
-  let realtimeDatabase = admin.database();
-  const result = await realtimeDatabase.ref('temp').once('value');
-  console.log(result.val())
-  var adaNameRef = admin.database().ref('temp');
-  adaNameRef.update({ first: 'Adadsfaafsdf', last: 'Lovelace' });
-  */
-// console.log(await admin.database().ref('sessionLikef').once('value').val())
 /*
- console.log(await (await admin.database().ref('sessionLike').child(735).child(0).child('users').once('value')).val())
-  admin.database().ref('sessionLike').child(744).update({
-    42:admin.database.ServerValue.increment(0),
-    13241:[-1]
-  });
   admin.database().ref('sessionLike').on('value', (snapshot)=> {
     console.log(snapshot.val());
   })*/
-  //console.log(await (await admin.database().ref('sessionLike').child(735).once('value')).val())
-
-  await admin.messaging().sendToDevice(
-    ['ejwscaBfSaqaweUudf7Toy:APA91bGdL_p2C9oOyp4oBQe8_5FoX66efdaGb95AmJU9Wiq0zmtGcxWQDWtCJKBlpcV2qC9pDVbgdk1wHOoZXPpuw23nrDwmq2tY4W0YsGq4xc8S5VCWYxBJBpA47fb2scmoTQIfYw_B'], // ['token_1', 'token_2', ...]
-    {
-      notification: {
-        title: '$FooCorp up 1.43% on the day',
-        body: '$FooCorp gained 11.80 points to close at 835.67, up 1.43% on the day.'
-      }
-    },
-    {
-      // Required for background/quit data-only messages on iOS
-      contentAvailable: true,
-      // Required for background/quit data-only messages on Android
-      priority: "high",
-    }
-  );
-  /*
-  await admin.messaging().sendToDevice(
-    ['ejwscaBfSaqaweUudf7Toy:APA91bGdL_p2C9oOyp4oBQe8_5FoX66efdaGb95AmJU9Wiq0zmtGcxWQDWtCJKBlpcV2qC9pDVbgdk1wHOoZXPpuw23nrDwmq2tY4W0YsGq4xc8S5VCWYxBJBpA47fb2scmoTQIfYw_B'], // ['token_1', 'token_2', ...]
-    {
-      data: {
-        title: '$FooCorp up 1.43% on the day',
-        body: '$FooCorp gained 11.80 points to close at 835.67, up 1.43% on the day.'
-      }
-    },
-    {
-      // Required for background/quit data-only messages on iOS
-      contentAvailable: true,
-      // Required for background/quit data-only messages on Android
-      priority: "high",
-    }
-  );*/
 
 })();
 

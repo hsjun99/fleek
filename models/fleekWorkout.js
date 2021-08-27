@@ -275,7 +275,7 @@ const workout = {
                         data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance}]);
                     }
                     else if (data[data.length-1][0].session_id == rowdata.session_session_id){
-                        data[data.length-1].push({reps:rowdata.reps, weight:rowdata.weigh, duration:rowdata.duration, distance:rowdata.distance});
+                        data[data.length-1].push({reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance});
                     }
                     else {
                         data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance}]);
