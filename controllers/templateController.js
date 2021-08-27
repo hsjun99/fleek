@@ -55,6 +55,19 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, {templateIdx: templateIdx}));
     },
+    importOtherUsersTemplate: async(req, res) => {
+        const uid = req.uid;
+        const template_id = req.params.template_id;
+
+        const templateIdx = await Template.postOtherUsersTemplateData(uid, template_id);
+
+        if (templateIdx == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.UPDATE_USERTEMPLATE_FAIL));
+        }
+
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, {templateIdx: templateIdx}));
+    },
     updateUserTemplate: async(req, res) => {
         const uid = req.uid;
         const template_id = req.params.template_id;

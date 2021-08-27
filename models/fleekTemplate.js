@@ -52,6 +52,70 @@ const template = {
             throw err;
         }
     },
+    postOtherUsersTemplateData: async(uid, template_id) => {
+        const fields1 = 'name, templateUsers_id, workout_workout_id, rest_time, workout_detail'
+        const fields2 = 'name, userinfo_uid';
+        const fields3 = 'workout_order, workout_workout_id, templateUsers_template_id, rest_time, workout_detail';
+        const questions2 = '?, ?';
+        const questions3 = '?, ?, ?, ?, ?'
+        const query1 = `SELECT ${fields1} FROM ${table_templateUsers}
+                        INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.templateUsers_id = ${template_id}`;
+        
+        const query2 = `INSERT INTO ${table_templateUsers}(${fields2}) VALUES(${questions2})`;
+        const query3 = `INSERT INTO ${table_templateUsersDetails}(${fields3}) VALUES(${questions3})`;
+  
+        let transactionArr = new Array();
+
+        let template_detail;
+        let templateUsers_template_id;
+
+        const restructure1 = async(result) => {
+            let data = [];
+            await asyncForEach(result, async(rowdata) => {
+                if (data.length == 0){
+                    data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)}]});
+                }
+                else if (data[data.length-1].template_id == rowdata.templateUsers_id){
+                    data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)});
+                }
+                else {
+                    data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)}]});
+                }
+            });
+            return data;
+        }
+
+        const ts1 = async(connection) => {
+            const result1 = await connection.query(query1);
+            const templateData = (await restructure1(result1))[0];
+
+            const result2 = await connection.query(query2, [templateData.name, uid]);
+            templateUsers_template_id = result2.insertId;
+            template_detail = templateData.detail;
+        }
+        const ts2 = async(connection) => {
+            let cnt = 1;
+            console.log(template_detail)
+            await asyncForEach(template_detail, async(workout) => {
+                console.log(workout)
+                await connection.query(query3, [cnt++, workout.workout_id, templateUsers_template_id, workout.rest_time, JSON.stringify(workout.workout_detail)])
+            });
+        }
+        
+        try {
+            transactionArr.push(ts1);
+            transactionArr.push(ts2);
+            await pool.Transaction(transactionArr);
+            return templateUsers_template_id;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('postTemplateData ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("postTemplateData ERROR: ", err);
+            throw err;
+        }
+    },
     postDefaultTemplateData: async(uid, default_template_group_id, index) => {
         const fields1 = 'sub_name, workout_workout_id'
         const fields2 = 'name, userinfo_uid';
@@ -94,7 +158,6 @@ const template = {
             await connection.query(query4);
         }
         
-       
         const restructure = async (result) => {
             let data = [];
             name = result[0].sub_name;

@@ -11,6 +11,9 @@ const table_follows = 'follows';
 const table_workoutAbility = 'workoutAbility';
 const table_userWorkoutHistory = 'userWorkoutHistory';
 
+const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation');
+const getUserRecentRecords = require('../modules/functionFleek/getUserRecentRecords');
+
 const workout = {
     getWorkoutInfo: async(workout_id) => {
         const query = `SELECT * FROM ${table_workout}
@@ -43,16 +46,47 @@ const workout = {
             throw err;
         }
     },
-    getWorkoutTable: async() => {
-        const fields = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, video_url, video_url_substitute, reference_num`;
+    getWorkoutTable: async(uid, sex, ageGroup, weightGroup) => {
+        const fields = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, video_url, video_url_substitute, reference_num, inclination, intercept`;
         const query = `SELECT ${fields} FROM ${table_workout}
-                        WHERE ${table_workout}.workout_id != 135`;
+                        LEFT JOIN ${table_equation} ON ${table_workout}.workout_id = ${table_equation}.workout_workout_id
+                        WHERE ${table_workout}.workout_id != 135
+                            AND (inclination IS NULL
+                                    OR (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}"))`;
         try {
             const result = await pool.queryParamSlave(query);
+            /*
+            const data = await Promise.all(result.map(async (rowdata, index) => {
+                return {
+                    index: index,
+                    workout_id: Number(rowdata.workout_id),
+                    english: rowdata.english,
+                    korean: rowdata.korean,
+                    category: rowdata.category,
+                    muscle_primary: rowdata.muscle_p,
+                    muscle_secondary: [rowdata.muscle_s1, rowdata.muscle_s2, rowdata.muscle_s3, rowdata.muscle_s4, rowdata.muscle_s5, rowdata.muscle_s6],
+                    equipment: rowdata.equipment,
+                    record_type: rowdata.record_type,
+                    multiplier: rowdata.multiplier,
+                    min_step: rowdata.min_step,
+                    tier: rowdata.tier,
+                    video_url: rowdata.video_url,
+                    video_url_substitute: rowdata.video_url_substitute,
+                    reference_num: rowdata.reference_num,
+                    equation: {
+                        inclination: rowdata.inclination,
+                        intercept: rowdata.intercept
+                    }
+                }
+            }));
+            */
+            /*
             const restructure = async() => {
                 let data = [];
+                let cnt = 0;
                 await asyncForEach(result, async(rowdata) => {
                     data.push({
+                        index: cnt++,
                         workout_id: Number(rowdata.workout_id),
                         english: rowdata.english,
                         korean: rowdata.korean,
@@ -66,13 +100,25 @@ const workout = {
                         tier: rowdata.tier,
                         video_url: rowdata.video_url,
                         video_url_substitute: rowdata.video_url_substitute,
-                        reference_num: rowdata.reference_num
+                        reference_num: rowdata.reference_num,
+                        equation: {
+                            inclination: rowdata.inclination,
+                            intercept: rowdata.intercept
+                        }
                     });
                 });
                 return data;
             }
             const data = await restructure();
-            return data;
+            */
+            /*
+            await Promise.all(data.map(async rowdata => {
+                const index = rowdata.index;
+                const workout_id = rowdata.workout_id;
+                const {recentRecords, rest_time} = await self.getWorkoutRecordById(workout_id, uid);
+                data[index].equation = {inclination: inclination, intercept: intercept}
+            }))*/
+            return result;
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
@@ -210,16 +256,16 @@ const workout = {
     getMostRecentWorkoutRecordById: async (workout_id, uid) => {
         const fields = `${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
-        INNER JOIN
-        (SELECT DISTINCT ${table_session}.session_id, ${table_session}.created_at, ${table_session}.userinfo_uid
-        FROM ${table_session}
-        INNER JOIN ${table_workoutlog} ON ${table_workoutlog}.session_session_id = ${table_session}.session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id} AND ${table_session}.is_deleted != 1
-        WHERE ${table_session}.userinfo_uid = '${uid}'
-        ORDER BY ${table_workoutlog}.session_session_id DESC
-        LIMIT 1) AS DISTINCT_SESSION
-        ON DISTINCT_SESSION.session_id = ${table_workoutlog}.session_session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}
-        INNER JOIN ${table_userinfo} ON DISTINCT_SESSION.userinfo_uid = ${table_userinfo}.uid
-        ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
+                        INNER JOIN
+                        (SELECT DISTINCT ${table_session}.session_id, ${table_session}.created_at, ${table_session}.userinfo_uid
+                        FROM ${table_session}
+                        INNER JOIN ${table_workoutlog} ON ${table_workoutlog}.session_session_id = ${table_session}.session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id} AND ${table_session}.is_deleted != 1
+                        WHERE ${table_session}.userinfo_uid = '${uid}'
+                        ORDER BY ${table_workoutlog}.session_session_id DESC
+                        LIMIT 1) AS DISTINCT_SESSION
+                        ON DISTINCT_SESSION.session_id = ${table_workoutlog}.session_session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}
+                        INNER JOIN ${table_userinfo} ON DISTINCT_SESSION.userinfo_uid = ${table_userinfo}.uid
+                        ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
             const restructure = async() => {

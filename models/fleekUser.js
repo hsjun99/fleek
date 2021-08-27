@@ -7,6 +7,8 @@ const table3 = 'follows';
 const table4 = 'workoutAbility';
 const table5 = 'suggestionBoard';
 const table6 = 'userBodyInfoTracking';
+const table7 = 'session';
+const table8 = 'fcmToken'
 
 const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation');
 
@@ -17,6 +19,57 @@ const experienceClassifier = require('../modules/classifier/experienceClassifier
 const timeFunction = require('../modules/function/timeFunction');
 
 const fleekUser = {
+    updatePrivacySetting: async(uid, privacyMode) => {
+        const query1 = `UPDATE ${table1} SET privacy_setting = ${privacyMode}
+                        WHERE uid="${uid}"`;
+        try {
+            const result1 = await pool.queryParamMaster(query1);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
+    addFcmToken: async(uid, fcm_token) => {
+        const fields = 'token_value, userinfo_uid';
+        const questions = `?, ?`;
+        const values = [fcm_token, uid];
+        const query = `INSERT IGNORE INTO ${table8}(${fields}) VALUES(${questions})`;
+        try {
+            const result = await pool.queryParamArrMaster(query, values);
+            return result[0];
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('addFollow ERROR : ', err.errno, err.code);
+                return -1;
+            }
+            console.log('addFollow ERROR : ', err);
+            throw err;
+        }
+    },
+    getAllUser: async() => {
+        const field = `uid, name, MAX(${table7}.created_at) AS last_date`;
+        // Privacy Setting: 전체공개(0), 나만보기(1)
+        const query = `SELECT ${field} FROM ${table7}
+                        RIGHT JOIN ${table1} ON ${table1}.uid = ${table7}.userinfo_uid AND ${table1}.privacy_setting != 1
+                        GROUP BY ${table1}.uid
+                        ORDER BY ${table1}.created_at`;
+        try {
+            const result = await pool.queryParamSlave(query);
+            return result;
+        } catch (err){
+            if (err.errno == 1062) {
+                console.log('checkName ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("checkName ERROR: ", err);
+            throw err;
+        }
+    },
     checkUser: async(uid) => {
         const field = 'uid';
         const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.uid="${uid}"`;
@@ -101,6 +154,20 @@ const fleekUser = {
             throw err;
         }
     },
+    deleteFollow: async(uid, unfollow_uid) => {
+        const query = `DELETE FROM ${table3} WHERE userinfo_uid = '${uid}' AND follow_uid = '${unfollow_uid}'`;
+        try {
+            const result = await pool.queryParamMaster(query);
+            return result[0];
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('addFollow ERROR : ', err.errno, err.code);
+                return -1;
+            }
+            console.log('addFollow ERROR : ', err);
+            throw err;
+        }
+    },
     checkFollow: async (uid, follow_uid) => {
         const fields = 'follows_id'
         const query = `SELECT ${fields} FROM ${table3} WHERE userinfo_uid='${uid}' AND follow_uid='${follow_uid}'`;
@@ -117,21 +184,29 @@ const fleekUser = {
             throw err;
         }
     },
-    getFollows: async (uid) => {
-        const fields = "name";
+    getFollowings: async (uid) => {
+        const fields = "uid, name";
         const query = `SELECT ${fields} FROM ${table3}
-                        INNER JOIN ${table1} ON ${table3}.follow_uid = ${table1}.uid AND ${table3}.userinfo_uid='${uid}'`;
+                        INNER JOIN ${table1} ON ${table3}.follow_uid = ${table1}.uid AND ${table3}.userinfo_uid='${uid}' AND ${table1}.privacy_setting != 1`;
+        try {
+            const result = await pool.queryParamMaster(query);
+            return result;
+        } catch (error) {
+            if (err.errno == 1062) {
+                console.log('getFollows ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getFollows ERROR: ", err);
+            throw err;
+        }
+    },
+    getFollowers: async (uid) => {
+        const fields = "uid, name";
+        const query = `SELECT ${fields} FROM ${table3}
+                        INNER JOIN ${table1} ON ${table3}.userinfo_uid = ${table1}.uid AND ${table3}.follow_uid = '${uid}' AND ${table1}.privacy_setting != 1`;
         try {
             const result = await pool.queryParamSlave(query);
-            const restructure = async() => {
-                let data = [];
-                await asyncForEach(result, async(rowdata) => {
-                    data.push(rowdata.name);
-                });
-                return data;
-            }
-            const data = await restructure();
-            return data;
+            return result;
         } catch (error) {
             if (err.errno == 1062) {
                 console.log('getFollows ERROR: ', err.errno, err.code);
@@ -158,7 +233,7 @@ const fleekUser = {
         }
     },
     getProfile: async (uid) => {
-        const fields = 'sex, age, height, weight, percentage, name';
+        const fields = 'sex, age, height, weight, percentage, name, privacy_setting';
         const query = `SELECT ${fields} FROM ${table1} 
                         WHERE ${table1}.uid="${uid}"`;
         try {
@@ -169,7 +244,8 @@ const fleekUser = {
             const weight = result[0].weight;
             const percentage = result[0].percentage;
             const name = result[0].name;
-            return {sex, age, height, weight, percentage, name};
+            const privacy_setting = result[0].privacy_setting;
+            return {sex, age, height, weight, percentage, name, privacy_setting};
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('getProfile ERROR: ', err.errno, err.code);

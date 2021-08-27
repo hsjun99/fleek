@@ -6,7 +6,8 @@ const poolPromise_slave = DB_slave();
 
 const asyncForEach = require('./function/asyncForEach');
 
-module.exports = { 
+
+module.exports = {
     queryParamMaster: async (query) => {
         return new Promise ( async (resolve, reject) => {
             try {

@@ -14,6 +14,12 @@ module.exports = {
         if (exist == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.SIGNUP_FAIL));
         }
+
+        const fcm_token = req.body.fcm_token;
+        const result = await User.addFcmToken(uid, fcm_token);
+        if (result == -1){
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.FOLLOW_FAIL));
+        }
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, {user: exist}));
     },
     signup: async(req, res) => {

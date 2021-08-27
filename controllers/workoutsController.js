@@ -4,6 +4,7 @@ let resMessage = require('../modules/responseMessage');
 
 let User = require("../models/fleekUser");
 let Workout = require("../models/fleekWorkout")
+let WorkoutEquation = require("../models/workoutEquation");
 let WorkoutAbility = require('../models/fleekWorkoutAbility');
 
 const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
@@ -17,12 +18,65 @@ const roundNumber = require('../modules/function/roundNumber');
 
 const jsonFormatter = require('../modules/function/jsonFormatter');
 
+
+const getWorkoutInfo = require('../modules/functionFleek/getWorkoutInfo');
+
 module.exports = {
     getWorkoutTableData: async (req, res) => {
-      const data = await Workout.getWorkoutTable();
-      if (data == -1){
+      const uid = req.uid;
+      // Get Profile
+      const profileResult = await User.getProfile(uid);
+      if (profileResult == -1){
+        return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+      }
+      const {sex, age, height, weight, percentage} = profileResult;
+      const ageGroup = await ageGroupClassifier(age); // Conversion to group
+      const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
+
+      const result = await Workout.getWorkoutTable(uid, sex, ageGroup, weightGroup);
+      if (result == -1){
         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
       }
+      const data = await Promise.all(result.map(async rowdata => {
+        const temp = await Promise.all([Workout.getWorkoutRecordById(rowdata.workout_id, uid), WorkoutAbility.getAllWorkoutAbilityHistory(uid, rowdata.workout_id), defaultIntensity(rowdata.inclination, rowdata.intercept, percentage, rowdata.min_step)]);
+        const info =  {
+          workout_id: Number(rowdata.workout_id),
+          english: rowdata.english,
+          korean: rowdata.korean,
+          category: rowdata.category,
+          muscle_primary: rowdata.muscle_p,
+          muscle_secondary: [rowdata.muscle_s1, rowdata.muscle_s2, rowdata.muscle_s3, rowdata.muscle_s4, rowdata.muscle_s5, rowdata.muscle_s6],
+          equipment: rowdata.equipment,
+          record_type: rowdata.record_type,
+          multiplier: rowdata.multiplier,
+          min_step: rowdata.min_step,
+          tier: rowdata.tier,
+          video_url: rowdata.video_url,
+          video_url_substitute: rowdata.video_url_substitute,
+          reference_num: rowdata.reference_num,
+          equation: {
+              inclination: rowdata.inclination,
+              intercept: rowdata.intercept
+          },
+          recent_records: temp[0].recentRecords,
+          rest_time: temp[0].rest_time,
+          workout_ability: temp[1],
+          plan: temp[2].plan,
+          detail_plan: temp[2].detail_plan
+        }
+        return info;
+      }))
+      /*
+      await Promise.all(data.map(async rowdata => {
+        const index = rowdata.index;
+        const workout_id = rowdata.workout_id;
+        const result = await Promise.all([await Workout.getWorkoutRecordById(workout_id, uid), await WorkoutAbility.getAllWorkoutAbilityHistory(uid, workout_id), await defaultIntensity(rowdata.equation.inclination, rowdata.equation.intercept, percentage, rowdata.min_step)]);
+        data[index].recent_records = result[0].recentRecords;
+        data[index].rest_time = result[0].rest_time;
+        data[index].workout_ability = result[1];
+        data[index].plan = result[2].plan;
+        data[index].detail_plan = result[2].detail_plan;
+      }))*/
       // Success
       res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
     },

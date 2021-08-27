@@ -15,13 +15,147 @@ const table_workoutAbility = 'workoutAbility';
 const table_userWorkoutHistory = 'userWorkoutHistory';
 const table_alphaProgramUsers = 'alphaProgramUsers';
 const table_alphaProgram = 'alphaProgram';
+const table_userinfo = 'userinfo';
+const table_fcmToken = 'fcmToken';
 
 
 const WorkoutAbility = require('./fleekWorkoutAbility');
 const WorkoutEquation = require('./workoutEquation');
 const User = require('./fleekUser');
 
+var admin = require('firebase-admin');
+
 const session = {
+    sessionLike: async(uid, session_id, emoji_type) => {
+        const table_sessionLike = await admin.database().ref('sessionLike');
+        try {
+            if (await (await admin.database().ref('sessionLike').child(session_id).once('value')).val() == null) {
+                await table_sessionLike.update({[session_id]: {0: {cnt:0, users:['null']}, 1: {cnt:0, users:['null']}, 2: {cnt:0, users:['null']}, 3: {cnt:0, users:['null']}, 4: {cnt:0, users:['null']}}});
+                const userList = await (await table_sessionLike.child(session_id).child(emoji_type).child('users').once('value')).val();
+                userList.push(uid);
+                await table_sessionLike.child(session_id).child(emoji_type).update({
+                    cnt: admin.database.ServerValue.increment(1),
+                    users: userList
+                });
+            } else {
+                // Step1: Remove user's emoji from the database
+                await Promise.all([0, 1, 2, 3, 4].map(async(emoji_type) => {
+                    const userList = await(await table_sessionLike.child(session_id).child(emoji_type).child('users').once('value')).val();
+                    var index = userList.indexOf(uid);
+                    if (index > -1) {
+                        userList.splice(index, 1);
+                        await table_sessionLike.child(session_id).child(emoji_type).update({
+                            cnt: admin.database.ServerValue.increment(-1),
+                            users: userList
+                        })
+                    }
+                }));
+                // Step2: Add user's new emoji to the database
+                const userList = await (await table_sessionLike.child(session_id).child(emoji_type).child('users').once('value')).val();
+                if (!userList.includes(uid)){
+                    userList.push(uid);
+                    await table_sessionLike.child(session_id).child(emoji_type).update({
+                        cnt: admin.database.ServerValue.increment(1),
+                        users: userList
+                    })
+                }
+            }
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('deleteSession ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("deleteSession ERROR: ", err);
+            throw err;
+        }
+    },
+    sessionStart: async(uid, name, followers_list) => {
+        const table_usersOnline = await admin.database().ref('usersOnline');
+        try {
+            table_usersOnline.update({[uid]: 1});
+
+            const followersString = '(' + followers_list.toString(',') + ')';
+            const fields1 = 'token_value';
+            const query1 = `SELECT ${fields1} FROM ${table_fcmToken}
+                            WHERE ${table_fcmToken}.userinfo_uid IN ${followersString}`;
+            const result1 = await pool.queryParamSlave(query1);
+            const token_list = await Promise.all(result1.map(async data => {
+                return data.token_value;
+            }));
+            await admin.messaging().sendToDevice(
+                token_list, // ['token_1', 'token_2', ...]
+                {
+                  notification: {
+                    title: '플릭(Fleek)',
+                    body: `${name}님이 운동을 시작하셨습니다!`
+                  }
+                },
+                {
+                  // Required for background/quit data-only messages on iOS
+                  contentAvailable: true,
+                  // Required for background/quit data-only messages on Android
+                  priority: "high",
+                }
+              );
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('deleteSession ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("deleteSession ERROR: ", err);
+            throw err;
+        }
+    },
+    sessionFinish: async(uid, name, followers_list, session_id) => {
+        const table_usersOnline = await admin.database().ref('usersOnline');
+        const table_sessionLike = await admin.database().ref('sessionLike');
+        try {
+            table_usersOnline.update({[uid]: 0});
+            table_sessionLike.update({[session_id]: {0: {cnt:0, users:['null']}, 1: {cnt:0, users:['null']}, 2: {cnt:0, users:['null']}, 3: {cnt:0, users:['null']}, 4: {cnt:0, users:['null']}}});
+            /*
+            List<EmojiType> emojiList = [
+                EmojiType(0, "정말 대단해요", "👍"),
+                EmojiType(1, "너무 뜨거워요", "🔥"),
+                EmojiType(2, "헬창이세요?", "💪"),
+                EmojiType(3, "루틴 좋아요", "❤️"),
+                EmojiType(4, "와우", "😳"),
+            ];
+            */
+            const followersString = '(' + followers_list.toString(',') + ')';
+            const fields1 = 'token_value';
+            const query1 = `SELECT ${fields1} FROM ${table_fcmToken}
+                            WHERE ${table_fcmToken}.userinfo_uid IN ${followersString}`;
+            const result1 = await pool.queryParamSlave(query1);
+            const token_list = await Promise.all(result1.map(async data => {
+                return data.token_value;
+            }));
+            await admin.messaging().sendToDevice(
+                token_list, // ['token_1', 'token_2', ...]
+                {
+                  notification: {
+                    title: '플릭(Fleek)',
+                    body: `${name}님이 운동을 완료했습니다!!!가야돼가야돼~~`
+                  }
+                },
+                {
+                  // Required for background/quit data-only messages on iOS
+                  contentAvailable: true,
+                  // Required for background/quit data-only messages on Android
+                  priority: "high",
+                }
+            );
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('deleteSession ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("deleteSession ERROR: ", err);
+            throw err;
+        }
+    },
     postSessionData: async (uid, data, created_at, template_id, total_time, alphaProgramUsers_id, alphaProgram_progress) => {
         const fields1 = 'userinfo_uid, created_at, templateUsers_template_id, alphaProgramUsers_alphaProgramUsers_id, alphaProgramUsers_progress, total_time';
         const fields2 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, workout_workout_id, session_session_id';
@@ -44,6 +178,8 @@ const session = {
                         WHERE ${table_alphaProgramUsers}.userinfo_uid = '${uid}' AND ${table_alphaProgramUsers}.alphaProgramUsers_id = ${alphaProgramUsers_id} AND ${table_alphaProgramUsers}.is_done = 0`;
         try {
             const result1 = await pool.queryParamArrMaster(query1, values1);
+            const session_id = result1.insertId;
+            
             let session_total_volume=0, session_total_sets=0, session_total_reps=0;
             let one_rms_index = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -115,7 +251,7 @@ const session = {
                     await pool.queryParamMaster(query8);
                 }
             }
-            return result1.insertId;
+            return session_id;
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('postSessionData ERROR: ', err.errno, err.code);
@@ -164,6 +300,47 @@ const session = {
                 return -1;
             }
             console.log("deleteSession ERROR: ", err);
+            throw err;
+        }
+    },
+    getAllSessionData: async () => {
+        const fields = `${table_session}.userinfo_uid, ${table_userinfo}.name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, ${table_session}.created_at, ${table_session}.total_time`;
+        const query = `SELECT ${fields} FROM ${table_workoutlog}
+                        INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.is_deleted != 1
+                        INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = ${table_session}.userinfo_uid AND ${table_userinfo}.privacy_setting != 1
+                        LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
+                        ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
+        try {
+            let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
+            const restructure = async() => {
+                let data = [];
+                await asyncForEach(result, async(rowdata) => {
+                    if (data.length == 0){
+                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]}]}});
+                    }
+                    else if (data[data.length-1].session_id == rowdata.session_session_id){
+                        const L = data[data.length-1].session_detail.content.length
+                        if (data[data.length-1].session_detail.content[L-1].workout_id == rowdata.workout_workout_id) {
+                            data[data.length-1].session_detail.content[L-1].sets.push({reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance});
+                        }
+                        else {
+                            data[data.length-1].session_detail.content.push({workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]});
+                        }
+                    }
+                    else {
+                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]}]}});
+                    }
+                });
+                return data;
+            }
+            const data = await restructure();
+            return data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
             throw err;
         }
     }

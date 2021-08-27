@@ -13,6 +13,8 @@ router.get('/default', AuthUser.checkToken, templateController.getDefaultTemplat
 
 router.post('/default/:group_id/:index', AuthUser.checkToken, templateController.importDefaultTemplate);
 
+router.post('/otherusers/:template_id', AuthUser.checkToken, templateController.importOtherUsersTemplate);
+
 router.put('/user/:template_id', AuthUser.checkToken, templateController.updateUserTemplate);
 
 router.delete('/user/:template_id', AuthUser.checkToken, templateController.deleteUserTemplate);
