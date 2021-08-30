@@ -172,11 +172,13 @@ const session = {
                 EmojiType(4, "와우", "😳"),
             ];
             */
+           /*
             const followersString = '(' + followers_list.toString(',') + ')';
             const fields1 = 'token_value';
             const query1 = `SELECT ${fields1} FROM ${table_fcmToken}
                             WHERE ${table_fcmToken}.userinfo_uid IN ${followersString}`;
             const result1 = await pool.queryParamSlave(query1);
+            */
             /*
             const token_list = await Promise.all(result1.map(async data => {
                 return data.token_value;

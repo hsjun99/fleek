@@ -5,6 +5,7 @@ let resMessage = require('../modules/responseMessage');
 var moment = require("moment");
 
 let Session = require("../models/fleekSession");
+let User = require("../models/fleekUser");
 
 module.exports = {
     saveSession: async (req, res) => {

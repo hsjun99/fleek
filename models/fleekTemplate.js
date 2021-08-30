@@ -95,9 +95,7 @@ const template = {
         }
         const ts2 = async(connection) => {
             let cnt = 1;
-            console.log(template_detail)
             await asyncForEach(template_detail, async(workout) => {
-                console.log(workout)
                 await connection.query(query3, [cnt++, workout.workout_id, templateUsers_template_id, workout.rest_time, JSON.stringify(workout.workout_detail)])
             });
         }

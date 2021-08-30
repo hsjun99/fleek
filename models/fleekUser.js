@@ -19,6 +19,21 @@ const experienceClassifier = require('../modules/classifier/experienceClassifier
 const timeFunction = require('../modules/function/timeFunction');
 
 const fleekUser = {
+    updateLastConnectionTime: async(uid, last_connection_at) => {
+        const query1 = `UPDATE ${table1} SET last_connection_at = "${last_connection_at}"
+                        WHERE uid="${uid}"`;
+        try {
+            await pool.queryParamMaster(query1);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
     updatePrivacySetting: async(uid, privacyMode) => {
         const query1 = `UPDATE ${table1} SET privacy_setting = ${privacyMode}
                         WHERE uid="${uid}"`;
@@ -96,8 +111,7 @@ const fleekUser = {
         try {
             let percentage;
             if (squat1RM != null){
-                const {inclination, intercept} = await getWorkoutEquation(200, sex, await ageGroupClassifier(age), await weightGroupClassifier(weight))
-                //const {inclination, intercept} = await workoutEquation.getEquation(200, sex, await ageGroupClassifier(age), await weightGroupClassifier(weight));
+                const {inclination, intercept} = await getWorkoutEquation(200, sex, await ageGroupClassifier(age), await weightGroupClassifier(weight));
                 percentage = Math.round(inclination * Math.log(squat1RM) + intercept);
                 if (percentage < -100) percentage = -100;
             } else {
