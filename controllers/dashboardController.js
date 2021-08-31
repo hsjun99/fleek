@@ -13,7 +13,7 @@ module.exports = {
         const uid = req.uid;
         const myRecord = await Dashboard.getDashboardRecords(uid);
         const myFavoriteWorkouts = await Dashboard.getFavoriteWorkouts(uid);
-
+        await console.log(myRecord)
         // DB Error Handling
         if (myRecord == -1 || myFavoriteWorkouts == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_DASHBOARD_FAIL));

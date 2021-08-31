@@ -34,6 +34,7 @@ module.exports = {
         if (acceptedUid == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.SIGNUP_FAIL));
         }
+        await User.addFollow(uid, 'kakao:1810981552');
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, {uid: acceptedUid}));
     },
     kakaosignin: async (req, res) => {

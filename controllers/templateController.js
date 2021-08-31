@@ -17,7 +17,7 @@ module.exports = {
         }
 
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, {templateIdx: templateIdx}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, {template_id: templateIdx}));
     },
     getUserTemplate: async(req, res) => {
         const uid = req.uid;
@@ -53,7 +53,7 @@ module.exports = {
         }
 
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, {templateIdx: templateIdx}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, {template_id: templateIdx}));
     },
     importOtherUsersTemplate: async(req, res) => {
         const uid = req.uid;
@@ -66,13 +66,12 @@ module.exports = {
         }
 
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, {templateIdx: templateIdx}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, {template_id: templateIdx}));
     },
     updateUserTemplate: async(req, res) => {
         const uid = req.uid;
         const template_id = req.params.template_id;
         const data = req.body;
-        console.log("UPDATE DATA: ", data)
 
         // Wrong Index Handling
         const flag = await Template.checkTemplate(uid, template_id);
@@ -93,7 +92,7 @@ module.exports = {
         }
 
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.UPDATE_USERTEMPLATE_SUCCESS, {updated_template_id: template_id}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.UPDATE_USERTEMPLATE_SUCCESS, {template_id: template_id}));
     },
     deleteUserTemplate: async(req, res) => {
         const uid = req.uid;
@@ -118,6 +117,6 @@ module.exports = {
         }
 
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_USERTEMPLATE_SUCCESS, {deleted_template_id: template_id}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_USERTEMPLATE_SUCCESS, {template_id: template_id}));
     }
 }

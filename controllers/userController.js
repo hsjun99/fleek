@@ -50,14 +50,12 @@ module.exports = {
             return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.FOLLOW_FAIL, {code: code_follow.already_follow}));
         }
         //****************************************
-
         // Do Follow
         const result = await User.addFollow(uid, follow_uid);
         // DB Error Handling
         if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.FOLLOW_FAIL));
         }
-
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.FOLLOW_SUCCESS, {code: code_follow.success}));
     },
@@ -179,7 +177,6 @@ module.exports = {
 
         let data = {uid: other_uid, template: null, calendar_data: null, dashboard:{record:null, favorite_workouts:null}, workout_data:null};
         [data.template, data.calendar_data, data.dashboard.record, data.dashboard.favorite_workouts, data.workout_data] = await Promise.all([Template.getUserTemplate(other_uid), Workout.getCalendarData(other_uid), Dashboard.getDashboardRecords(other_uid), Dashboard.getFavoriteWorkouts(other_uid), getOthersWorkoutData()]);
-   
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
     },

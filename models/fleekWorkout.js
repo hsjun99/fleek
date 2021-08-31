@@ -133,7 +133,7 @@ const workout = {
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
                         LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = ${table_session}.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
-                        ORDER BY ${table_workoutlog}.session_session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
+                        ORDER BY ${table_session}.created_at ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
             const restructure = async() => {
@@ -464,7 +464,7 @@ const workout = {
             const result1 = await pool.queryParamSlave(query1);
             const fields2 = `workout_id, (0.6*("${result1[0].category}"=category) + 0.2*(${result1[0].muscle_p}=muscle_p) + 0.15*(${result1[0].muscle_s1}=muscle_s1) + ${Math.random()*2-1}*(${result1[0].tier}=tier)) AS SCORE`;
             const query2 = `SELECT ${fields2} FROM ${table_workout}
-                            WHERE workout_id != ${workout_id}
+                            WHERE workout_id != ${workout_id} AND workout_id != 135
                             ORDER BY SCORE DESC
                             LIMIT 10`;
             const result2 = await pool.queryParamSlave(query2);

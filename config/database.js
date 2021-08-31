@@ -10,7 +10,8 @@ const DB_master = async() => {
                 port: configAWS.port_master,
                 user: configAWS.user_master,
                 password: configAWS.password_master,
-                database: configAWS.database_master
+                database: configAWS.database_master,
+                charset : 'utf8mb4'
             }
             resolve(mysql.createPool(configDB));
         });

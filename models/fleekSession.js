@@ -247,8 +247,13 @@ const session = {
                     })
                     await pool.queryParamArrMaster(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, workouts.workout_id, uid, result1.insertId, created_at]);
                     // Update UserWorkoutHistory Table - finish_num
+                    const fields11 = 'add_num, finish_num, userinfo_uid, workout_workout_id';
+                    const questions11 = `?, ?, ?, ?`;
+                    const values11 = [0, 0, uid, workouts.workout_id];
+                    const query11 = `INSERT IGNORE INTO ${table_userWorkoutHistory}(${fields11}) VALUES(${questions11})`;
                     const query5 = `UPDATE ${table_userWorkoutHistory} SET finish_num = finish_num+1 WHERE userinfo_uid = "${uid}" AND workout_workout_id="${workouts.workout_id}"`;
-                    await pool.queryParamMaster(query5)
+                    await pool.queryParamArrMaster(query11, values11);
+                    await pool.queryParamMaster(query5);
                     session_total_volume += total_volume;
                     session_total_sets += workouts.detail.length;
                     session_total_reps += total_reps;
@@ -354,7 +359,7 @@ const session = {
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.is_deleted != 1
                         INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = ${table_session}.userinfo_uid AND ${table_userinfo}.privacy_setting != 1
                         LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
-                        ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
+                        ORDER BY ${table_session}.created_at DESC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
             const restructure = async() => {
