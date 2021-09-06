@@ -7,7 +7,7 @@ const authUser = {
     checkToken: async(req, res, next) => {
         var idToken = req.headers.authorization;
         if (!idToken){}
-         //Invalid idToken
+        //Invalid idToken
         if (!(await Auth(idToken))) {
             res.status(statusCode.UNAUTHORIZED).send(util.fail(statusCode.UNAUTHORIZED, resMessage.INVALID_TOKEN));
             return;

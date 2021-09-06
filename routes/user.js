@@ -24,8 +24,11 @@ router.get('/fleekdata/:other_uid', AuthUser.checkToken, userController.getOther
 
 router.post('/privacysetting/:privacy_mode', AuthUser.checkToken, userController.updatePrivacySetting);
 
+router.delete('/unregister', AuthUser.checkToken, userController.unregister);
+
 //router.post('/fcmtoken/:fcm_token', AuthUser.checkToken, userController.initializeFcmToken);
 
+/*
 
 var admin = require('firebase-admin');
 router.get('/temp/sendnoti', AuthUser.checkToken, async(req, res)=> {
@@ -61,6 +64,6 @@ router.get('/temp/sendnoti', AuthUser.checkToken, async(req, res)=> {
     );
     res.send("SUCCESS");
 })
-
+*/
 
 module.exports = router;

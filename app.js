@@ -28,10 +28,8 @@ const ssmPromise = require("./modules/auth/awsparamStore.js");
     credential: admin.credential.cert(serviceAccount),
     databaseURL: configAWS.databaseURL
   });
-/*
-  admin.database().ref('sessionLike').on('value', (snapshot)=> {
-    console.log(snapshot.val());
-  })*/
+
+  //console.log(await admin.auth().getUser('kakao:1890900563'));
 
 })();
 

@@ -19,6 +19,19 @@ const code_follow = {
 }
 
 module.exports = {
+    unregister: async(req, res) => {
+        const uid = req.uid;
+
+        const result = await User.unregister(uid);
+
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.FOLLOW_FAIL));
+        }
+
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.FOLLOW_SUCCESS));
+
+    },
     follow: async(req, res) => {
         const uid = req.uid;
         const follow_uid = req.params.follow_uid;

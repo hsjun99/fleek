@@ -18,7 +18,29 @@ const experienceClassifier = require('../modules/classifier/experienceClassifier
 
 const timeFunction = require('../modules/function/timeFunction');
 
+
+
+const {Unregister} = require("../modules/auth/firebaseAuth");
+
 const fleekUser = {
+    unregister: async(uid) => {
+        const query = `UPDATE ${table1} SET is_deleted = 1
+                        WHERE uid="${uid}"`
+        try {
+            // Delete From Firebase
+            const result = await Unregister(uid);
+
+            await pool.queryParamMaster(query);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
     updateLastConnectionTime: async(uid, last_connection_at) => {
         const query1 = `UPDATE ${table1} SET last_connection_at = "${last_connection_at}"
                         WHERE uid="${uid}"`;
@@ -71,6 +93,7 @@ const fleekUser = {
         // Privacy Setting: 전체공개(0), 나만보기(1)
         const query = `SELECT ${field} FROM ${table7}
                         RIGHT JOIN ${table1} ON ${table1}.uid = ${table7}.userinfo_uid AND ${table1}.privacy_setting != 1
+                        WHERE ${table1}.is_deleted != 1
                         GROUP BY ${table1}.uid
                         ORDER BY ${table1}.created_at`;
         try {
@@ -87,7 +110,7 @@ const fleekUser = {
     },
     checkUser: async(uid) => {
         const field = 'uid';
-        const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.uid="${uid}"`;
+        const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.uid="${uid}" AND ${table1}.is_deleted != 1`;
         try {
             const result = await pool.queryParamSlave(query);
             if (result.length == 0) return false;
@@ -201,7 +224,8 @@ const fleekUser = {
     getFollowings: async (uid) => {
         const fields = "uid, name";
         const query = `SELECT ${fields} FROM ${table3}
-                        INNER JOIN ${table1} ON ${table3}.follow_uid = ${table1}.uid AND ${table3}.userinfo_uid='${uid}' AND ${table1}.privacy_setting != 1`;
+                        INNER JOIN ${table1} ON ${table3}.follow_uid = ${table1}.uid AND ${table3}.userinfo_uid='${uid}' AND ${table1}.privacy_setting != 1
+                        WHERE ${table1}.is_deleted != 1`;
         try {
             const result = await pool.queryParamMaster(query);
             return result;
@@ -217,7 +241,8 @@ const fleekUser = {
     getFollowers: async (uid) => {
         const fields = "uid, name";
         const query = `SELECT ${fields} FROM ${table3}
-                        INNER JOIN ${table1} ON ${table3}.userinfo_uid = ${table1}.uid AND ${table3}.follow_uid = '${uid}' AND ${table1}.privacy_setting != 1`;
+                        INNER JOIN ${table1} ON ${table3}.userinfo_uid = ${table1}.uid AND ${table3}.follow_uid = '${uid}' AND ${table1}.privacy_setting != 1
+                        WHERE ${table1}.is_deleted != 1`;
         try {
             const result = await pool.queryParamSlave(query);
             return result;
@@ -232,7 +257,7 @@ const fleekUser = {
     },
     checkName: async (name) => {
         const field = 'name';
-        const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.name="${name}"`;
+        const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.name="${name}" AND ${table1}.is_deleted != 1`;
         try {
             const result = await pool.queryParamSlave(query);
             if (result.length != 0) return false;

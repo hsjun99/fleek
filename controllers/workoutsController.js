@@ -52,6 +52,18 @@ module.exports = {
       }));
       res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
     },*/
+    addCustomWorkout: async(req, res) => {
+      const uid = req.uid;
+      const {workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier} = req.body;
+
+      const result = await Workout.postCustomWorkout(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier);
+      
+      if (result == -1){
+        return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+      }
+
+      res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS));
+    },
     getWorkoutTableData: async (req, res) => {
       const uid = req.uid;
       // Get Profile
@@ -81,6 +93,7 @@ module.exports = {
           multiplier: rowdata.multiplier,
           min_step: rowdata.min_step,
           tier: rowdata.tier,
+          is_custom: rowdata.is_custom,
           video_url: rowdata.video_url,
           video_url_substitute: rowdata.video_url_substitute,
           reference_num: rowdata.reference_num,

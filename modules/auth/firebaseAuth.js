@@ -18,5 +18,13 @@ module.exports = {
         } catch (error) {
             return false;
         }
+    },
+    Unregister: async (uid) => {
+        try {
+            await admin.auth().deleteUser(uid);
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
 }

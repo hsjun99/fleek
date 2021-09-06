@@ -10,11 +10,48 @@ const table_userinfo = 'userinfo';
 const table_follows = 'follows';
 const table_workoutAbility = 'workoutAbility';
 const table_userWorkoutHistory = 'userWorkoutHistory';
+const table_customWorkout = 'customWorkout';
 
 const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation');
 const getUserRecentRecords = require('../modules/functionFleek/getUserRecentRecords');
 
 const workout = {
+    postCustomWorkout: async(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier) => {
+        const fields1 = 'korean, muscle_p, muscle_s1, equipment, record_type, multiplier, is_custom';
+        const fields2 = 'workout_workout_id, userinfo_uid, created_by_uid, created_at';
+        const questions1 = `?, ?, ?, ?, ?, ?, ?`;
+        const questions2 = `?, ?, ?, ?`
+        const values1 = [workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, 1];
+        const query1 = `INSERT INTO ${table_workout}(${fields1}) VALUES(${questions1})`;
+
+        let transactionArr = new Array();
+        let workout_id;
+
+        const ts1 = async(connection) => {
+            const result1 = await connection.query(query1, values1);
+            workout_id = result1.insertId;
+        }
+        const ts2 = async(connection) => {
+            const values2 = [workout_id, uid, uid, await timeFunction.currentTime()];
+            const query2 = `INSERT INTO ${table_customWorkout}(${fields2}) VALUES(${questions2})`;
+            await connection.query(query2, values2);
+        }
+
+        try {
+            transactionArr.push(ts1);
+            transactionArr.push(ts2);
+            await pool.Transaction(transactionArr);
+
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
     getWorkoutInfo: async(workout_id) => {
         const query = `SELECT * FROM ${table_workout}
                         WHERE ${table_workout}.workout_id = ${workout_id}`;
@@ -47,12 +84,15 @@ const workout = {
         }
     },
     getWorkoutTable: async(uid, sex, ageGroup, weightGroup) => {
-        const fields = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, video_url, video_url_substitute, reference_num, inclination, intercept`;
+        const fields = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, inclination, intercept`;
         const query = `SELECT ${fields} FROM ${table_workout}
                         LEFT JOIN ${table_equation} ON ${table_workout}.workout_id = ${table_equation}.workout_workout_id
+                        LEFT JOIN ${table_customWorkout} ON ${table_workout}.workout_id = ${table_customWorkout}.workout_workout_id AND ${table_customWorkout}.userinfo_uid = '${uid}'
                         WHERE ${table_workout}.workout_id != 135
                             AND (inclination IS NULL
-                                    OR (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}"))`;
+                                    OR (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}"))
+                            AND (is_custom = 0
+                                    OR (is_custom = 1 AND ${table_customWorkout}.is_deleted != 1))`;
         try {
             const result = await pool.queryParamSlave(query);
             /*
