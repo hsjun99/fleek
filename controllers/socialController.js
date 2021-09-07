@@ -13,6 +13,7 @@ let Workout = require("../models/fleekWorkout");
 let Dashboard = require("../models/fleekDashboard");
 const { asyncify } = require('async');
 const dashboardController = require('./dashboardController');
+const { getUid } = require('../modules/auth/firebaseAuth');
 
 module.exports = {
     sessionStart: async(req, res) => {
@@ -69,7 +70,7 @@ module.exports = {
     },
     getAllUser: async(req, res) => {
         const uid = req.uid;
-        const data = await User.getAllUser();
+        const data = await User.getAllUser(uid);
         if (data == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
         }
