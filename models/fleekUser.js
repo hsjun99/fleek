@@ -18,8 +18,6 @@ const experienceClassifier = require('../modules/classifier/experienceClassifier
 
 const timeFunction = require('../modules/function/timeFunction');
 
-
-
 const {Unregister} = require("../modules/auth/firebaseAuth");
 
 const fleekUser = {
@@ -272,19 +270,29 @@ const fleekUser = {
         }
     },
     getProfile: async (uid) => {
-        const fields = 'sex, age, height, weight, percentage, name, privacy_setting';
-        const query = `SELECT ${fields} FROM ${table1} 
+        const fields = 'sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting';
+        const fields2 = 'userBodyInfoTracking_id, height, weight, skeletal_muscle_mass, body_fat_ratio, created_at';
+        const query = `SELECT ${fields} FROM ${table1}
                         WHERE ${table1}.uid="${uid}"`;
+        const query2 = `SELECT ${fields2} FROM ${table6}
+                        WHERE ${table6}.userinfo_uid="${uid}"
+                        ORDER BY created_at ASC`;
+
         try {
             const result = await pool.queryParamSlave(query);
             const sex = result[0].sex;
             const age = result[0].age;
             const height = result[0].height;
             const weight = result[0].weight;
+            const skeletal_muscle_mass = result[0].skeletal_muscle_mass;
+            const body_fat_ratio = result[0].body_fat_ratio;
             const percentage = result[0].percentage;
             const name = result[0].name;
             const privacy_setting = result[0].privacy_setting;
-            return {sex, age, height, weight, percentage, name, privacy_setting};
+            const body_info_history = await pool.queryParamSlave(query2);
+            
+
+            return {sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, body_info_history};
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('getProfile ERROR: ', err.errno, err.code);
@@ -329,8 +337,8 @@ const fleekUser = {
         const query1 = `UPDATE ${table1} SET height="${height}", weight="${weight}" WHERE uid="${uid}"`;
         const query2 = `INSERT INTO ${table6}(${fields2}) VALUES(${questions2})`;
         try {
-            const result1 = await pool.queryParamMaster(query1);
-            const result2 = await pool.queryParamArrMaster(query2, values2);
+            await pool.queryParamMaster(query1);
+            await pool.queryParamArrMaster(query2, values2);
             return true;
         } catch (err) {
             if (err.errno == 1062) {
@@ -341,6 +349,40 @@ const fleekUser = {
             throw err;
         }
     },
+    updateBodyInfo: async(uid, height, weight, skeletal_muscle_mass, body_fat_ratio) => {
+        const fields2 = 'height, weight, skeletal_muscle_mass, body_fat_ratio, userinfo_uid, created_at';
+        const questions2 = `?, ?, ?, ?, ?, ?`;
+        const values2 = [height, weight, skeletal_muscle_mass, body_fat_ratio, uid, await timeFunction.currentTime()];
+        const query1 = `UPDATE ${table1} SET height="${height}", weight="${weight}", skeletal_muscle_mass = ${skeletal_muscle_mass}, body_fat_ratio = ${body_fat_ratio} WHERE uid="${uid}"`;
+        const query2 = `INSERT INTO ${table6}(${fields2}) VALUES(${questions2})`;
+        try {
+            await pool.queryParamMaster(query1);
+            await pool.queryParamArrMaster(query2, values2);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
+    deleteBodyInfo: async(uid, userBodyInfoTracking_id) => {
+        const query1 = `DELETE FROM ${table6} WHERE ${table6}.userinfo_uid = '${uid}' AND ${table6}.userBodyInfoTracking_id = ${userBodyInfoTracking_id}`;
+        try {
+            await pool.queryParamMaster(query1);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    }
+    ,
     getWorkoutMaxOneRm: async(uid, workout_id) => {
         const fields = 'max_one_rm';
         const query = `SELECT ${fields} FROM ${table4} 

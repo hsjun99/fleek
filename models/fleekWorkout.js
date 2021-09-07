@@ -16,12 +16,12 @@ const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation'
 const getUserRecentRecords = require('../modules/functionFleek/getUserRecentRecords');
 
 const workout = {
-    postCustomWorkout: async(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier) => {
-        const fields1 = 'korean, muscle_p, muscle_s1, equipment, record_type, multiplier, is_custom';
-        const fields2 = 'workout_workout_id, userinfo_uid, created_by_uid, created_at';
-        const questions1 = `?, ?, ?, ?, ?, ?, ?`;
-        const questions2 = `?, ?, ?, ?`
-        const values1 = [workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, 1];
+    postCustomWorkout: async(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute) => {
+        const fields1 = 'korean, english, category, muscle_p, muscle_s1, equipment, record_type, multiplier, video_url, video_url_substitute, is_custom';
+        const fields2 = 'workout_workout_id, userinfo_uid, created_at';
+        const questions1 = `?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?`;
+        const questions2 = `?, ?, ?`
+        const values1 = [workout_name, 'custom', '-', muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute, 1];
         const query1 = `INSERT INTO ${table_workout}(${fields1}) VALUES(${questions1})`;
 
         let transactionArr = new Array();
@@ -32,7 +32,7 @@ const workout = {
             workout_id = result1.insertId;
         }
         const ts2 = async(connection) => {
-            const values2 = [workout_id, uid, uid, await timeFunction.currentTime()];
+            const values2 = [workout_id, uid, await timeFunction.currentTime()];
             const query2 = `INSERT INTO ${table_customWorkout}(${fields2}) VALUES(${questions2})`;
             await connection.query(query2, values2);
         }
@@ -42,13 +42,34 @@ const workout = {
             transactionArr.push(ts2);
             await pool.Transaction(transactionArr);
 
-            return true;
+            return workout_id;
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('updateProfile ERROR: ', err.errno, err.code);
                 return -1;
             }
             console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
+    getOthersCustomWorkouts: async(other_uid, sex, ageGroup, weightGroup) => {
+        const fields = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, inclination, intercept`;
+        const query = `SELECT ${fields} FROM ${table_workout}
+                        LEFT JOIN ${table_equation} ON ${table_workout}.workout_id = ${table_equation}.workout_workout_id
+                        LEFT JOIN ${table_customWorkout} ON ${table_workout}.workout_id = ${table_customWorkout}.workout_workout_id AND ${table_customWorkout}.userinfo_uid = '${other_uid}'
+                        WHERE ${table_workout}.workout_id != 135
+                            AND (inclination IS NULL
+                                    OR (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}"))
+                            AND (is_custom = 1 AND ${table_customWorkout}.is_deleted != 1)`;
+        try {
+            const result = await pool.queryParamSlave(query);
+            return result;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
             throw err;
         }
     },
@@ -59,6 +80,7 @@ const workout = {
         try {
             const data = await pool.queryParamSlave(query);
             return {
+                workout_id: workout_id,
                 english: data[0].english,
                 korean: data[0].korean,
                 category: data[0].category,
@@ -67,12 +89,14 @@ const workout = {
                 equipment: data[0].equipment,
                 record_type: data[0].record_type,
                 multiplier: data[0].multiplier,
+                min_step: data[0].min_step,
+                tier: data[0].tier,
+                is_custom: data[0].is_custom,
                 popularity: data[0].popularity,
                 video_url: data[0].video_url,
                 video_url_substitute: data[0].video_url_substitute,
                 reference_num: data[0].reference_num,
-                min_step: data[0].min_step,
-                tier: data[0].tier
+                
             }
         } catch (err) {
             if (err.errno == 1062) {
@@ -173,7 +197,7 @@ const workout = {
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
                         LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = ${table_session}.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
-                        ORDER BY ${table_session}.created_at ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
+                        ORDER BY ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
             const restructure = async() => {

@@ -20,7 +20,7 @@ router.get('/substitute/:workout_id', AuthUser.checkToken, workoutsController.ge
 
 router.get('/table', AuthUser.checkToken, workoutsController.getWorkoutTableData);
 
-//router.post('/customworkout', AuthUser.checkToken, workoutsController.addCustomWorkout);
+router.post('/customworkout', AuthUser.checkToken, workoutsController.addCustomWorkout);
 
 //router.get('/table/:other_uid', AuthUser.checkToken, workoutsController.getOthersWorkoutData);
 

@@ -57,8 +57,9 @@ module.exports = {
         await Session.sessionFinish(uid, name, followers_list);
     },
     getAllSession: async (req, res) => {
+        const uid = req.uid;
         // Post Session
-        const data = await Session.getAllSessionData();
+        const data = await Session.getAllSessionData(uid);
         // DB Error Handling
         if (data == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));

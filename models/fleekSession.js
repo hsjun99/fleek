@@ -27,9 +27,15 @@ var admin = require('firebase-admin');
 
 const firebaseCM = require('../modules/firebase/firebaseCloudMessaging');
 
+const feedMessage = require('../modules/feedMessage');
+
+
+
+
 const session = {
     sessionLike: async(uid, session_id, emoji_type) => {
         const table_sessionLike = await admin.database().ref('sessionLike');
+        const table_usersFeed = await admin.database().ref('usersFeed');
 
         const fields1 = 'userinfo_uid'
         const query1 = `SELECT ${fields1} FROM ${table_session}
@@ -67,7 +73,11 @@ const session = {
                 }
             }
             const result1 = await pool.queryParamSlave(query1);
-            const liked_uid = result1.userinfo_uid;
+            const liked_uid = result1[0].userinfo_uid;
+
+            const message = await feedMessage.session_like(uid, session_id);
+            await table_usersFeed.child(liked_uid).push().set(message);
+            /*
 
             const fields2 = 'token_value';
             const query2 = `SELECT ${fields2} FROM ${table_fcmToken}
@@ -84,7 +94,7 @@ const session = {
             }
             if (token_list.length != 0){
                 await firebaseCM(token_list, message)
-            }
+            }*/
             return true;
         } catch (err) {
             if (err.errno == 1062) {
@@ -353,11 +363,11 @@ const session = {
             throw err;
         }
     },
-    getAllSessionData: async () => {
+    getAllSessionData: async (uid) => {
         const fields = `${table_session}.userinfo_uid, ${table_userinfo}.name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, ${table_session}.created_at, ${table_session}.total_time`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.is_deleted != 1
-                        INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = ${table_session}.userinfo_uid AND ${table_userinfo}.privacy_setting != 1
+                        INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = ${table_session}.userinfo_uid AND (${table_userinfo}.privacy_setting != 1 OR (${table_userinfo}.privacy_setting = 1 AND ${table_userinfo}.uid = '${uid}'))
                         LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
                         ORDER BY ${table_session}.created_at DESC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {

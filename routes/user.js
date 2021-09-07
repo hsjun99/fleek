@@ -16,6 +16,10 @@ router.put('/name/:new_name', AuthUser.checkToken, userController.updateName);
 
 router.put('/height&weight/:height/:weight', AuthUser.checkToken, userController.updateHeightWeight);
 
+router.put('/bodyinfo', AuthUser.checkToken, userController.updateBodyInfo);
+
+router.delete('/bodyinfo/:body_info_id', AuthUser.checkToken, userController.deleteBodyInfo);
+
 router.post('/suggestion', AuthUser.checkToken, userController.postSuggestion);
 
 router.get('/fleekdata/self', AuthUser.checkToken, userController.getSelfFleekData);

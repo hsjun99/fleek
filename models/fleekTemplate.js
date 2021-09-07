@@ -1,11 +1,14 @@
 const pool = require('../modules/pool');
 const asyncForEach = require('../modules/function/asyncForEach');
+const timeFunction = require('../modules/function/timeFunction');
 
 const table_templateUsers = 'templateUsers';
 const table_templateUsersDetails = 'templateUsersDetails';
 const table_templateDefaultGroup = 'templateDefaultGroup';
 const table_templateDefault = 'templateDefault';
 const table_templateDefaultDetails = 'templateDefaultDetails';
+const table_workout = 'workout';
+const table_customWorkout = 'customWorkout'
 
 const getUserInfo = require('../modules/functionFleek/getUserInfo');
 const getUserNextWorkoutPlanHierarchy = require('../modules/functionFleek/getUserNextWorkoutPlanHierarchy');
@@ -53,13 +56,14 @@ const template = {
         }
     },
     postOtherUsersTemplateData: async(uid, template_id) => {
-        const fields1 = 'name, templateUsers_id, workout_workout_id, rest_time, workout_detail'
+        const fields1 = 'name, templateUsers_id, workout_workout_id, rest_time, workout_detail, is_custom'
         const fields2 = 'name, userinfo_uid';
         const fields3 = 'workout_order, workout_workout_id, templateUsers_template_id, rest_time, workout_detail';
         const questions2 = '?, ?';
         const questions3 = '?, ?, ?, ?, ?'
         const query1 = `SELECT ${fields1} FROM ${table_templateUsers}
-                        INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.templateUsers_id = ${template_id}`;
+                        INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.templateUsers_id = ${template_id}
+                        LEFT JOIN ${table_workout} ON ${table_templateUsersDetails}.workout_workout_id = ${table_workout}.workout_id`;
         
         const query2 = `INSERT INTO ${table_templateUsers}(${fields2}) VALUES(${questions2})`;
         const query3 = `INSERT INTO ${table_templateUsersDetails}(${fields3}) VALUES(${questions3})`;
@@ -73,13 +77,13 @@ const template = {
             let data = [];
             await asyncForEach(result, async(rowdata) => {
                 if (data.length == 0){
-                    data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)}]});
+                    data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, is_custom: rowdata.is_custom, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)}]});
                 }
                 else if (data[data.length-1].template_id == rowdata.templateUsers_id){
-                    data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)});
+                    data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, is_custom: rowdata.is_custom, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)});
                 }
                 else {
-                    data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)}]});
+                    data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, is_custom: rowdata.is_custom, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)}]});
                 }
             });
             return data;
@@ -96,7 +100,14 @@ const template = {
         const ts2 = async(connection) => {
             let cnt = 1;
             await asyncForEach(template_detail, async(workout) => {
-                await connection.query(query3, [cnt++, workout.workout_id, templateUsers_template_id, workout.rest_time, JSON.stringify(workout.workout_detail)])
+                await connection.query(query3, [cnt++, workout.workout_id, templateUsers_template_id, workout.rest_time, JSON.stringify(workout.workout_detail)]);
+                if (workout.is_custom == 1){
+                    const fields4 = 'workout_workout_id, userinfo_uid, created_at';
+                    const values4 = [workout.workout_id, uid, await timeFunction.currentTime()];
+                    const questions4 = '?, ?, ?'
+                    const query4 = `INSERT IGNORE INTO ${table_customWorkout}(${fields4}) VALUES(${questions4})`;
+                    await connection.query(query4, values4);
+                }
             });
         }
         

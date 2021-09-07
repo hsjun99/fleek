@@ -54,15 +54,43 @@ module.exports = {
     },*/
     addCustomWorkout: async(req, res) => {
       const uid = req.uid;
-      const {workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier} = req.body;
+      const {workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute} = req.body;
 
-      const result = await Workout.postCustomWorkout(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier);
+      const result = await Workout.postCustomWorkout(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute);
       
       if (result == -1){
         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
       }
 
-      res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS));
+      const default_plan = await defaultIntensity(null, null, 0, 0);
+
+      const custom_workout_info =  {
+        workout_id: result,
+        english: 'custom',
+        korean: workout_name,
+        category: null,
+        muscle_primary: muscle_primary,
+        muscle_secondary: [muscle_secondary, -1, -1, -1, -1, -1],
+        equipment: equipment,
+        record_type: record_type,
+        multiplier: multiplier,
+        min_step: 0,
+        tier: null,
+        is_custom: 1,
+        video_url: video_url,
+        video_url_substitute: video_url_substitute,
+        reference_num: null,
+        equation: {
+            inclination: null,
+            intercept: null
+        },
+        recent_records: [],
+        rest_time: 0,
+        workout_ability: [],
+        plan: default_plan.plan,
+        detail_plan: default_plan.detail_plan
+      }
+      res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, {custom_workout_info: custom_workout_info}));
     },
     getWorkoutTableData: async (req, res) => {
       const uid = req.uid;
