@@ -90,8 +90,8 @@ const fleekUser = {
         const field = `uid, name, MAX(${table7}.created_at) AS last_date`;
         // Privacy Setting: 전체공개(0), 나만보기(1)
         const query = `SELECT ${field} FROM ${table7}
-                        RIGHT JOIN ${table1} ON ${table1}.uid = ${table7}.userinfo_uid AND ${table1}.privacy_setting != 1
-                        WHERE ${table1}.is_deleted != 1
+                        RIGHT JOIN ${table1} ON ${table1}.uid = ${table7}.userinfo_uid
+                        WHERE ${table1}.privacy_setting != 1 AND ${table1}.is_deleted != 1
                         GROUP BY ${table1}.uid
                         ORDER BY ${table1}.created_at`;
         try {

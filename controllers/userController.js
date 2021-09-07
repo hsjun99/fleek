@@ -214,12 +214,11 @@ module.exports = {
         }
         const getOthersCustomWorkout = async() => {
             const result = await Workout.getOthersCustomWorkouts(other_uid, sex, ageGroup, weightGroup);
-            console.log(result)
             if (result == -1){
                 return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
             }
             const data = await Promise.all(result.map(async rowdata => {
-                const temp = await Promise.all([Workout.getWorkoutRecordById(rowdata.workout_id, uid), WorkoutAbility.getAllWorkoutAbilityHistory(uid, rowdata.workout_id), defaultIntensity(rowdata.inclination, rowdata.intercept, percentage, rowdata.min_step)]);
+                const workoutRecord = await Workout.getWorkoutRecordById(rowdata.workout_id, uid);
                 const info =  {
                   workout_id: Number(rowdata.workout_id),
                   english: rowdata.english,
@@ -236,15 +235,10 @@ module.exports = {
                   video_url: rowdata.video_url,
                   video_url_substitute: rowdata.video_url_substitute,
                   reference_num: rowdata.reference_num,
-                  equation: {
-                      inclination: rowdata.inclination,
-                      intercept: rowdata.intercept
-                  },
-                  recent_records: temp[0].recentRecords,
-                  rest_time: temp[0].rest_time,
-                  workout_ability: temp[1],
-                  plan: temp[2].plan,
-                  detail_plan: temp[2].detail_plan
+                  rest_time: workoutRecord.rest_time,
+                  //workout_ability: temp[1],
+                  //plan: temp[2].plan,
+                  //detail_plan: temp[2].detail_plan
                 }
                 return info;
             }))

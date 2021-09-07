@@ -29,9 +29,6 @@ const firebaseCM = require('../modules/firebase/firebaseCloudMessaging');
 
 const feedMessage = require('../modules/feedMessage');
 
-
-
-
 const session = {
     sessionLike: async(uid, session_id, emoji_type) => {
         const table_sessionLike = await admin.database().ref('sessionLike');
