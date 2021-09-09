@@ -92,6 +92,16 @@ module.exports = {
       }
       res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, {custom_workout_info: custom_workout_info}));
     },
+    deleteCustomWorkout: async(req, res) => {
+      const uid = req.uid;
+      const workout_id = req.params.workout_id;
+
+      const result = Workout.deleteCustomWorkout(uid, workout_id);
+      if (result == -1){
+        return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+      }
+      res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS));
+    },
     getWorkoutTableData: async (req, res) => {
       const uid = req.uid;
       // Get Profile

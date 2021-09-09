@@ -22,7 +22,7 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, {sessionIdx: sessionIdx}));
 
-        const followers = await User.getFollowers(uid);
+        const followers = await User.getFollowersWithoutPrivacySetting(uid);
         const followers_list = await Promise.all(followers.map(async follower => {
             return follower.uid;
         }));

@@ -72,8 +72,11 @@ const session = {
             const result1 = await pool.queryParamSlave(query1);
             const liked_uid = result1[0].userinfo_uid;
 
+            // Send Message
             const message = await feedMessage.session_like(uid, session_id);
+            await table_usersFeed.child(liked_uid).update({new_message: 1});
             await table_usersFeed.child(liked_uid).push().set(message);
+            
             /*
 
             const fields2 = 'token_value';
@@ -104,8 +107,24 @@ const session = {
     },
     sessionStart: async(uid, name, followers_list) => {
         const table_usersOnline = await admin.database().ref('usersOnline');
+        const table_usersFeed = await admin.database().ref('usersFeed');
+
+        const fields1 = 'privacy_setting';
+        const query1 = `SELECT ${fields1} FROM ${table_userinfo}
+                        WHERE ${table_userinfo}.uid = '${uid}'`;
         try {
             table_usersOnline.update({[uid]: 1});
+
+            const result1 = await pool.queryParamSlave(query1);
+            const privacy_mode = result1[0].privacy_setting;
+            // Send Message
+            if (privacy_mode == 0) {
+                const message = await feedMessage.session_start(uid);
+                await Promise.all(followers_list.map(async (follow_uid) => {
+                    await table_usersFeed.child(follow_uid).update({new_message: 1});
+                    await table_usersFeed.child(follow_uid).push().set(message);
+                }));
+            }
             /*
             const followersString = '(' + followers_list.toString(',') + ')';
             const fields1 = 'token_value';
@@ -137,6 +156,8 @@ const session = {
         const table_usersOnline = await admin.database().ref('usersOnline');
         try {
             table_usersOnline.update({[uid]: 0});
+
+            
             /*
             const followersString = '(' + followers_list.toString(',') + ')';
             const fields1 = 'token_value';
@@ -167,9 +188,27 @@ const session = {
     sessionFinish: async(uid, name, followers_list, session_id) => {
         const table_usersOnline = await admin.database().ref('usersOnline');
         const table_sessionLike = await admin.database().ref('sessionLike');
+        const table_usersFeed = await admin.database().ref('usersFeed');
+
+        const fields1 = 'privacy_setting';
+        const query1 = `SELECT ${fields1} FROM ${table_userinfo}
+                        WHERE ${table_userinfo}.uid = '${uid}'`;
         try {
             table_usersOnline.update({[uid]: 0});
             table_sessionLike.update({[session_id]: {0: {cnt:0, users:['null']}, 1: {cnt:0, users:['null']}, 2: {cnt:0, users:['null']}, 3: {cnt:0, users:['null']}, 4: {cnt:0, users:['null']}}});
+
+
+            const result1 = await pool.queryParamSlave(query1);
+            const privacy_mode = result1[0].privacy_setting;
+            // Send Message
+            if (privacy_mode == 0){
+                const message = await feedMessage.session_finish(uid, session_id);
+                await Promise.all(followers_list.map(async (follow_uid) => {
+                    await table_usersFeed.child(follow_uid).update({new_message: 1});
+                    await table_usersFeed.child(follow_uid).push().set(message);
+                }));
+            }
+
             /*
             List<EmojiType> emojiList = [
                 EmojiType(0, "정말 대단해요", "👍"),

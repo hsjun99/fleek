@@ -14,6 +14,10 @@ const getUserInfo = require('../modules/functionFleek/getUserInfo');
 const getUserNextWorkoutPlanHierarchy = require('../modules/functionFleek/getUserNextWorkoutPlanHierarchy');
 const { CodeStarconnections } = require('aws-sdk');
 
+var admin = require('firebase-admin');
+const feedMessage = require('../modules/feedMessage');
+
+
 const template = {
     postTemplateData: async (uid, name, data) => {
         const fields1 = 'name, userinfo_uid';
@@ -52,6 +56,30 @@ const template = {
                 return -1;
             }
             console.log("postTemplateData ERROR: ", err);
+            throw err;
+        }
+    },
+    postOtherUsersTemplateDataFirebase: async(uid, template_id) => {
+        const table_usersFeed = await admin.database().ref('usersFeed');
+        const fields1 = 'userinfo_uid';
+        const query1 = `SELECT ${fields1} FROM ${table_templateUsers}
+                        WHERE ${table_templateUsers}.templateUsers_id = ${template_id}`;
+        try {
+            const result = await pool.queryParamMaster(query1);
+            const imported_uid = result[0].userinfo_uid;
+
+            // Send Message
+            const message = await feedMessage.template_import(uid, template_id);
+            await table_usersFeed.child(imported_uid).update({new_message: 1});
+            await table_usersFeed.child(imported_uid).push().set(message);
+
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getUserTemplate ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getUserTemplate ERROR: ", err);
             throw err;
         }
     },
@@ -307,6 +335,8 @@ const template = {
         const query2 = `INSERT INTO ${table_templateUsersDetails}(${fields2}) VALUES(${questions2})`;
         const query3 = `UPDATE ${table_templateUsers} SET name='${name}'
                         WHERE ${table_templateUsers}.templateUsers_id = '${template_id}' AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
+        const query4 = `UPDATE ${table_templateUsers} SET is_deleted = 1
+                        WHERE ${table_templateUsers}.templateUsers_id = '${template_id}' AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
 
         // Transactions
         let transactionArr = new Array();
@@ -320,7 +350,11 @@ const template = {
             });
         };
         const ts3 = async (connection) => {
-            await connection.query(query3);
+            if (data.length == 0) {
+                await connection.query(query4);
+            } else {
+                await connection.query(query3);
+            }
         };
         
         try {   

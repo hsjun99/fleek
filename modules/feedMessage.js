@@ -86,10 +86,11 @@ module.exports = {
             created_at: await timeFunction.currentTime()
         }
     },
-    session_finish: async(uid) => {
+    session_finish: async(uid, session_id) => {
         return {
             type: "U_4",
             uid: uid,
+            session_id: session_id,
             created_at: await timeFunction.currentTime()
         }
     },

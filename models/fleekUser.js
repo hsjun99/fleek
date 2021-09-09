@@ -10,6 +10,8 @@ const table6 = 'userBodyInfoTracking';
 const table7 = 'session';
 const table8 = 'fcmToken'
 
+var admin = require('firebase-admin');
+
 const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation');
 
 const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
@@ -19,6 +21,8 @@ const experienceClassifier = require('../modules/classifier/experienceClassifier
 const timeFunction = require('../modules/function/timeFunction');
 
 const {Unregister} = require("../modules/auth/firebaseAuth");
+
+const feedMessage = require('../modules/feedMessage');
 
 const fleekUser = {
     unregister: async(uid) => {
@@ -180,6 +184,7 @@ const fleekUser = {
         try {
             //onsole.log(uid, follow_uid)
             const result = await pool.queryParamArrMaster(query, values);
+
             return result[0];
         } catch (err) {
             if (err.errno == 1062) {
@@ -187,6 +192,23 @@ const fleekUser = {
                 return -1;
             }
             console.log('addFollow ERROR : ', err);
+            throw err;
+        }
+    },
+    addFollowFirebase: async (uid, follow_uid) => {
+        const table_usersFeed = await admin.database().ref('usersFeed');
+        try {
+            // Send Message
+            const message = await feedMessage.followed(uid);
+            await table_usersFeed.child(follow_uid).update({new_message: 1});
+            await table_usersFeed.child(follow_uid).push().set(message);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('deleteSession ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("deleteSession ERROR: ", err);
             throw err;
         }
     },
@@ -253,6 +275,23 @@ const fleekUser = {
             throw err;
         }
     },
+    getFollowersWithoutPrivacySetting: async (uid) => {
+        const fields = "uid, name";
+        const query = `SELECT ${fields} FROM ${table3}
+                        INNER JOIN ${table1} ON ${table3}.userinfo_uid = ${table1}.uid AND ${table3}.follow_uid = '${uid}'
+                        WHERE ${table1}.is_deleted != 1`;
+        try {
+            const result = await pool.queryParamSlave(query);
+            return result;
+        } catch (error) {
+            if (err.errno == 1062) {
+                console.log('getFollows ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getFollows ERROR: ", err);
+            throw err;
+        }
+    },
     checkName: async (name) => {
         const field = 'name';
         const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.name="${name}" AND ${table1}.is_deleted != 1`;
@@ -289,7 +328,7 @@ const fleekUser = {
             const percentage = result[0].percentage;
             const name = result[0].name;
             const privacy_setting = result[0].privacy_setting;
-            const body_info_history = await pool.queryParamSlave(query2);
+            const body_info_history = await pool.queryParamMaster(query2);
             
 
             return {sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, body_info_history};
@@ -339,6 +378,21 @@ const fleekUser = {
         try {
             await pool.queryParamMaster(query1);
             await pool.queryParamArrMaster(query2, values2);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
+    updateBodyInfoRecord: async(uid, userBodyInfoTracking_id, height, weight, skeletal_muscle_mass, body_fat_ratio) => {
+        const query = `UPDATE ${table6} SET height = ${height}, weight = ${weight}, skeletal_muscle_mass = ${skeletal_muscle_mass}, body_fat_ratio = ${body_fat_ratio}
+                        WHERE userinfo_uid="${uid}" AND userBodyInfoTracking_id = ${userBodyInfoTracking_id}`;
+        try {
+            await pool.queryParamMaster(query);
             return true;
         } catch (err) {
             if (err.errno == 1062) {

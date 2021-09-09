@@ -73,6 +73,8 @@ module.exports = {
         }
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.FOLLOW_SUCCESS, {code: code_follow.success}));
+
+        await User.addFollowFirebase(uid, follow_uid);
     },
     unfollow: async(req, res) => {
         const uid = req.uid;
@@ -150,6 +152,17 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
 
+    },
+    updateBodyInfoRecord: async(req, res) => {
+        const uid = req.uid;
+        const userBodyInfoTracking_id = req.params.body_info_id;
+        const {height, weight, skeletal_muscle_mass, body_fat_ratio} = req.body;
+        const result = await User.updateBodyInfoRecord(uid, userBodyInfoTracking_id, height, weight, skeletal_muscle_mass, body_fat_ratio);
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
     },
     deleteBodyInfo: async(req, res) => {
         const uid = req.uid;

@@ -3,6 +3,7 @@ var router = express.Router();
 
 const AuthUser = require('../middlewares/authUser');
 const workoutsController = require('../controllers/workoutsController');
+const { Auth } = require('../modules/auth/firebaseAuth');
 
 
 //router.get('/geteach/:id', AuthUser.checkToken, workoutsController.getEach);
@@ -21,6 +22,8 @@ router.get('/substitute/:workout_id', AuthUser.checkToken, workoutsController.ge
 router.get('/table', AuthUser.checkToken, workoutsController.getWorkoutTableData);
 
 router.post('/customworkout', AuthUser.checkToken, workoutsController.addCustomWorkout);
+
+router.delete('/customworkout/:workout_id', AuthUser.checkToken, workoutsController.deleteCustomWorkout);
 
 //router.get('/table/:other_uid', AuthUser.checkToken, workoutsController.getOthersWorkoutData);
 

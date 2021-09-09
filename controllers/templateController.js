@@ -67,6 +67,8 @@ module.exports = {
 
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, {template_id: templateIdx}));
+
+        await Template.postOtherUsersTemplateDataFirebase(uid, template_id);
     },
     updateUserTemplate: async(req, res) => {
         const uid = req.uid;

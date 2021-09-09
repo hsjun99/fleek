@@ -52,6 +52,20 @@ const workout = {
             throw err;
         }
     },
+    deleteCustomWorkout: async(uid, workout_id) => {
+        const query = `UPDATE ${table_customWorkout} SET is_deleted = 1 WHERE workout_workout_id = ${workout_id} AND userinfo_uid = '${uid}'`;
+        try {
+            await pool.queryParamMaster(query);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
     getOthersCustomWorkouts: async(other_uid, sex, ageGroup, weightGroup) => {
         const fields = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, inclination, intercept`;
         const query = `SELECT ${fields} FROM ${table_workout}
@@ -119,69 +133,6 @@ const workout = {
                                     OR (is_custom = 1 AND ${table_customWorkout}.is_deleted != 1))`;
         try {
             const result = await pool.queryParamSlave(query);
-            /*
-            const data = await Promise.all(result.map(async (rowdata, index) => {
-                return {
-                    index: index,
-                    workout_id: Number(rowdata.workout_id),
-                    english: rowdata.english,
-                    korean: rowdata.korean,
-                    category: rowdata.category,
-                    muscle_primary: rowdata.muscle_p,
-                    muscle_secondary: [rowdata.muscle_s1, rowdata.muscle_s2, rowdata.muscle_s3, rowdata.muscle_s4, rowdata.muscle_s5, rowdata.muscle_s6],
-                    equipment: rowdata.equipment,
-                    record_type: rowdata.record_type,
-                    multiplier: rowdata.multiplier,
-                    min_step: rowdata.min_step,
-                    tier: rowdata.tier,
-                    video_url: rowdata.video_url,
-                    video_url_substitute: rowdata.video_url_substitute,
-                    reference_num: rowdata.reference_num,
-                    equation: {
-                        inclination: rowdata.inclination,
-                        intercept: rowdata.intercept
-                    }
-                }
-            }));
-            */
-            /*
-            const restructure = async() => {
-                let data = [];
-                let cnt = 0;
-                await asyncForEach(result, async(rowdata) => {
-                    data.push({
-                        index: cnt++,
-                        workout_id: Number(rowdata.workout_id),
-                        english: rowdata.english,
-                        korean: rowdata.korean,
-                        category: rowdata.category,
-                        muscle_primary: rowdata.muscle_p,
-                        muscle_secondary: [rowdata.muscle_s1, rowdata.muscle_s2, rowdata.muscle_s3, rowdata.muscle_s4, rowdata.muscle_s5, rowdata.muscle_s6],
-                        equipment: rowdata.equipment,
-                        record_type: rowdata.record_type,
-                        multiplier: rowdata.multiplier,
-                        min_step: rowdata.min_step,
-                        tier: rowdata.tier,
-                        video_url: rowdata.video_url,
-                        video_url_substitute: rowdata.video_url_substitute,
-                        reference_num: rowdata.reference_num,
-                        equation: {
-                            inclination: rowdata.inclination,
-                            intercept: rowdata.intercept
-                        }
-                    });
-                });
-                return data;
-            }
-            const data = await restructure();
-            */
-            /*
-            await Promise.all(data.map(async rowdata => {
-                const index = rowdata.index;
-                const workout_id = rowdata.workout_id;
-                const {recentRecords, rest_time} = await self.getWorkoutRecordById(workout_id, uid);
-                data[index].equation = {inclination: inclination, intercept: intercept}
-            }))*/
             return result;
         } catch (err) {
             if (err.errno == 1062) {

@@ -16,7 +16,9 @@ router.put('/name/:new_name', AuthUser.checkToken, userController.updateName);
 
 router.put('/height&weight/:height/:weight', AuthUser.checkToken, userController.updateHeightWeight);
 
-router.put('/bodyinfo', AuthUser.checkToken, userController.updateBodyInfo);
+router.post('/bodyinfo', AuthUser.checkToken, userController.updateBodyInfo);
+
+router.put('/bodyinfo/:body_info_id', AuthUser.checkToken, userController.updateBodyInfoRecord);
 
 router.delete('/bodyinfo/:body_info_id', AuthUser.checkToken, userController.deleteBodyInfo);
 
