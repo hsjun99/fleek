@@ -30,7 +30,7 @@ const firebaseCM = require('../modules/firebase/firebaseCloudMessaging');
 const feedMessage = require('../modules/feedMessage');
 
 const session = {
-    sessionLike: async(uid, session_id, emoji_type) => {
+    sessionLike: async(uid, session_id, emoji_type, name, privacy_mode, template_name) => {
         const table_sessionLike = await admin.database().ref('sessionLike');
         const table_usersFeed = await admin.database().ref('usersFeed');
 
@@ -73,33 +73,37 @@ const session = {
             const liked_uid = result1[0].userinfo_uid;
 
             // Send Message
-            const message = await feedMessage.session_like(uid, session_id);
-            await table_usersFeed.child(liked_uid).update({new_message: 1});
-            await table_usersFeed.child(liked_uid).push().set(message);
-            
+            if (privacy_mode == 0 && uid != liked_uid){
+                const message = await feedMessage.session_like(uid, session_id, template_name);
+                console.log(message)
+                await table_usersFeed.child(liked_uid).update({new_message: 1});
+                await table_usersFeed.child(liked_uid).push().set(message);
+            }
             
             // Send Push
-            const fields2 = 'token_value';
-            const query2 = `SELECT ${fields2} FROM ${table_fcmToken}
-                            WHERE ${table_fcmToken}.userinfo_uid = '${liked_uid}'`;
-            const result2 = await pool.queryParamSlave(query2);
-            const token_list = await Promise.all(result2.map(async data => {
-                return data.token_value;
-            }));
-            const message_background = {
-                notification: {
-                    title: '플릭(Fleek)',
-                    body: `좋아요를 받았습니다! 확인해보세요!!`
+            if (privacy_mode == 0 && uid != liked_uid) {
+                const fields2 = 'token_value';
+                const query2 = `SELECT ${fields2} FROM ${table_fcmToken}
+                                WHERE ${table_fcmToken}.userinfo_uid = '${liked_uid}'`;
+                const result2 = await pool.queryParamSlave(query2);
+                const token_list = await Promise.all(result2.map(async data => {
+                    return data.token_value;
+                }));
+                const message_background = {
+                    notification: {
+                        title: '플릭(Fleek)',
+                        body: `${name}님이 좋아요를 눌렀습니다! 확인해보세요!!`
+                    }
                 }
-            }
-            const message_foreground = {
-                data: {
-                    title: '플릭(Fleek)',
-                    body: `좋아요를 받았습니다! 확인해보세요!!`
+                const message_foreground = {
+                    data: {
+                        title: '플릭(Fleek)',
+                        body: `${name}님이 좋아요를 눌렀습니다! 확인해보세요!!`
+                    }
                 }
-            }
-            if (token_list.length != 0){
-                await firebaseCM(token_list, message_background, message_foreground);
+                if (token_list.length != 0){
+                    await firebaseCM(token_list, message_background, message_foreground);
+                }
             }
             return true;
         } catch (err) {
@@ -191,24 +195,19 @@ const session = {
             throw err;
         }
     },
-    sessionFinish: async(uid, name, followers_list, session_id) => {
+    sessionFinish: async(uid, name, privacy_mode, followers_list, session_id, template_name) => {
         const table_usersOnline = await admin.database().ref('usersOnline');
         const table_sessionLike = await admin.database().ref('sessionLike');
         const table_usersFeed = await admin.database().ref('usersFeed');
 
-        const fields1 = 'privacy_setting';
-        const query1 = `SELECT ${fields1} FROM ${table_userinfo}
-                        WHERE ${table_userinfo}.uid = '${uid}'`;
         try {
             table_usersOnline.update({[uid]: 0});
             table_sessionLike.update({[session_id]: {0: {cnt:0, users:['null']}, 1: {cnt:0, users:['null']}, 2: {cnt:0, users:['null']}, 3: {cnt:0, users:['null']}, 4: {cnt:0, users:['null']}}});
 
 
-            const result1 = await pool.queryParamSlave(query1);
-            const privacy_mode = result1[0].privacy_setting;
             // Send Message
             if (privacy_mode == 0){
-                const message = await feedMessage.session_finish(uid, session_id);
+                const message = await feedMessage.session_finish(uid, session_id, template_name);
                 await Promise.all(followers_list.map(async (follow_uid) => {
                     await table_usersFeed.child(follow_uid).update({new_message: 1});
                     await table_usersFeed.child(follow_uid).push().set(message);
@@ -238,16 +237,18 @@ const session = {
                 const message_background = {
                     notification: {
                         title: '플릭(Fleek)',
-                        body: `${name}님이 운동을 완료했습니다!!!가야돼가야돼`
+                        body: `${name}님이 ${template_name} 운동을 완료했습니다!`
                     }
                 }
                 const message_foreground = {
                     data: {
                         title: '플릭(Fleek)',
-                        body: `${name}님이 운동을 완료했습니다!!!가야돼가야돼`
+                        body: `${name}님이 ${template_name} 운동을 완료했습니다!`
                     }
                 }
-                await firebaseCM(token_list, message_background, message_foreground);
+                if (token_list.length != 0){
+                    await firebaseCM(token_list, message_background, message_foreground);
+                }
             }
             
             return true;

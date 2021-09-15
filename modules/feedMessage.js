@@ -64,11 +64,12 @@
 const timeFunction = require('./function/timeFunction');
 
 module.exports = {
-    session_like: async(uid, session_id) => {
+    session_like: async(uid, session_id, template_name) => {
         return {
             type: "U_1",
             uid: uid,
             session_id: session_id,
+            template_name: template_name,
             created_at: await timeFunction.currentTime()
         }
     },
@@ -86,11 +87,12 @@ module.exports = {
             created_at: await timeFunction.currentTime()
         }
     },
-    session_finish: async(uid, session_id) => {
+    session_finish: async(uid, session_id, template_name) => {
         return {
             type: "U_4",
             uid: uid,
             session_id: session_id,
+            template_name: template_name,
             created_at: await timeFunction.currentTime()
         }
     },

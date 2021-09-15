@@ -6,6 +6,7 @@ var moment = require("moment");
 
 let Session = require("../models/fleekSession");
 let User = require("../models/fleekUser");
+let Template = require('../models/fleekTemplate');
 
 module.exports = {
     saveSession: async (req, res) => {
@@ -26,9 +27,14 @@ module.exports = {
         const followers_list = await Promise.all(followers.map(async follower => {
             return follower.uid;
         }));
-
-        const {name} = await User.getProfile(uid);
-        await Session.sessionFinish(uid, name, followers_list, sessionIdx);
+        let template_name;
+        if (data.template_id == null) {
+            template_name = '익명의 루틴';
+        } else {
+            template_name = await Template.getUserTemplateName(data.template_id);
+        }
+        const {name, privacy_setting} = await User.getProfile(uid);
+        await Session.sessionFinish(uid, name, privacy_setting, followers_list, sessionIdx, template_name);
     },
     deleteSession: async (req, res) => {
         const uid = req.uid;

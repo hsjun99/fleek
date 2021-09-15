@@ -83,8 +83,18 @@ module.exports = {
         const session_id = req.params.session_id;
         const emoji_type = req.params.emoji_type;
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS));
-    
-        const flag = await Session.sessionLike(uid, session_id, emoji_type);
+        const {name, privacy_setting} = await User.getProfile(uid)
+
+        let template_name;
+        const template_id = await Template.getUserTemplateIdFromSessionId(session_id);
+        //await console.log(template_id)
+        if (template_id == null) {
+            template_name = '익명의 루틴';
+        } else {
+            template_name = await Template.getUserTemplateName(template_id);
+        }
+        //await console.log(template_name)
+        const flag = await Session.sessionLike(uid, session_id, emoji_type, name, privacy_setting, template_name);
     },
     getFollowers: async(req, res) => {
         const uid = req.uid;

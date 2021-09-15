@@ -9,6 +9,7 @@ const table_templateDefault = 'templateDefault';
 const table_templateDefaultDetails = 'templateDefaultDetails';
 const table_workout = 'workout';
 const table_customWorkout = 'customWorkout'
+const table_session = 'session';
 
 const getUserInfo = require('../modules/functionFleek/getUserInfo');
 const getUserNextWorkoutPlanHierarchy = require('../modules/functionFleek/getUserNextWorkoutPlanHierarchy');
@@ -16,6 +17,7 @@ const { CodeStarconnections } = require('aws-sdk');
 
 var admin = require('firebase-admin');
 const feedMessage = require('../modules/feedMessage');
+
 const workout = require('./fleekWorkout');
 
 
@@ -216,6 +218,38 @@ const template = {
                 return -1;
             }
             console.log("postTemplateData ERROR: ", err);
+            throw err;
+        }
+    },
+    getUserTemplateName: async(template_id) => {
+        const fields = 'name';
+        const query = `SELECT ${fields} FROM ${table_templateUsers}
+                        WHERE ${table_templateUsers}.templateUsers_id = ${template_id}`;
+        try {
+            const result = await pool.queryParamSlave(query);
+            return result[0].name;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getUserTemplate ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getUserTemplate ERROR: ", err);
+            throw err;
+        }
+    },
+    getUserTemplateIdFromSessionId: async(session_id) => {
+        const fields = 'templateUsers_template_id';
+        const query = `SELECT ${fields} FROM ${table_session}
+                        WHERE ${table_session}.session_id = ${session_id}`;
+        try {
+            const result = await pool.queryParamSlave(query);
+            return result[0].templateUsers_template_id;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getUserTemplate ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getUserTemplate ERROR: ", err);
             throw err;
         }
     },
