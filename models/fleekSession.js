@@ -75,7 +75,6 @@ const session = {
             // Send Message
             if (privacy_mode == 0 && uid != liked_uid){
                 const message = await feedMessage.session_like(uid, session_id, template_name);
-                console.log(message)
                 await table_usersFeed.child(liked_uid).update({new_message: 1});
                 await table_usersFeed.child(liked_uid).push().set(message);
             }

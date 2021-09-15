@@ -75,7 +75,8 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.FOLLOW_SUCCESS, {code: code_follow.success}));
 
-        await User.addFollowFirebase(uid, follow_uid);
+        const {name, privacy_setting} = await User.getProfile(uid);
+        await User.addFollowFirebase(uid, follow_uid, name, privacy_setting);
     },
     unfollow: async(req, res) => {
         const uid = req.uid;
