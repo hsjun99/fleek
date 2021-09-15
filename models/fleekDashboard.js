@@ -14,7 +14,7 @@ const template = {
         try {
             const result1 = await pool.queryParamMaster(query1);
             // No Record
-            if (result1.length == 0){
+            if (result1.length == 0) {
                 return {
                     session_time_avg: null,
                     session_volume_avg: null,
@@ -48,9 +48,9 @@ const template = {
                         ORDER BY ${table_userWorkoutHistory}.finish_num DESC
                         LIMIT 5`;
 
-        const restructure = async(result1) => {
+        const restructure = async (result1) => {
             let data = [];
-            await asyncForEach(result1, async(rowdata) => {
+            await asyncForEach(result1, async (rowdata) => {
                 const query2 = `SELECT ${fields2} FROM ${table_workoutAbility}
                                 INNER JOIN ${table_session}
                                 ON ${table_session}.session_id = ${table_workoutAbility}.session_session_id AND ${table_workoutAbility}.userinfo_uid = '${uid}' AND ${table_workoutAbility}.workout_workout_id = ${rowdata.workout_workout_id} AND ${table_session}.is_deleted = 0`;
@@ -63,7 +63,7 @@ const template = {
                 const oneRmData = await pool.queryParamMaster(query2);
                 const totalRepsData = await pool.queryParamMaster(query3);
                 const maxRepsData = await pool.queryParamMaster(query4);
-                data.push({workout_id: rowdata.workout_workout_id, one_rm: Math.round(oneRmData[0].one_rm_MAX), total_days: rowdata.finish_num, total_reps: totalRepsData[0].reps_SUM, max_reps: maxRepsData[0].reps_MAX});
+                data.push({ workout_id: rowdata.workout_workout_id, one_rm: Math.round(oneRmData[0].one_rm_MAX), total_days: rowdata.finish_num, total_reps: totalRepsData[0].reps_SUM, max_reps: maxRepsData[0].reps_MAX });
             });
             return data;
         }

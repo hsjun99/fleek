@@ -16,6 +16,7 @@ const { CodeStarconnections } = require('aws-sdk');
 
 var admin = require('firebase-admin');
 const feedMessage = require('../modules/feedMessage');
+const workout = require('./fleekWorkout');
 
 
 const template = {
@@ -227,14 +228,24 @@ const template = {
             const restructure = async() => {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
+                    let workout_detail = JSON.parse(rowdata.workout_detail);
+                    await Promise.all(workout_detail.map(async(set_detail, index) => {
+                        // If set_type is not defined in workout_detail
+                        if (!("set_type" in set_detail)) {
+                            workout_detail[index]["set_type"] = 0;
+                        }
+                        if (!("rpe" in set_detail)) {
+                            workout_detail[index]["rpe"] = null;
+                        }
+                    }))
                     if (data.length == 0){
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)}]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
                     }
                     else if (data[data.length-1].template_id == rowdata.templateUsers_id){
-                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)});
+                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail});
                     }
                     else {
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)}]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
                     }
                 });
                 return data;
@@ -288,42 +299,7 @@ const template = {
             console.log("getUserTemplate ERROR: ", err);
             throw err;
         }
-    },/*
-    updateUserTemplate: async(uid, template_id, name, data) => {
-        const fields2 = 'workout_order, workout_workout_id, templateUsers_template_id';
-        const questions2 = '?, ?, ?'
-        const query1 = `DELETE T_details
-                        FROM ${table_templateUsersDetails} T_details
-                        INNER JOIN ${table_templateUsers} ON T_details.templateUsers_template_id = ${table_templateUsers}.templateUsers_id AND ${table_templateUsers}.userinfo_uid = '${uid}'
-                        WHERE T_details.templateUsers_template_id=${template_id}`;
-        const query2 = `INSERT INTO ${table_templateUsersDetails}(${fields2}) VALUES(${questions2})`;
-        const query3 = `UPDATE ${table_templateUsers} SET name='${name}'
-                        WHERE ${table_templateUsers}.templateUsers_id = '${template_id}' AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
-        
-        let transactionArr = new Array();
-
-        const addTemplateDetails = async() => {
-            let cnt = 1;
-            await asyncForEach(data, async(workout) => {
-                transactionArr.push({query: query2, value: [cnt++, workout, template_id]});
-            });
-        }
-       
-        try {
-            transactionArr.push({query: query1, value: null});
-            await addTemplateDetails();
-            transactionArr.push({query: query3, value: null});
-            const result = await pool.Transaction(transactionArr);
-            return template_id;
-        } catch (err) {
-            if (err.errno == 1062) {
-                console.log('updateUserTemplate ERROR: ', err.errno, err.code);
-                return -1;
-            }
-            console.log("updateUserTemplate ERROR: ", err);
-            throw err;
-        }
-    },*/
+    },
     updateUserTemplate: async(uid, template_id, name, data) => {
         const fields2 = 'workout_order, workout_workout_id, rest_time, templateUsers_template_id, workout_detail';
         const questions2 = '?, ?, ?, ?, ?'
@@ -359,7 +335,7 @@ const template = {
         
         try {   
             transactionArr.push(ts1);
-            transactionArr.push(ts2)
+            transactionArr.push(ts2);
             transactionArr.push(ts3);
             await pool.Transaction(transactionArr);
             return template_id;

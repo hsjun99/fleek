@@ -7,6 +7,7 @@ let Template = require("../models/fleekTemplate");
 let Workout = require("../models/fleekWorkout");
 let Dashboard = require("../models/fleekDashboard");
 let WorkoutAbility = require('../models/fleekWorkoutAbility');
+let UserWorkoutMemo = require('../models/fleekUserWorkoutMemo');
 
 const defaultIntensity = require('../modules/algorithm/defaultIntensity');
 
@@ -275,5 +276,59 @@ module.exports = {
 
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
-    }
+    },
+    getUserWorkoutMemo: async(req, res) => {
+        const uid = req.uid;
+        const workout_id = req.params.workout_id;
+
+        const result = await UserWorkoutMemo.getMemo(uid, workout_id);
+
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, result));
+    },
+    postUserWorkoutMemo: async(req, res) => {
+        const uid = req.uid;
+        const workout_id = req.params.workout_id;
+        const content = req.body.content;
+
+        const result = await UserWorkoutMemo.postMemo(uid, workout_id, content);
+
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+        console.log(result.insertId)
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, {userWorkoutMemo_id: result.insertId}));
+    },
+    updateUserWorkoutMemo: async(req, res) => {
+        const uid = req.uid;
+        const userWorkoutMemo_id = req.params.userWorkoutMemo_id;
+        const content = req.body.content;
+
+        const result = await UserWorkoutMemo.updateMemo(uid, userWorkoutMemo_id, content);
+
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
+    },
+    deleteUserWorkoutMemo: async(req, res) => {
+        const uid = req.uid;
+        const userWorkoutMemo_id = req.params.userWorkoutMemo_id;
+
+        const result = await UserWorkoutMemo.deleteMemo(uid, userWorkoutMemo_id);
+
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
+    },
 }

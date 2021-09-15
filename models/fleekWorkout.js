@@ -11,6 +11,8 @@ const table_follows = 'follows';
 const table_workoutAbility = 'workoutAbility';
 const table_userWorkoutHistory = 'userWorkoutHistory';
 const table_customWorkout = 'customWorkout';
+const table_templateUsers = 'templateUsers';
+const table_templateUsersDetails = 'templateUsersDetails';
 
 const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation');
 const getUserRecentRecords = require('../modules/functionFleek/getUserRecentRecords');
@@ -52,10 +54,51 @@ const workout = {
             throw err;
         }
     },
-    deleteCustomWorkout: async(uid, workout_id) => {
-        const query = `UPDATE ${table_customWorkout} SET is_deleted = 1 WHERE workout_workout_id = ${workout_id} AND userinfo_uid = '${uid}'`;
+    deleteCustomWorkout: async(uid, workout_id, template_data) => {
+        const query1 = `UPDATE ${table_customWorkout} SET is_deleted = 1 WHERE workout_workout_id = ${workout_id} AND userinfo_uid = '${uid}'`;
+        
+        // Transactions
+        let transactionArr = new Array();
+        const ts1 = async(connection) => {
+            await connection.query(query1);
+        }
+        const ts2 = async(connection) => {
+            await Promise.all(template_data.map(async(template) => {
+                let detail_final = await Promise.all(template.detail.map(async(detail) => {
+                    if (detail.workout_id == workout_id) {
+                        return null;
+                    } else {
+                        return detail;
+                    }
+                }))
+                detail_final = detail_final.filter(item => item); // remove null
+
+                // Update Template Detail
+                const fields3 = 'workout_order, workout_workout_id, rest_time, templateUsers_template_id, workout_detail';
+                const question3 = '?, ?, ?, ?, ?'
+                
+                const query2 = `DELETE T_details
+                                FROM ${table_templateUsersDetails} T_details
+                                INNER JOIN ${table_templateUsers} ON T_details.templateUsers_template_id = ${table_templateUsers}.templateUsers_id AND ${table_templateUsers}.userinfo_uid = '${uid}'
+                                WHERE T_details.templateUsers_template_id=${template.template_id}`;
+                const query3 = `INSERT INTO ${table_templateUsersDetails}(${fields3}) VALUES(${question3})`;
+                const query4 = `UPDATE ${table_templateUsers} SET is_deleted = 1
+                                WHERE ${table_templateUsers}.templateUsers_id = '${template.template_id}' AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
+                await connection.query(query2);
+                let cnt = 1;
+                await asyncForEach(detail_final, async(workout) => {
+                    await connection.query(query3, [cnt++, workout.workout_id, workout.rest_time, Number(template.template_id), JSON.stringify(workout.workout_detail)]);
+                });
+                if (detail_final.length == 0) {
+                    await connection.query(query4);
+                }
+            }))
+        }
         try {
-            await pool.queryParamMaster(query);
+            transactionArr.push(ts1);
+            transactionArr.push(ts2);
+
+            await pool.Transaction(transactionArr);
             return true;
         } catch (err) {
             if (err.errno == 1062) {
@@ -122,15 +165,18 @@ const workout = {
         }
     },
     getWorkoutTable: async(uid, sex, ageGroup, weightGroup) => {
-        const fields = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, inclination, intercept`;
+        const fields = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, inclination, intercept, ${table_customWorkout}.is_deleted, userinfo_uid`;
         const query = `SELECT ${fields} FROM ${table_workout}
                         LEFT JOIN ${table_equation} ON ${table_workout}.workout_id = ${table_equation}.workout_workout_id
                         LEFT JOIN ${table_customWorkout} ON ${table_workout}.workout_id = ${table_customWorkout}.workout_workout_id AND ${table_customWorkout}.userinfo_uid = '${uid}'
                         WHERE ${table_workout}.workout_id != 135
                             AND (inclination IS NULL
                                     OR (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}"))
-                            AND (is_custom = 0
-                                    OR (is_custom = 1 AND ${table_customWorkout}.is_deleted != 1))`;
+                            AND (${table_customWorkout}.userinfo_uid = '${uid}' OR is_custom = 0)
+                                    `;
+
+                        //AND (is_custom = 0
+                        //OR (is_custom = 1 AND ${table_customWorkout}.is_deleted != 1))
         try {
             const result = await pool.queryParamSlave(query);
             return result;
@@ -144,10 +190,11 @@ const workout = {
         }
     },
     getCalendarData: async(uid) => {
-        const fields = `reps, weight, duration, distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time`;
+        const fields = `reps, weight, duration, distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, ${table_templateUsers}.name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
                         LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = ${table_session}.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
+                        LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
                         ORDER BY ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
@@ -155,7 +202,7 @@ const workout = {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
                     if (data.length == 0){
-                        data.push({session_id: rowdata.session_session_id, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
+                        data.push({session_id: rowdata.session_session_id, template_name: rowdata.name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
                     }
                     else if (data[data.length-1].session_id == rowdata.session_session_id){
                         const L = data[data.length-1].session_detail.content.length
@@ -167,7 +214,7 @@ const workout = {
                         }
                     }
                     else {
-                        data.push({session_id: rowdata.session_session_id, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
+                        data.push({session_id: rowdata.session_session_id, template_name: rowdata.name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
                     }
                 });
                 return data;
@@ -204,7 +251,7 @@ const workout = {
         }
     },
     getWorkoutRecordById: async (workout_id, uid) => {
-        const fields = 'reps, weight, duration, distance, rest_time, session_session_id, created_at';
+        const fields = 'reps, weight, duration, distance, set_type, rpe, rest_time, session_session_id, created_at';
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${workout_id} AND ${table_session}.is_deleted != 1
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
@@ -215,13 +262,13 @@ const workout = {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
                     if (data.length == 0){
-                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
+                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
                     }
                     else if (data[data.length-1][0].session_id == rowdata.session_session_id){
-                        data[data.length-1].push({reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, session_id: rowdata.session_session_id, created_at: rowdata.created_at});
+                        data[data.length-1].push({reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at});
                     }
                     else {
-                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
+                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
                     }
                 });
                 return data;

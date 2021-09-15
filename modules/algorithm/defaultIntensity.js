@@ -12,19 +12,25 @@ module.exports = async(inclination, intercept, percentage, min_step) => {
             "reps": 10,
             "weight": calibratedWeight,
             "duration": 0,
-            "distance": 0
+            "distance": 0,
+            "set_type": 0,
+            "rpe": null
         },
         {
             "reps": 10,
             "weight": calibratedWeight,
             "duration": 0,
-            "distance": 0
+            "distance": 0,
+            "set_type": 0,
+            "rpe": null
         },
         {
             "reps": 10,
             "weight": calibratedWeight,
             "duration": 0,
-            "distance": 0
+            "distance": 0,
+            "set_type": 0,
+            "rpe": null
         }
     ]
     return {plan, detail_plan};

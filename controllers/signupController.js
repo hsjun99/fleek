@@ -19,8 +19,8 @@ module.exports = {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.SIGNUP_FAIL));
         }
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, {user: exist}));
-
         const fcm_token = req.body.fcm_token;
+
         await User.addFcmToken(uid, fcm_token);
         const now = moment();
         const last_connection_at = await now.format("YYYY-MM-DD HH:mm:ss");
@@ -34,18 +34,20 @@ module.exports = {
         }
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
+
         const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, squat1RM, experience, goal);
-        
+
         await asyncForEach(initialUserRoutine, async(routine) => {
             await Template.postTemplateData(uid, routine.name, routine.detail);
         });
-
+ 
         const result = await User.updateBodyInfo(uid, height, weight, null, null);
+
         if (acceptedUid == -1 || result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.SIGNUP_FAIL));
         }
         await User.addFollow(uid, 'kakao:1810981552'); // 플릭이 친구추가
-
+ 
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, {uid: acceptedUid}));
     },
     kakaosignin: async (req, res) => {

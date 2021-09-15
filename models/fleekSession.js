@@ -77,8 +77,8 @@ const session = {
             await table_usersFeed.child(liked_uid).update({new_message: 1});
             await table_usersFeed.child(liked_uid).push().set(message);
             
-            /*
-
+            
+            // Send Push
             const fields2 = 'token_value';
             const query2 = `SELECT ${fields2} FROM ${table_fcmToken}
                             WHERE ${table_fcmToken}.userinfo_uid = '${liked_uid}'`;
@@ -86,15 +86,21 @@ const session = {
             const token_list = await Promise.all(result2.map(async data => {
                 return data.token_value;
             }));
-            const message = {
+            const message_background = {
                 notification: {
-                  title: '플릭(Fleek)',
-                  body: `좋아요를 받았습니다! 확인해보세요!!`
+                    title: '플릭(Fleek)',
+                    body: `좋아요를 받았습니다! 확인해보세요!!`
+                }
+            }
+            const message_foreground = {
+                data: {
+                    title: '플릭(Fleek)',
+                    body: `좋아요를 받았습니다! 확인해보세요!!`
                 }
             }
             if (token_list.length != 0){
-                await firebaseCM(token_list, message)
-            }*/
+                await firebaseCM(token_list, message_background, message_foreground);
+            }
             return true;
         } catch (err) {
             if (err.errno == 1062) {
@@ -218,25 +224,32 @@ const session = {
                 EmojiType(4, "와우", "😳"),
             ];
             */
-           /*
-            const followersString = '(' + followers_list.toString(',') + ')';
-            const fields1 = 'token_value';
-            const query1 = `SELECT ${fields1} FROM ${table_fcmToken}
-                            WHERE ${table_fcmToken}.userinfo_uid IN ${followersString}`;
-            const result1 = await pool.queryParamSlave(query1);
-            */
-            /*
-            const token_list = await Promise.all(result1.map(async data => {
-                return data.token_value;
-            }));
-            const message = {
-                notification: {
-                  title: '플릭(Fleek)',
-                  body: `${name}님이 운동을 완료했습니다!!!가야돼가야돼~~`
+           
+            // Send Push
+            if (privacy_mode == 0) {
+                const followersString = "('" + followers_list.join("\',\'") + "')";
+                const fields2 = 'token_value';
+                const query2 = `SELECT ${fields2} FROM ${table_fcmToken}
+                                WHERE ${table_fcmToken}.userinfo_uid IN ${followersString}`;
+                const result2 = await pool.queryParamSlave(query2);
+                const token_list = await Promise.all(result2.map(async data => {
+                    return data.token_value;
+                }));
+                const message_background = {
+                    notification: {
+                        title: '플릭(Fleek)',
+                        body: `${name}님이 운동을 완료했습니다!!!가야돼가야돼`
+                    }
                 }
+                const message_foreground = {
+                    data: {
+                        title: '플릭(Fleek)',
+                        body: `${name}님이 운동을 완료했습니다!!!가야돼가야돼`
+                    }
+                }
+                await firebaseCM(token_list, message_background, message_foreground);
             }
-            await firebaseCM(token_list, message);
-            */
+            
             return true;
         } catch (err) {
             if (err.errno == 1062) {
@@ -249,10 +262,10 @@ const session = {
     },
     postSessionData: async (uid, data, created_at, template_id, total_time, alphaProgramUsers_id, alphaProgram_progress) => {
         const fields1 = 'userinfo_uid, created_at, templateUsers_template_id, alphaProgramUsers_alphaProgramUsers_id, alphaProgramUsers_progress, total_time';
-        const fields2 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, workout_workout_id, session_session_id';
+        const fields2 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, set_type, rpe, workout_workout_id, session_session_id';
         const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, workout_workout_id, userinfo_uid, session_session_id, created_at';
         const questions1 = '?, ?, ?, ?, ?, ?';
-        const questions2 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
+        const questions2 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
         const questions4 = '?, ?, ?, ?, ?, ?, ?, ?, ?';
         const values1 = [uid, created_at, template_id, alphaProgramUsers_id, alphaProgram_progress, total_time];
         // Insert into Session Table
@@ -281,16 +294,27 @@ const session = {
                     let max_one_rm=0, total_volume=0, max_volume=0, total_reps=0, max_weight=0;
                     // Get Multiplier from Workout Table
                     const query9 = `SELECT multiplier FROM ${table_workout}
-                                        WHERE ${table_workout}.workout_id = ${workouts.workout_id}`;
+                                    WHERE ${table_workout}.workout_id = ${workouts.workout_id}`;
                     const result9 = await pool.queryParamArrSlave(query9);
                     await asyncForEach(workouts.detail, async(sets) => {
-                        await pool.queryParamArrMaster(query2, [sets.reps, sets.weight, sets.duration, sets.distance, sets.iswarmup, workouts.workout_order, sets.set_order, workouts.rest_time, workouts.workout_id, result1.insertId]);
+                        await pool.queryParamArrMaster(query2, [sets.reps, sets.weight, sets.duration, sets.distance, sets.iswarmup, workouts.workout_order, sets.set_order, workouts.rest_time, sets.set_type, sets.rpe, workouts.workout_id, result1.insertId]);
                         max_one_rm = Math.max(max_one_rm, await oneRmCalculator(sets.weight, sets.reps));
                         total_volume += sets.reps * sets.weight * result9[0].multiplier;
                         max_volume = Math.max(max_volume, sets.reps * sets.weight * result9[0].multiplier);
                         total_reps += sets.reps;
                         max_weight = Math.max(max_weight, sets.weight);
                     })
+                    /*
+                    // Update Memo
+                    const fields14 = 'content, created_at, userinfo_uid, workout_workout_id'
+                    const questions14 = '?, ?, ?, ?'
+                    const values14 = [workouts.memo, created_at, uid, workouts.workout_id];
+                    const query14 = `INSERT INTO ${table_userWorkoutMemo}(${fields14}) VALUES(${questions14})`;
+                    await pool.queryParamArrMaster(query14, values14)
+                    */
+
+
+
                     await pool.queryParamArrMaster(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, workouts.workout_id, uid, result1.insertId, created_at]);
                     // Update UserWorkoutHistory Table - finish_num
                     const fields11 = 'add_num, finish_num, userinfo_uid, workout_workout_id';
@@ -400,7 +424,7 @@ const session = {
         }
     },
     getAllSessionData: async (uid) => {
-        const fields = `${table_session}.userinfo_uid, ${table_userinfo}.name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, ${table_session}.created_at, ${table_session}.total_time`;
+        const fields = `${table_session}.userinfo_uid, ${table_userinfo}.name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, ${table_session}.created_at, ${table_session}.total_time`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.is_deleted != 1
                         INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = ${table_session}.userinfo_uid AND (${table_userinfo}.privacy_setting != 1 OR (${table_userinfo}.privacy_setting = 1 AND ${table_userinfo}.uid = '${uid}'))
@@ -412,19 +436,19 @@ const session = {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
                     if (data.length == 0){
-                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]}]}});
+                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}]}]}});
                     }
                     else if (data[data.length-1].session_id == rowdata.session_session_id){
                         const L = data[data.length-1].session_detail.content.length
                         if (data[data.length-1].session_detail.content[L-1].workout_id == rowdata.workout_workout_id) {
-                            data[data.length-1].session_detail.content[L-1].sets.push({reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance});
+                            data[data.length-1].session_detail.content[L-1].sets.push({reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe});
                         }
                         else {
-                            data[data.length-1].session_detail.content.push({workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]});
+                            data[data.length-1].session_detail.content.push({workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}]});
                         }
                     }
                     else {
-                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]}]}});
+                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}]}]}});
                     }
                 });
                 return data;
