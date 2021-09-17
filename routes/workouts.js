@@ -13,7 +13,11 @@ router.get('/geteachrecords/:id', AuthUser.checkToken, workoutsController.getEac
 
 router.get('/getall', AuthUser.checkToken, workoutsController.getall);
 
-router.get('/algorithm/:name/:intensity/:workout_id', AuthUser.checkToken, workoutsController.getAlgoWorkoutPlan);
+router.get('/algorithm/list', AuthUser.checkToken, workoutsController.getAlgoList);
+
+router.get('/algorithm/:algorithm_id/:workout_id', AuthUser.checkToken, workoutsController.getAlgoWorkoutPlan);
+
+//router.get('/algorithm/:name/:intensity/:workout_id', AuthUser.checkToken, workoutsController.getAlgoWorkoutPlan);
 
 //router.get('/previewdata/:workout_id', AuthUser.checkToken, workoutsController.getWorkoutsPreviewData);
 

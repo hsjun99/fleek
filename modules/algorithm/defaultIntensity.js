@@ -1,6 +1,6 @@
 module.exports = async(inclination, intercept, percentage, min_step) => {
     const oneRM = Math.exp((percentage-intercept)/inclination);
-    const calibratedWeight = Math.floor(oneRM*0.68/min_step)*min_step;
+    const calibratedWeight = Math.round(oneRM*0.68/min_step)*min_step;
     
     const plan = {
         "sets": 3,
