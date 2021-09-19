@@ -13,6 +13,7 @@ const weightGroupClassifier = require('../modules/classifier/weightGroupClassifi
 
 const defaultIntensity = require('../modules/algorithm/defaultIntensity');
 const fleekIntensity = require('../modules/algorithm/fleekIntensity');
+const fleekIntensityRecentRecord = require('../modules/algorithm/fleekIntensityRecentRecord');
 
 const asyncForEach = require('../modules/function/asyncForEach');
 const roundNumber = require('../modules/function/roundNumber');
@@ -235,8 +236,14 @@ module.exports = {
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, result));
   },
   getAlgoList: async(req, res) => {
+    const uid = req.uid;
+    const workout_id = req.params.workout_id;
+    const most_recent_record = await Workout.getMostRecentWorkoutRecordById(workout_id, uid);
     const algo_list = await Promise.all(fleekIntensity.map(async(algo) => {
-      return {algorithm_id: algo.algorithm_id, algorithm_name: algo.algorithm_name};
+      if (algo.algorithm_id == 0 && most_recent_record.length == 0) {
+        return {availability: 0, algorithm_id: algo.algorithm_id, algorithm_name: algo.algorithm_name};
+      }
+      return {availability: 1, algorithm_id: algo.algorithm_id, algorithm_name: algo.algorithm_name};
     }));
 
     // Success
@@ -257,12 +264,22 @@ module.exports = {
     }
     const { min_step } = workoutData;
 
-    const algo_index = fleekIntensity.findIndex(algo => algo.algorithm_id == algorithm_id);
-    
-    const content_data = fleekIntensity[algo_index].algorithm_content
-    const detail_data = await Promise.all([0, 1, 2, 3, 4].map(async(intensity) => {
-      const data_by_intensity = await Promise.all(fleekIntensity[algo_index].algorithm_detail[intensity].weights.map(async(weight_param, index) => {
-        const reps = fleekIntensity[algo_index].algorithm_detail[intensity].reps[index];
+    let content_data, detail_data;
+
+    if (algorithm_id == 0) {
+      const most_recent_record = (await Workout.getMostRecentWorkoutRecordById(workout_id, uid))[0];
+      const most_recent_max_one_rm = await WorkoutAbility.getRecentWorkoutMaxOneRm(uid, workout_id);
+ 
+      content_data = fleekIntensity[0].algorithm_content
+      detail_data = await fleekIntensityRecentRecord(most_recent_record, most_recent_max_one_rm, min_step);
+
+    } else{
+      const algo_index = fleekIntensity.findIndex(algo => algo.algorithm_id == algorithm_id);
+      
+      content_data = fleekIntensity[algo_index].algorithm_content
+      detail_data = await Promise.all([0, 1, 2, 3, 4].map(async(intensity) => {
+        const data_by_intensity = await Promise.all(fleekIntensity[algo_index].algorithm_detail[intensity].weights.map(async(weight_param, index) => {
+          const reps = fleekIntensity[algo_index].algorithm_detail[intensity].reps[index];
         const weight = roundNumber.roundNum(weight_param * max_one_rm, min_step);
         let rpe;
         if (weight == null || !isFinite(weight)){
@@ -274,6 +291,7 @@ module.exports = {
       }));
       return data_by_intensity
     }));
+  }
 
     // Success
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, {algorithm_content: content_data, detail_plan: detail_data}));

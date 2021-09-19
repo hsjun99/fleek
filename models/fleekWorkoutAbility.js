@@ -11,7 +11,7 @@ const workoutAbility = {
         const query = `SELECT ${fields} FROM ${table_workoutAbility}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutAbility}.session_session_id AND ${table_session}.is_deleted != 1
                         WHERE ${table_workoutAbility}.userinfo_uid="${uid}" AND ${table_workoutAbility}.workout_workout_id="${workout_id}"
-                        ORDER BY workoutAbility_id DESC
+                        ORDER BY ${table_session}.created_at DESC
                         LIMIT 1`;
         try {
             const result = await pool.queryParamSlave(query);

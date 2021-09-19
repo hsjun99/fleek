@@ -17,7 +17,7 @@ const authUser = {
             req.uid = uid;
         }
         else {
-            req.uid = 'kakao:1775725179'
+            req.uid = 'sXwP7BZONrcS02SBy2HvTbu5ha43'
         }
         next();
     }
