@@ -137,7 +137,7 @@ module.exports = [
     {
         algorithm_id: 4,
         algorithm_name: "GVT",
-        algorithm_content: "막대한 볼륨으로 근육을 성장시키는 저면 볼륨 트레이닝입니다. 60~90초의 쉬는 시간으로 짧은 시간 내, 최대한 많은 볼륨을 수행하는 트레이닝 방법입니다.",
+        algorithm_content: "막대한 볼륨으로 근육을 성장시키는 저먼 볼륨 트레이닝입니다. 60~90초의 쉬는 시간으로 짧은 시간 내, 최대한 많은 볼륨을 수행하는 트레이닝 방법입니다.",
         algorithm_detail: [
             // 0
             {
