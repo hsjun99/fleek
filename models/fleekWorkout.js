@@ -13,11 +13,29 @@ const table_userWorkoutHistory = 'userWorkoutHistory';
 const table_customWorkout = 'customWorkout';
 const table_templateUsers = 'templateUsers';
 const table_templateUsersDetails = 'templateUsersDetails';
+const table_workoutYoutube = 'workoutYoutube';
 
 const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation');
 const getUserRecentRecords = require('../modules/functionFleek/getUserRecentRecords');
 
 const workout = {
+    getWorkoutYoutubeVideo: async(workout_id) => {
+        const fields = 'video_id, video_title, channel_name';
+        const query = `SELECT ${fields} FROM ${table_workoutYoutube}
+                        WHERE ${table_workoutYoutube}.workout_workout_id = ${workout_id}`;
+                            
+        try {
+            const data = await pool.queryParamSlave(query);
+            return data
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
     postCustomWorkout: async(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute) => {
         const fields1 = 'korean, english, category, muscle_p, muscle_s1, equipment, record_type, multiplier, video_url, video_url_substitute, is_custom';
         const fields2 = 'workout_workout_id, userinfo_uid, created_at';

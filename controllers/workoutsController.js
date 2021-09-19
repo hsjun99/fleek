@@ -4,6 +4,7 @@ let resMessage = require('../modules/responseMessage');
 
 let User = require("../models/fleekUser");
 let Workout = require("../models/fleekWorkout")
+let WorkoutEquation = require("../models/workoutEquation");
 let WorkoutAbility = require('../models/fleekWorkoutAbility');
 let Template = require('../models/fleekTemplate');
 
@@ -12,6 +13,7 @@ const weightGroupClassifier = require('../modules/classifier/weightGroupClassifi
 
 const defaultIntensity = require('../modules/algorithm/defaultIntensity');
 const fleekIntensity = require('../modules/algorithm/fleekIntensity');
+const fleekIntensityRecentRecord = require('../modules/algorithm/fleekIntensityRecentRecord');
 
 const asyncForEach = require('../modules/function/asyncForEach');
 const roundNumber = require('../modules/function/roundNumber');
@@ -20,6 +22,8 @@ const jsonFormatter = require('../modules/function/jsonFormatter');
 
 
 const getWorkoutInfo = require('../modules/functionFleek/getWorkoutInfo');
+const getUserInfo = require('../modules/functionFleek/getUserInfo');
+const getRpeByRepsWeight = require('../modules/functionFleek/getRpeByRepsWeight');
 
 
 module.exports = {
@@ -119,7 +123,7 @@ module.exports = {
       return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
     }
     const data = await Promise.all(result.map(async rowdata => {
-      const temp = await Promise.all([Workout.getWorkoutRecordById(rowdata.workout_id, uid), WorkoutAbility.getAllWorkoutAbilityHistory(uid, rowdata.workout_id), defaultIntensity(rowdata.inclination, rowdata.intercept, percentage, rowdata.min_step)]);
+      const temp = await Promise.all([Workout.getWorkoutRecordById(rowdata.workout_id, uid), WorkoutAbility.getAllWorkoutAbilityHistory(uid, rowdata.workout_id), defaultIntensity(rowdata.inclination, rowdata.intercept, percentage, rowdata.min_step), await Workout.getWorkoutYoutubeVideo(rowdata.workout_id)]);
 
       const info = {
         workout_id: Number(rowdata.workout_id),
@@ -146,7 +150,8 @@ module.exports = {
         rest_time: temp[0].rest_time,
         workout_ability: temp[1],
         plan: temp[2].plan,
-        detail_plan: temp[2].detail_plan
+        detail_plan: temp[2].detail_plan,
+        youtube_info: temp[3]
       }
       return info;
     }))
@@ -230,35 +235,66 @@ module.exports = {
     // Success
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, result));
   },
-  getAlgoWorkoutPlan: async (req, res) => {
+  getAlgoList: async(req, res) => {
     const uid = req.uid;
     const workout_id = req.params.workout_id;
-    const algoName = req.params.name;
-    const intensity = req.params.intensity;
+    const most_recent_record = await Workout.getMostRecentWorkoutRecordById(workout_id, uid);
+    const algo_list = await Promise.all(fleekIntensity.map(async(algo) => {
+      if (algo.algorithm_id == 0 && most_recent_record.length == 0) {
+        return {availability: 0, algorithm_id: algo.algorithm_id, algorithm_name: algo.algorithm_name};
+      }
+      return {availability: 1, algorithm_id: algo.algorithm_id, algorithm_name: algo.algorithm_name};
+    }));
 
+    // Success
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, algo_list));
+  },
+  getAlgoWorkoutPlan: async (req, res) => {
+    const uid = req.uid;
+    const algorithm_id = req.params.algorithm_id;
+    const workout_id = req.params.workout_id;
+
+    const {percentage, sex, ageGroup, weightGroup} = await getUserInfo(uid)
+    const {inclination, intercept} = await WorkoutEquation.getEquation(workout_id, sex, ageGroup, weightGroup);
     // Get Max 1RM && WorkoutData
-    const [max_one_rm, workoutData] = await Promise.all([await WorkoutAbility.getWorkoutMaxOneRm(uid, workout_id), await Workout.getWorkoutInfo(workout_id)]);
+    const [max_one_rm, workoutData] = await Promise.all([await WorkoutAbility.getWorkoutMaxOneRm(uid, workout_id, percentage, inclination, intercept), await Workout.getWorkoutInfo(workout_id)]);
     // DB Error Handling
     if (max_one_rm == -1 || workoutData == -1) {
       return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUTALGORITHM_FAIL));
     }
-
-
     const { min_step } = workoutData;
 
-    // Workout Plan Restructure in JSON
-    const restructure = async () => {
-      let data = [];
-      let index = 0;
-      await asyncForEach(fleekIntensity[algoName][intensity].weights, async (weight_param) => {
-        data.push({ reps: fleekIntensity[algoName][intensity].reps[index++], weight: roundNumber.roundNum(weight_param * max_one_rm, min_step) });
-      })
-      return data;
-    }
-    const data = await restructure();
+    let content_data, detail_data;
+
+    if (algorithm_id == 0) {
+      const most_recent_record = (await Workout.getMostRecentWorkoutRecordById(workout_id, uid))[0];
+      const most_recent_max_one_rm = await WorkoutAbility.getRecentWorkoutMaxOneRm(uid, workout_id);
+ 
+      content_data = fleekIntensity[0].algorithm_content
+      detail_data = await fleekIntensityRecentRecord(most_recent_record, most_recent_max_one_rm, min_step);
+
+    } else{
+      const algo_index = fleekIntensity.findIndex(algo => algo.algorithm_id == algorithm_id);
+      
+      content_data = fleekIntensity[algo_index].algorithm_content
+      detail_data = await Promise.all([0, 1, 2, 3, 4].map(async(intensity) => {
+        const data_by_intensity = await Promise.all(fleekIntensity[algo_index].algorithm_detail[intensity].weights.map(async(weight_param, index) => {
+          const reps = fleekIntensity[algo_index].algorithm_detail[intensity].reps[index];
+        const weight = roundNumber.roundNum(weight_param * max_one_rm, min_step);
+        let rpe;
+        if (weight == null || !isFinite(weight)){
+          rpe = null;
+        } else {
+          rpe = await getRpeByRepsWeight(reps, weight/max_one_rm);
+        }
+        return { reps: reps, weight: weight, rpe: rpe };
+      }));
+      return data_by_intensity
+    }));
+  }
 
     // Success
-    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, data));
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, {algorithm_content: content_data, detail_plan: detail_data}));
   },
   getWorkoutsPreviewData: async (req, res) => {
     const uid = req.uid;

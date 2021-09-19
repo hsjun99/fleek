@@ -423,6 +423,102 @@ const session = {
             throw err;
         }
     },
+    getFirstSessionBatchData: async(uid) => {
+        const fields = `SESSION_BATCH.userinfo_uid, ${table_userinfo}.name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.total_time`;
+        const query = `SELECT ${fields} FROM ${table_workoutlog}
+                        INNER JOIN 
+                        (SELECT session_id, userinfo_uid, ${table_session}.created_at, total_time, templateUsers_template_id FROM ${table_session}
+                        INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = userinfo_uid AND ${table_userinfo}.privacy_setting != 1
+                        WHERE ${table_session}.is_deleted != 1
+                        ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC
+                        LIMIT 50) AS SESSION_BATCH
+                        ON SESSION_BATCH.session_id = ${table_workoutlog}.session_session_id
+                        INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = SESSION_BATCH.userinfo_uid AND (${table_userinfo}.privacy_setting != 1 OR (${table_userinfo}.privacy_setting = 1 AND ${table_userinfo}.uid = '${uid}'))
+                        LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = SESSION_BATCH.templateUsers_template_id
+                        ORDER BY SESSION_BATCH.created_at DESC, SESSION_BATCH.session_id DESC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
+        try {
+            let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
+            const restructure = async() => {
+                let data = [];
+                await asyncForEach(result, async(rowdata) => {
+                    if (data.length == 0){
+                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}]}]}});
+                    }
+                    else if (data[data.length-1].session_id == rowdata.session_session_id){
+                        const L = data[data.length-1].session_detail.content.length
+                        if (data[data.length-1].session_detail.content[L-1].workout_id == rowdata.workout_workout_id) {
+                            data[data.length-1].session_detail.content[L-1].sets.push({reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe});
+                        }
+                        else {
+                            data[data.length-1].session_detail.content.push({workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}]});
+                        }
+                    }
+                    else {
+                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}]}]}});
+                    }
+                });
+                return data;
+            }
+            const data = await restructure();
+            return data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    getNextSessionBatchData: async(uid, last_session_id) => {
+        const fields = `SESSION_BATCH.userinfo_uid, ${table_userinfo}.name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.total_time`;
+        const query = `SELECT ${fields} FROM ${table_workoutlog}
+                        INNER JOIN 
+                        (SELECT session_id, userinfo_uid, ${table_session}.created_at, total_time, templateUsers_template_id FROM ${table_session}
+                        INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = userinfo_uid AND ${table_userinfo}.privacy_setting != 1
+                        WHERE (${table_session}.created_at < (SELECT created_at FROM ${table_session} WHERE session_id = ${last_session_id})
+                                OR (${table_session}.created_at = (SELECT created_at FROM ${table_session} WHERE session_id = ${last_session_id}) AND session_id < ${last_session_id} ))
+                            AND ${table_session}.is_deleted != 1
+                        ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC
+                        LIMIT 50) AS SESSION_BATCH
+                        ON SESSION_BATCH.session_id = ${table_workoutlog}.session_session_id
+                        INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = SESSION_BATCH.userinfo_uid AND (${table_userinfo}.privacy_setting != 1 OR (${table_userinfo}.privacy_setting = 1 AND ${table_userinfo}.uid = '${uid}'))
+                        LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = SESSION_BATCH.templateUsers_template_id
+                        ORDER BY SESSION_BATCH.created_at DESC, SESSION_BATCH.session_id DESC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
+        try {
+            let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
+            const restructure = async() => {
+                let data = [];
+                await asyncForEach(result, async(rowdata) => {
+                    if (data.length == 0){
+                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}]}]}});
+                    }
+                    else if (data[data.length-1].session_id == rowdata.session_session_id){
+                        const L = data[data.length-1].session_detail.content.length
+                        if (data[data.length-1].session_detail.content[L-1].workout_id == rowdata.workout_workout_id) {
+                            data[data.length-1].session_detail.content[L-1].sets.push({reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe});
+                        }
+                        else {
+                            data[data.length-1].session_detail.content.push({workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}]});
+                        }
+                    }
+                    else {
+                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}]}]}});
+                    }
+                });
+                return data;
+            }
+            const data = await restructure();
+            return data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
     getAllSessionData: async (uid) => {
         const fields = `${table_session}.userinfo_uid, ${table_userinfo}.name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, ${table_session}.created_at, ${table_session}.total_time`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}

@@ -68,6 +68,22 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
     },
+    getSessionBatch: async(req, res) => {
+        const uid = req.uid;
+        const last_session_id = req.params.last_session_id;
+        let data;
+        if (last_session_id == "init") {
+            data = await Session.getFirstSessionBatchData(uid);
+        } else {
+            data = await Session.getNextSessionBatchData(uid, last_session_id);
+        }
+        // DB Error Handling
+        if (data == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
+        }
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
+    },
     getAllUser: async(req, res) => {
         const uid = req.uid;
         const data = await User.getAllUser(uid);
