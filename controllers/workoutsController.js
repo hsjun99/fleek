@@ -238,12 +238,18 @@ module.exports = {
   getAlgoList: async(req, res) => {
     const uid = req.uid;
     const workout_id = req.params.workout_id;
+    const {percentage, sex, ageGroup, weightGroup} = await getUserInfo(uid)
+    const {inclination, intercept} = await WorkoutEquation.getEquation(workout_id, sex, ageGroup, weightGroup);
     const most_recent_record = await Workout.getMostRecentWorkoutRecordById(workout_id, uid);
     const algo_list = await Promise.all(fleekIntensity.map(async(algo) => {
       if (algo.algorithm_id == 0 && most_recent_record.length == 0) {
         return {availability: 0, algorithm_id: algo.algorithm_id, algorithm_name: algo.algorithm_name};
       }
-      return {availability: 1, algorithm_id: algo.algorithm_id, algorithm_name: algo.algorithm_name};
+      if ((inclination == null || intercept == null) && most_recent_record.length == 0) {
+        return {availability: 0, algorithm_id: algo.algorithm_id, algorithm_name: algo.algorithm_name};
+      } else {
+        return {availability: 1, algorithm_id: algo.algorithm_id, algorithm_name: algo.algorithm_name};
+      }
     }));
 
     // Success
