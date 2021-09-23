@@ -110,6 +110,9 @@ function createFirebaseToken(kakaoAccessToken,callback) {
         console.log(userRecord)
         admin.auth().createUser(userRecord).then((user)=>{
           next(null,user)
+        }).catch((error) => {
+          console.log(error)
+          next(null, userRecord);
         })
       })
     },
