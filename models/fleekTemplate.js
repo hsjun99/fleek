@@ -257,6 +257,11 @@ const template = {
         const fields = 'name, templateUsers_id, workout_workout_id, rest_time, lastdate, workout_detail';
         const query = `SELECT ${fields} FROM ${table_templateUsers}
                         INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.userinfo_uid = '${uid}' AND ${table_templateUsers}.is_deleted != 1`;
+        const durationToInt = async(set) => {
+            set.distance = parseInt(set.distance);
+            return set;
+        }
+        
         try {
             const result = await pool.queryParamMaster(query);
             const restructure = async() => {
@@ -272,14 +277,20 @@ const template = {
                             workout_detail[index]["rpe"] = null;
                         }
                     }))
+                    //TO BE DELETED
+                    const workout_detail_INT = await Promise.all(workout_detail.map(async(set) => {
+                        let set_INT = durationToInt(set)
+                        return set_INT;
+                    }))
+                    //TO BE DELETED
                     if (data.length == 0){
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail_INT}]});
                     }
                     else if (data[data.length-1].template_id == rowdata.templateUsers_id){
-                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail});
+                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail_INT});
                     }
                     else {
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail_INT}]});
                     }
                 });
                 return data;

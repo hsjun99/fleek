@@ -280,13 +280,16 @@ const workout = {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
                     if (data.length == 0){
-                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
+                        //TO BE DELETED
+                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:parseInt(rowdata.distance), set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
                     }
                     else if (data[data.length-1][0].session_id == rowdata.session_session_id){
-                        data[data.length-1].push({reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at});
+                        //TO BE DELETED
+                        data[data.length-1].push({reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:parseInt(rowdata.distance), set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at});
                     }
                     else {
-                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
+                        //TO BE DELETED
+                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:parseInt(rowdata.distance), set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
                     }
                 });
                 return data;
