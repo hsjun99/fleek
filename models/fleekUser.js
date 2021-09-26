@@ -93,6 +93,7 @@ const fleekUser = {
         }
     },
     getAllUser: async(uid) => {
+        /*
         const field = `uid, name, MAX(${table7}.created_at) AS last_date`;
         // Privacy Setting: 전체공개(0), 나만보기(1)
         const query = `SELECT ${field} FROM ${table7}
@@ -100,6 +101,12 @@ const fleekUser = {
                         WHERE (${table1}.privacy_setting != 1 OR (${table1}.privacy_setting = 1 AND ${table1}.uid = '${uid}')) AND ${table1}.is_deleted != 1
                         GROUP BY ${table1}.uid
                         ORDER BY ${table1}.created_at`;
+        */
+
+        const field = `uid, name`;
+        // Privacy Setting: 전체공개(0), 나만보기(1)
+        const query = `SELECT ${field} FROM ${table1}
+                        WHERE (${table1}.privacy_setting != 1 OR (${table1}.privacy_setting = 1 AND ${table1}.uid = '${uid}')) AND ${table1}.is_deleted != 1`;
         try {
             const result = await pool.queryParamSlave(query);
             return result;

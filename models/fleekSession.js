@@ -14,14 +14,9 @@ const table_templateUsers = 'templateUsers';
 const table_workoutAbility = 'workoutAbility';
 const table_userWorkoutHistory = 'userWorkoutHistory';
 const table_alphaProgramUsers = 'alphaProgramUsers';
-const table_alphaProgram = 'alphaProgram';
+//const table_alphaProgram = 'alphaProgram';
 const table_userinfo = 'userinfo';
 const table_fcmToken = 'fcmToken';
-
-
-const WorkoutAbility = require('./fleekWorkoutAbility');
-const WorkoutEquation = require('./workoutEquation');
-const User = require('./fleekUser');
 
 var admin = require('firebase-admin');
 
@@ -260,13 +255,13 @@ const session = {
             throw err;
         }
     },
-    postSessionData: async (uid, data, created_at, template_id, total_time, alphaProgramUsers_id, alphaProgram_progress) => {
+    postSessionData: async (uid, body_weight, data, created_at, template_id, total_time, alphaProgramUsers_id, alphaProgram_progress) => {
         const fields1 = 'userinfo_uid, created_at, templateUsers_template_id, alphaProgramUsers_alphaProgramUsers_id, alphaProgramUsers_progress, total_time';
         const fields2 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, set_type, rpe, workout_workout_id, session_session_id';
-        const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, workout_workout_id, userinfo_uid, session_session_id, created_at';
+        const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at';
         const questions1 = '?, ?, ?, ?, ?, ?';
         const questions2 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
-        const questions4 = '?, ?, ?, ?, ?, ?, ?, ?, ?';
+        const questions4 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
         const values1 = [uid, created_at, template_id, alphaProgramUsers_id, alphaProgram_progress, total_time];
         // Insert into Session Table
         const query1 = `INSERT INTO ${table_session}(${fields1}) VALUES(${questions1})`;
@@ -285,6 +280,7 @@ const session = {
             const session_id = result1.insertId;
             
             let session_total_volume=0, session_total_sets=0, session_total_reps=0;
+            let session_total_distance=0, session_total_duration=0;
             let one_rms_index = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -292,17 +288,32 @@ const session = {
             const addWorkoutlog = async() => {
                 await asyncForEach(data, async(workouts) => {
                     let max_one_rm=0, total_volume=0, max_volume=0, total_reps=0, max_weight=0;
+                    let max_reps=0, max_duration=0, max_speed=0, total_distance=0, total_duration=0;
                     // Get Multiplier from Workout Table
-                    const query9 = `SELECT multiplier FROM ${table_workout}
+                    const fields9 = 'multiplier, record_type';
+                    const query9 = `SELECT ${fields9} FROM ${table_workout}
                                     WHERE ${table_workout}.workout_id = ${workouts.workout_id}`;
                     const result9 = await pool.queryParamArrSlave(query9);
                     await asyncForEach(workouts.detail, async(sets) => {
                         await pool.queryParamArrMaster(query2, [sets.reps, sets.weight, sets.duration, sets.distance, sets.iswarmup, workouts.workout_order, sets.set_order, workouts.rest_time, sets.set_type, sets.rpe, workouts.workout_id, result1.insertId]);
+                        if (result9[0].record_type == 4) {
+                            total_volume += sets.reps * sets.weight * result9[0].multiplier + body_weight;
+                            max_volume = Math.max(max_volume, sets.reps * sets.weight * result9[0].multiplier + body_weight);
+                        } else {
+                            total_volume += sets.reps * sets.weight * result9[0].multiplier;
+                            max_volume = Math.max(max_volume, sets.reps * sets.weight * result9[0].multiplier);
+                        }
                         max_one_rm = Math.max(max_one_rm, await oneRmCalculator(sets.weight, sets.reps));
-                        total_volume += sets.reps * sets.weight * result9[0].multiplier;
-                        max_volume = Math.max(max_volume, sets.reps * sets.weight * result9[0].multiplier);
                         total_reps += sets.reps;
                         max_weight = Math.max(max_weight, sets.weight);
+                        
+                        max_reps = Math.max(max_reps, sets.reps);
+                        max_duration = Math.max(max_duration, sets.duration);
+                        total_distance += sets.distance;
+                        total_duration += sets.duration;
+                        if (sets.distance != 0 && sets.distance != null && sets.duration != 0 && sets.duration != null) {
+                            max_speed = Math.max(max_speed, sets.distance / (sets.duration/60));
+                        }
                     })
                     /*
                     // Update Memo
@@ -315,7 +326,7 @@ const session = {
 
 
 
-                    await pool.queryParamArrMaster(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, workouts.workout_id, uid, result1.insertId, created_at]);
+                    await pool.queryParamArrMaster(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workouts.workout_id, uid, result1.insertId, created_at]);
                     // Update UserWorkoutHistory Table - finish_num
                     const fields11 = 'add_num, finish_num, userinfo_uid, workout_workout_id';
                     const questions11 = `?, ?, ?, ?`;
@@ -327,6 +338,10 @@ const session = {
                     session_total_volume += total_volume;
                     session_total_sets += workouts.detail.length;
                     session_total_reps += total_reps;
+                    
+                    session_total_distance += total_distance;
+                    session_total_duration += total_duration;
+
                     one_rms_index[workouts.workouts_index-1] = max_one_rm.toFixed(2);
                 });
             }
@@ -340,6 +355,7 @@ const session = {
                             WHERE ${table_session}.session_id = ${result1.insertId}`;
             await pool.queryParamMaster(query6);
 
+            /*
             const fields10 = 'workouts_index, total_days';
             const query10 = `SELECT ${fields10} FROM ${table_alphaProgramUsers}
                             INNER JOIN ${table_alphaProgram} ON ${table_alphaProgram}.alphaProgram_id = ${table_alphaProgramUsers}.alphaProgram_alphaProgram_id AND ${table_alphaProgramUsers}.alphaProgramUsers_id = ${alphaProgramUsers_id}`;
@@ -371,6 +387,7 @@ const session = {
                     await pool.queryParamMaster(query8);
                 }
             }
+            */
             return session_id;
         } catch (err) {
             if (err.errno == 1062) {

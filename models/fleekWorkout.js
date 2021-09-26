@@ -213,7 +213,7 @@ const workout = {
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
                         LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = ${table_session}.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
                         LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
-                        ORDER BY ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
+                        ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
             const restructure = async() => {
@@ -248,6 +248,23 @@ const workout = {
             throw err;
         }
     },
+    getWorkoutRecordTypeById: async (workout_id) => {
+        const fields = 'record_type';
+        const query = `SELECT ${fields} FROM ${table_workout}
+                        WHERE ${table_workout}.workout_id = ${workout_id}`;
+        try {
+            const result = await pool.queryParamSlave(query);
+            if (result.length==0) return -1;
+            return result[0].record_type;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutById ERROR: ", err);
+            throw err;
+        }
+    },
     getWorkoutById: async (workout_id, sex, age, weight) => {
         const fields = 'english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, inclination, intercept, video_url, min_step';
         const query = `SELECT ${fields} FROM ${table_workout} 
@@ -272,7 +289,7 @@ const workout = {
         const fields = 'reps, weight, duration, distance, set_type, rpe, rest_time, session_session_id, created_at';
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${workout_id} AND ${table_session}.is_deleted != 1
-                        ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
+                        ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
             let rest_time = 0; // default;
