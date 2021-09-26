@@ -277,20 +277,14 @@ const template = {
                             workout_detail[index]["rpe"] = null;
                         }
                     }))
-                    //TO BE DELETED
-                    const workout_detail_INT = await Promise.all(workout_detail.map(async(set) => {
-                        let set_INT = durationToInt(set)
-                        return set_INT;
-                    }))
-                    //TO BE DELETED
                     if (data.length == 0){
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail_INT}]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
                     }
                     else if (data[data.length-1].template_id == rowdata.templateUsers_id){
-                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail_INT});
+                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail});
                     }
                     else {
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail_INT}]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
                     }
                 });
                 return data;
