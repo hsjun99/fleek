@@ -255,6 +255,88 @@ const session = {
             throw err;
         }
     },
+    modifySessionData: async(uid, session_id, data, total_time) => {
+        const fields3 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, set_type, rpe, workout_workout_id, session_session_id';
+        const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at';
+        const questions3 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
+        const questions4 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
+        const query1 = `DELETE FROM ${table_workoutlog}
+                        WHERE session_session_id = ${session_id}`;
+        const query2 = `DELETE FROM ${table_workoutAbility}
+                        WHERE session_session_id = ${session_id} AND userinfo_uid = '${uid}'`;
+        const query3 = `INSERT INTO ${table_workoutlog}(${fields3}) VALUES(${questions3})`;
+        const query4 = `INSERT INTO ${table_workoutAbility}(${fields4}) VALUES(${questions4})`;
+        
+        // Transactions
+        let transactionArr = new Array();
+        const ts1 = async (connection) => {
+            // DELETE Intitial Workout Logs
+            await connection.query(query1);
+        }
+        const ts2 = async (connection) => {
+            // DELETE Initial Workout Ability
+            await connection.query(query2);
+        }
+        const ts3 = async (connection) => {
+            await asyncForEach(data, async(workouts) => {
+                let max_one_rm=0, total_volume=0, max_volume=0, total_reps=0, max_weight=0;
+                let max_reps=0, max_duration=0, max_speed=0, total_distance=0, total_duration=0;
+                // Get Multiplier from Workout Table
+                const fields9 = 'multiplier, record_type';
+                const query9 = `SELECT ${fields9} FROM ${table_workout}
+                                WHERE ${table_workout}.workout_id = ${workouts.workout_id}`;
+                const result9 = await pool.queryParamArrSlave(query9);
+                await asyncForEach(workouts.detail, async(sets) => {
+                    // INSERT NEW Workout Logs
+                    await connection.query(query3, [sets.reps, sets.weight, sets.duration, sets.distance, sets.iswarmup, workouts.workout_order, sets.set_order, workouts.rest_time, sets.set_type, sets.rpe, workouts.workout_id, session_id]);
+                    if (result9[0].record_type == 4) {
+                        total_volume += sets.reps * sets.weight * result9[0].multiplier + body_weight;
+                        max_volume = Math.max(max_volume, sets.reps * sets.weight * result9[0].multiplier + body_weight);
+                    } else {
+                        total_volume += sets.reps * sets.weight * result9[0].multiplier;
+                        max_volume = Math.max(max_volume, sets.reps * sets.weight * result9[0].multiplier);
+                    }
+                    max_one_rm = Math.max(max_one_rm, await oneRmCalculator(sets.weight, sets.reps));
+                    total_reps += sets.reps;
+                    max_weight = Math.max(max_weight, sets.weight);
+                    
+                    max_reps = Math.max(max_reps, sets.reps);
+                    max_duration = Math.max(max_duration, sets.duration);
+                    total_distance += sets.distance;
+                    total_duration += sets.duration;
+                    if (sets.distance != 0 && sets.distance != null && sets.duration != 0 && sets.duration != null) {
+                        max_speed = Math.max(max_speed, sets.distance / (sets.duration/60));
+                    }
+                })
+                await connection.query(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workouts.workout_id, uid, result1.insertId, created_at]);
+                
+                session_total_volume += total_volume;
+                session_total_sets += workouts.detail.length;
+                session_total_reps += total_reps;
+                session_total_distance += total_distance;
+                session_total_duration += total_duration;
+            });
+            
+            const query5 = `UPDATE ${table_session}
+                            SET session_total_volume = ${session_total_volume}, session_total_sets = ${session_total_sets}, session_total_reps = ${session_total_reps}, session_total_distance = ${session_total_distance}, session_total_duration = ${session_total_duration}, total_time = ${total_time}
+                            WHERE ${table_session}.session_id = ${session_id}`;
+            await connection.query(query5)
+        }
+        try {
+            transactionArr.push(ts1);
+            transactionArr.push(ts2);
+            transactionArr.push(ts3);
+            await pool.Transaction(transactionArr);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('postSessionData ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("postSessionData ERROR: ", err);
+            throw err;
+        }
+    },
     postSessionData: async (uid, body_weight, data, created_at, template_id, total_time, alphaProgramUsers_id, alphaProgram_progress) => {
         const fields1 = 'userinfo_uid, created_at, templateUsers_template_id, alphaProgramUsers_alphaProgramUsers_id, alphaProgramUsers_progress, total_time';
         const fields2 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, set_type, rpe, workout_workout_id, session_session_id';
@@ -268,7 +350,10 @@ const session = {
         // Insert into Workoutlog Table
         const query2 = `INSERT INTO ${table_workoutlog}(${fields2}) VALUES(${questions2})`;
         // Update Template Table - lastdate
-        const query3 = `UPDATE ${table_templateUsers} SET lastdate='${created_at}'
+        const query3 = `UPDATE ${table_templateUsers}
+                        SET lastdate = CASE WHEN COALESCE(lastdate, '1000-01-01 00:00:00') < '${created_at}' THEN '${created_at}'
+                        ELSE lastdate
+                        END
                         WHERE ${table_templateUsers}.templateUsers_id = ${template_id}`;
         // Insert into WorkoutAbility Table
         const query4 = `INSERT INTO ${table_workoutAbility}(${fields4}) VALUES(${questions4})`;
@@ -351,7 +436,7 @@ const session = {
 
             const fields6 = 'total_volume, total_sets, total_reps';
             // Update Session Table - total volume, sets, reps
-            const query6 = `UPDATE ${table_session} SET session_total_volume = ${session_total_volume}, session_total_sets = ${session_total_sets}, session_total_reps = ${session_total_reps}
+            const query6 = `UPDATE ${table_session} SET session_total_volume = ${session_total_volume}, session_total_sets = ${session_total_sets}, session_total_reps = ${session_total_reps}, session_total_distance = ${session_total_distance}, session_total_duration = ${session_total_duration}
                             WHERE ${table_session}.session_id = ${result1.insertId}`;
             await pool.queryParamMaster(query6);
 
