@@ -30,7 +30,6 @@ module.exports = {
   /*
     getOthersWorkoutData: async(req, res) => {
       const other_uid = req.params.other_uid;
-
       const profileResult = await User.getProfile(other_uid);
       if (profileResult == -1){
         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
@@ -106,6 +105,20 @@ module.exports = {
       return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
     }
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS));
+  },
+  getWorkoutAbilityAndRecentRecords: async(req, res) => {
+    const uid = req.uid;
+    let workout_ids = req.query.wids;
+    if (typeof req.query.wids == "string") workout_ids = [workout_ids];
+    const data = await Promise.all(workout_ids.map(async(workout_id) => {
+      const result = await Promise.all([await Workout.getWorkoutRecordById(workout_id, uid), await WorkoutAbility.getAllWorkoutAbilityHistory(uid, workout_id)]);
+      return {
+        workout_id: workout_id,
+        recent_records: result[0].recentRecords,
+        workout_ability: result[1]
+      };
+    }));
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
   },
   getWorkoutTableData: async (req, res) => {
     const uid = req.uid;

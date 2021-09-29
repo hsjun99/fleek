@@ -23,8 +23,8 @@ module.exports = {
 
         await User.addFcmToken(uid, fcm_token);
         const now = moment();
-        const last_connection_at = await now.format("YYYY-MM-DD HH:mm:ss");
-        await User.updateLastConnectionTime(uid, last_connection_at);
+        //const last_connection_at = await now.format("YYYY-MM-DD HH:mm:ss");
+        //await User.updateLastConnectionTime(uid, last_connection_at);
     },
     signup: async(req, res) => {
         const uid = req.uid;

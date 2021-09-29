@@ -45,6 +45,7 @@ const fleekUser = {
             throw err;
         }
     },
+    /*
     updateLastConnectionTime: async(uid, last_connection_at) => {
         const query1 = `UPDATE ${table1} SET last_connection_at = "${last_connection_at}"
                         WHERE uid="${uid}"`;
@@ -60,6 +61,7 @@ const fleekUser = {
             throw err;
         }
     },
+    */
     updatePrivacySetting: async(uid, privacyMode) => {
         const query1 = `UPDATE ${table1} SET privacy_setting = ${privacyMode}
                         WHERE uid="${uid}"`;

@@ -8,6 +8,7 @@ const { Auth } = require('../modules/auth/firebaseAuth');
 
 //router.get('/geteach/:id', AuthUser.checkToken, workoutsController.getEach);
 
+router.get('/abilityandrecords', AuthUser.checkToken, workoutsController.getWorkoutAbilityAndRecentRecords);
 
 router.get('/geteachrecords/:id', AuthUser.checkToken, workoutsController.getEachUsersRecords);
 
@@ -24,6 +25,8 @@ router.get('/algorithm/:algorithm_id/:workout_id', AuthUser.checkToken, workouts
 router.get('/substitute/:workout_id', AuthUser.checkToken, workoutsController.getSubstituteWorkout);
 
 router.get('/table', AuthUser.checkToken, workoutsController.getWorkoutTableData);
+
+//router.get('/table/optimize', AuthUser.checkToken, workoutsController.getWorkoutTableDataOptimize);
 
 router.post('/customworkout', AuthUser.checkToken, workoutsController.addCustomWorkout);
 
