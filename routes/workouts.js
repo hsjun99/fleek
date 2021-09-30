@@ -24,9 +24,7 @@ router.get('/algorithm/:algorithm_id/:workout_id', AuthUser.checkToken, workouts
 
 router.get('/substitute/:workout_id', AuthUser.checkToken, workoutsController.getSubstituteWorkout);
 
-router.get('/table', AuthUser.checkToken, workoutsController.getWorkoutTableData);
-
-//router.get('/table/optimize', AuthUser.checkToken, workoutsController.getWorkoutTableDataOptimize);
+router.get('/table', AuthUser.checkToken, workoutsController.getWorkoutTableDataOptimize);
 
 router.post('/customworkout', AuthUser.checkToken, workoutsController.addCustomWorkout);
 

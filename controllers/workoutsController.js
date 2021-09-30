@@ -113,13 +113,69 @@ module.exports = {
     const data = await Promise.all(workout_ids.map(async(workout_id) => {
       const result = await Promise.all([await Workout.getWorkoutRecordById(workout_id, uid), await WorkoutAbility.getAllWorkoutAbilityHistory(uid, workout_id)]);
       return {
-        workout_id: workout_id,
+        workout_id: Number(workout_id),
         recent_records: result[0].recentRecords,
         workout_ability: result[1]
       };
     }));
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
   },
+  getWorkoutTableDataOptimize: async(req, res) => {
+    const uid = req.uid;
+    // Get Profile
+    const profileResult = await User.getProfile(uid);
+    if (profileResult == -1) {
+      return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+    }
+    const { sex, age, weight, percentage } = profileResult;
+    const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)])
+    //const ageGroup = await ageGroupClassifier(age); // Conversion to group
+    //const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
+    
+    const result = await Workout.getWorkoutTable(uid, sex, ageGroup, weightGroup);
+    if (result == -1) {
+      return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
+    }
+    let start = new Date();
+    //const workout_ids = await Promise.all(result.map(async(rowdata) => {return rowdata.workout_id}));
+    const [workout_record_result, workout_ability_result, youtube_info_result] = await Promise.all([await Workout.getWorkoutRecordTotal(uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(uid), await Workout.getWorkoutYoutubeVideoTotal()]);
+    const data = await Promise.all(result.map(async(rowdata) => {
+      const default_intensity_result = await defaultIntensity(rowdata.inclination, rowdata.intercept, percentage, rowdata.min_step);
+      const info = {
+        workout_id: Number(rowdata.workout_id),
+        english: rowdata.english,
+        korean: rowdata.korean,
+        category: rowdata.category,
+        muscle_primary: rowdata.muscle_p,
+        muscle_secondary: [rowdata.muscle_s1, rowdata.muscle_s2, rowdata.muscle_s3, rowdata.muscle_s4, rowdata.muscle_s5, rowdata.muscle_s6],
+        equipment: rowdata.equipment,
+        record_type: rowdata.record_type,
+        multiplier: rowdata.multiplier,
+        min_step: rowdata.min_step,
+        tier: rowdata.tier,
+        is_custom: rowdata.is_custom,
+        is_deleted: rowdata.is_deleted,
+        video_url: rowdata.video_url,
+        video_url_substitute: rowdata.video_url_substitute,
+        reference_num: rowdata.reference_num,
+        equation: {
+          inclination: rowdata.inclination,
+          intercept: rowdata.intercept
+        },
+        recent_records: workout_record_result[rowdata.workout_id] != undefined ? workout_record_result[rowdata.workout_id] : [],
+        rest_time: 0,
+        workout_ability: workout_ability_result[rowdata.workout_id] != undefined ? workout_ability_result[rowdata.workout_id] : [],
+        plan: default_intensity_result.plan,
+        detail_plan: default_intensity_result.detail_plan,
+        youtube_info: youtube_info_result[rowdata.workout_id] != undefined ? youtube_info_result[rowdata.workout_id] : []
+      }
+      return info;
+    }));
+    let end = new Date();
+    console.log(end-start)
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
+  },
+  /*
   getWorkoutTableData: async (req, res) => {
     const uid = req.uid;
     // Get Profile
@@ -127,7 +183,7 @@ module.exports = {
     if (profileResult == -1) {
       return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
     }
-    const { sex, age, height, weight, percentage } = profileResult;
+    const { sex, age, weight, percentage } = profileResult;
     const ageGroup = await ageGroupClassifier(age); // Conversion to group
     const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
 
@@ -168,20 +224,19 @@ module.exports = {
       }
       return info;
     }))
-    /*
-    await Promise.all(data.map(async rowdata => {
-      const index = rowdata.index;
-      const workout_id = rowdata.workout_id;
-      const result = await Promise.all([await Workout.getWorkoutRecordById(workout_id, uid), await WorkoutAbility.getAllWorkoutAbilityHistory(uid, workout_id), await defaultIntensity(rowdata.equation.inclination, rowdata.equation.intercept, percentage, rowdata.min_step)]);
-      data[index].recent_records = result[0].recentRecords;
-      data[index].rest_time = result[0].rest_time;
-      data[index].workout_ability = result[1];
-      data[index].plan = result[2].plan;
-      data[index].detail_plan = result[2].detail_plan;
-    }))*/
+    // await Promise.all(data.map(async rowdata => {
+    //   const index = rowdata.index;
+    //   const workout_id = rowdata.workout_id;
+    //   const result = await Promise.all([await Workout.getWorkoutRecordById(workout_id, uid), await WorkoutAbility.getAllWorkoutAbilityHistory(uid, workout_id), await defaultIntensity(rowdata.equation.inclination, rowdata.equation.intercept, percentage, rowdata.min_step)]);
+    //   data[index].recent_records = result[0].recentRecords;
+    //   data[index].rest_time = result[0].rest_time;
+    //   data[index].workout_ability = result[1];
+    //   data[index].plan = result[2].plan;
+    //   data[index].detail_plan = result[2].detail_plan;
+    // }))
     // Success
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
-  },
+  },*/
   getEachUsersRecords: async (req, res) => {
     const id = req.params.id;
     const uid = req.uid;

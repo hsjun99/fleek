@@ -204,24 +204,24 @@ module.exports = {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
         }
         const {sex, age, height, weight, percentage} = profileResult;
-        const ageGroup = await ageGroupClassifier(age); // Conversion to group
-        const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
-
+        const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)])
+        // const ageGroup = await ageGroupClassifier(age); // Conversion to group
+        // const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
+        const [workout_record_result, workout_ability_result] = await Promise.all([await Workout.getWorkoutRecordTotal(uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(uid)]);
         const getOthersWorkoutData = async() => {
             const result = await Workout.getWorkoutTable(other_uid, sex, ageGroup, weightGroup);
             if (result == -1){
                 return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
             }
             const workout_data = await Promise.all(result.map(async rowdata => {
-                const temp = await Promise.all([Workout.getWorkoutRecordById(rowdata.workout_id, other_uid), WorkoutAbility.getAllWorkoutAbilityHistory(other_uid, rowdata.workout_id)]);
                 const info =  {
                     workout_id: Number(rowdata.workout_id),
                     equation: {
                         inclination: rowdata.inclination,
                         intercept: rowdata.intercept
                     },
-                    recent_records: temp[0].recentRecords,
-                    workout_ability: temp[1]
+                    recent_records: workout_record_result[rowdata.workout_id] != undefined ? workout_record_result[rowdata.workout_id] : [],
+                    workout_ability: workout_ability_result[rowdata.workout_id] != undefined ? workout_ability_result[rowdata.workout_id] : []
                 }
                 return info;
             }));

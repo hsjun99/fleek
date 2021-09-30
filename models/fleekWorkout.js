@@ -19,6 +19,30 @@ const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation'
 const getUserRecentRecords = require('../modules/functionFleek/getUserRecentRecords');
 
 const workout = {
+    getWorkoutYoutubeVideoTotal: async() => {
+        const fields = 'workout_workout_id, video_id, video_title, channel_name';
+        const query = `SELECT ${fields} FROM ${table_workoutYoutube}
+                        ORDER BY workout_workout_id`;          
+        try {
+            const result = await pool.queryParamSlave(query);
+            let temp = {};
+            await asyncForEach(result, async(rowdata) => {
+                if (temp[rowdata.workout_workout_id] == undefined){       
+                    temp[rowdata.workout_workout_id] = [{video_id: rowdata.video_id, video_title: rowdata.video_title, channel_name: rowdata.channel_name}];
+                } else {
+                    temp[rowdata.workout_workout_id].push({video_id: rowdata.video_id, video_title: rowdata.video_title, channel_name: rowdata.channel_name});
+                }
+            })
+            return temp;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
     getWorkoutYoutubeVideo: async(workout_id) => {
         const fields = 'video_id, video_title, channel_name';
         const query = `SELECT ${fields} FROM ${table_workoutYoutube}
@@ -282,6 +306,38 @@ const workout = {
                 return -1;
             }
             console.log("getWorkoutById ERROR: ", err);
+            throw err;
+        }
+    },
+    getWorkoutRecordTotal: async (uid) => {
+        const fields = 'workout_workout_id, reps, weight, duration, distance, set_type, rpe, rest_time, session_session_id, created_at';
+        const query = `SELECT ${fields} FROM ${table_workoutlog}
+                        INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
+                        ORDER BY ${table_workoutlog}.workout_workout_id ASC, ${table_session}.created_at DESC, ${table_session}.session_id DESC, ${table_workoutlog}.set_order ASC`;
+        try {
+            let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
+            let temp = {};
+            await asyncForEach(result, async(rowdata) => {
+                if (temp[rowdata.workout_workout_id] == undefined) {
+                    temp[rowdata.workout_workout_id] = [];
+                }
+                if (temp[rowdata.workout_workout_id].length == 0){       
+                    temp[rowdata.workout_workout_id].push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
+                }
+                else if (temp[rowdata.workout_workout_id][temp[rowdata.workout_workout_id].length-1][0].session_id == rowdata.session_session_id){
+                    temp[rowdata.workout_workout_id][temp[rowdata.workout_workout_id].length-1].push({reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at});
+                }
+                else {
+                    temp[rowdata.workout_workout_id].push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
+                }
+            })
+            return temp;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
             throw err;
         }
     },
