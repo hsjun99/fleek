@@ -6,6 +6,6 @@ build:
       - npm install            
       - npm install -g pm2                 
 run:                              
-  command: pm2 start ./bin/www -i max
+  command: pm2-runtime ./bin/www -i max
   network:
     port: 3000
