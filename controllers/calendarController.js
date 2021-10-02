@@ -4,13 +4,20 @@ let resMessage = require('../modules/responseMessage');
 
 let Workout = require("../models/fleekWorkout")
 let WorkoutAbility = require('../models/fleekWorkoutAbility');
+let User = require('../models/fleekUser');
+
+const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
+const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');
 
 module.exports = {
     getData: async (req, res) => {
         const uid = req.uid;
-
+        const profileResult = await User.getProfile(uid);
+        const { sex, age, weight } = profileResult;
+        const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)])
+    
         // Get Calendar Data
-        const data = await Workout.getCalendarData(uid);
+        const data = await Workout.getCalendarData(uid, sex, ageGroup, weightGroup);
         // DB Error Handling
         if (data == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_CALENDAR_FAIL));

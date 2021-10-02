@@ -191,9 +191,13 @@ module.exports = {
     },
     getSelfFleekData: async(req, res) => {
         const uid = req.uid;
+        const profileResult = await User.getProfile(uid);
+        const { sex, age, weight } = profileResult;
+        const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)])
 
         let data = {uid: uid, template: null, calendar_data: null, dashboard:{record:null, favorite_workouts:null}};
-        [data.template, data.calendar_data, data.dashboard.record, data.dashboard.favorite_workouts] = await Promise.all([Template.getUserTemplate(uid), Workout.getCalendarData(uid), Dashboard.getDashboardRecords(uid), Dashboard.getFavoriteWorkouts(uid)]);
+
+        [data.template, data.calendar_data, data.dashboard.record, data.dashboard.favorite_workouts] = await Promise.all([Template.getUserTemplate(uid), Workout.getCalendarData(uid, sex, ageGroup, weightGroup), Dashboard.getDashboardRecords(uid), Dashboard.getFavoriteWorkouts(uid)]);
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
     },
     getOthersFleekData: async(req, res) => {
@@ -261,7 +265,7 @@ module.exports = {
         }
 
         let data = {uid: other_uid, template: null, calendar_data: null, dashboard:{record:null, favorite_workouts:null}, workout_data:null, extra_custom_workout_table:null};
-        [data.template, data.calendar_data, data.dashboard.record, data.dashboard.favorite_workouts, data.workout_data, data.extra_custom_workout_table] = await Promise.all([Template.getUserTemplate(other_uid), Workout.getCalendarData(other_uid), Dashboard.getDashboardRecords(other_uid), Dashboard.getFavoriteWorkouts(other_uid), getOthersWorkoutData(), getOthersCustomWorkout()]);
+        [data.template, data.calendar_data, data.dashboard.record, data.dashboard.favorite_workouts, data.workout_data, data.extra_custom_workout_table] = await Promise.all([Template.getUserTemplate(other_uid), Workout.getCalendarData(other_uid, sex, ageGroup, weightGroup), Dashboard.getDashboardRecords(other_uid), Dashboard.getFavoriteWorkouts(other_uid), getOthersWorkoutData(), getOthersCustomWorkout()]);
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
     },
