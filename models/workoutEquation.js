@@ -5,7 +5,7 @@ const table = 'equation';
 const workoutEquation = {
     getEquationTotal: async(sex, ageGroup, weightGroup) => {
         const fields = 'workout_workout_id, inclination, intercept';
-        const query = `SELECT ${fields} FROM ${table} WHERE sex="${sex}" AND age="${ageGroup}" AND weight="${weightGroup}"`;
+        const query = `SELECT ${fields} FROM ${table} WHERE sex="${sex}" AND (age="${ageGroup}" OR age=8) AND weight="${weightGroup}"`;
         try {
             const result = await pool.queryParamSlave(query);
             let temp = {};
@@ -22,9 +22,9 @@ const workoutEquation = {
             throw err;
         }
     },
-    getEquation: async (workout_id, sex, age, weight) => {
+    getEquation: async (workout_id, sex, ageGroup, weightGroup) => {
         const fields = 'inclination, intercept';
-        const query = `SELECT ${fields} FROM ${table} WHERE workout_workout_id="${workout_id}" AND sex="${sex}" AND age="${age}" AND weight="${weight}"`;
+        const query = `SELECT ${fields} FROM ${table} WHERE workout_workout_id="${workout_id}" AND sex="${sex}" AND (age="${ageGroup}" OR age=8) AND weight="${weightGroup}"`;
         try {
             const result = await pool.queryParamSlave(query);
             let inclination, intercept;
@@ -45,11 +45,10 @@ const workoutEquation = {
             throw err;
         }
     },
-    checkEquation: async (workout_id, sex, age, weight) => {
-        const query = `SELECT * FROM ${table} WHERE workout_workout_id="${workout_id}" AND sex="${sex}" AND age="${age}" AND weight="${weight}"`;
+    checkEquation: async (workout_id, sex, ageGroup, weightGroup) => {
+        const query = `SELECT * FROM ${table} WHERE workout_workout_id="${workout_id}" AND sex="${sex}" AND (age="${ageGroup}" OR age=8) AND weight="${weightGroup}"`;
         try {
             const result = await pool.queryParamSlave(query);
-            console.log(result);
             if (result.length === 0) {
                 return false;
             } else return true
