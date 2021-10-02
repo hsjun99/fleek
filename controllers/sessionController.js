@@ -49,6 +49,7 @@ module.exports = {
         }
     },
     deleteSession: async (req, res) => {
+      //  await new Promise(resolve => setTimeout(resolve, 20000));
         const uid = req.uid;
         const session_id = req.params.session_id;
 
