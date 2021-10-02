@@ -4,8 +4,10 @@ build:
   commands:    
     build:
       - npm install            
-      - npm install -g pm2                 
+      - npm install -g pm2  
+    post-build:
+      - pm2 link bdiv1i5usl8fmlu 57apckoyu0h0c3n               
 run:                              
-  command: pm2-runtime ./bin/www -i max
+  command: pm2 ./bin/www -i max
   network:
     port: 3000
