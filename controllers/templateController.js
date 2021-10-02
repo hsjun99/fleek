@@ -97,6 +97,7 @@ module.exports = {
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.UPDATE_USERTEMPLATE_SUCCESS, {template_id: template_id}));
     },
     deleteUserTemplate: async(req, res) => {
+        await new Promise(resolve => setTimeout(resolve, 20000));
         const uid = req.uid;
         const template_id = req.params.template_id;
 

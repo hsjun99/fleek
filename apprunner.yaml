@@ -2,8 +2,9 @@ version: 1.0
 runtime: nodejs12
 build:
   commands:    
-    pre-build:
-      - npm install                             
+    build:
+      - npm install            
+      - npm install -g pm2                 
 run:                              
   command: npm start
   network:
