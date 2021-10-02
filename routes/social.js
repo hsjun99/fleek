@@ -20,4 +20,6 @@ router.get('/followers', AuthUser.checkToken, socialController.getFollowers);
 
 router.get('/followings', AuthUser.checkToken, socialController.getFollowings);
 
+router.get('/follow', AuthUser.checkToken, socialController.getFollowersAndFollowings);
+
 module.exports = router;

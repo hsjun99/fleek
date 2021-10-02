@@ -14,9 +14,9 @@ router.get('/geteachrecords/:id', AuthUser.checkToken, workoutsController.getEac
 
 router.get('/getall', AuthUser.checkToken, workoutsController.getall);
 
-router.get('/algorithm/list/:workout_id', AuthUser.checkToken, workoutsController.getAlgoList);
+router.get('/algorithm/list/:workout_id', AuthUser.checkToken, workoutsController.getAlgorithmData);
 
-router.get('/algorithm/:algorithm_id/:workout_id', AuthUser.checkToken, workoutsController.getAlgoWorkoutPlan);
+//router.get('/algorithm/:algorithm_id/:workout_id', AuthUser.checkToken, workoutsController.getAlgoWorkoutPlan);
 
 //router.get('/algorithm/:name/:intensity/:workout_id', AuthUser.checkToken, workoutsController.getAlgoWorkoutPlan);
 

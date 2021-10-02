@@ -203,11 +203,11 @@ module.exports = {
         if (profileResult == -1){
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
         }
-        const {sex, age, height, weight, percentage} = profileResult;
+        const {sex, age, weight} = profileResult;
         const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)])
         // const ageGroup = await ageGroupClassifier(age); // Conversion to group
         // const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
-        const [workout_record_result, workout_ability_result] = await Promise.all([await Workout.getWorkoutRecordTotal(uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(uid)]);
+        const [workout_record_result, workout_ability_result] = await Promise.all([await Workout.getWorkoutRecordTotal(other_uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(other_uid)]);
         const getOthersWorkoutData = async() => {
             const result = await Workout.getWorkoutTable(other_uid, sex, ageGroup, weightGroup);
             if (result == -1){
@@ -233,7 +233,7 @@ module.exports = {
                 return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
             }
             const data = await Promise.all(result.map(async rowdata => {
-                const workoutRecord = await Workout.getWorkoutRecordById(rowdata.workout_id, uid);
+                //const workoutRecord = await Workout.getWorkoutRecordById(rowdata.workout_id, uid);
                 const info =  {
                   workout_id: Number(rowdata.workout_id),
                   english: rowdata.english,
@@ -250,7 +250,7 @@ module.exports = {
                   video_url: rowdata.video_url,
                   video_url_substitute: rowdata.video_url_substitute,
                   reference_num: rowdata.reference_num,
-                  rest_time: workoutRecord.rest_time,
+                  rest_time: 0,
                   //workout_ability: temp[1],
                   //plan: temp[2].plan,
                   //detail_plan: temp[2].detail_plan

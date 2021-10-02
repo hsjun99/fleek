@@ -112,7 +112,13 @@ module.exports = {
         //await console.log(template_name)
         const flag = await Session.sessionLike(uid, session_id, emoji_type, name, privacy_setting, template_name);
     },
+    getFollowersAndFollowings: async (req, res) => {
+        const uid = req.uid;
+        const [data_followers, data_followings] = await Promise.all([await User.getFollowers(uid), await User.getFollowings(uid)]);
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, {followers: data_followers, followings: data_followings}));
+    },
     getFollowers: async(req, res) => {
+        //await new Promise(resolve => setTimeout(resolve, 20000));
         const uid = req.uid;
         const data = await User.getFollowers(uid);
         if (data == -1) {

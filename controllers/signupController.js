@@ -22,7 +22,7 @@ module.exports = {
         const fcm_token = req.body.fcm_token;
 
         await User.addFcmToken(uid, fcm_token);
-        const now = moment();
+        //const now = moment();
         //const last_connection_at = await now.format("YYYY-MM-DD HH:mm:ss");
         //await User.updateLastConnectionTime(uid, last_connection_at);
     },
