@@ -132,13 +132,12 @@ module.exports = {
     //const ageGroup = await ageGroupClassifier(age); // Conversion to group
     //const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
     
-    const result = await Workout.getWorkoutTable(uid, sex, ageGroup, weightGroup);
-    if (result == -1) {
-      return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
-    }
-    let start = new Date();
-    //const workout_ids = await Promise.all(result.map(async(rowdata) => {return rowdata.workout_id}));
-    const [workout_record_result, workout_ability_result, youtube_info_result] = await Promise.all([await Workout.getWorkoutRecordTotal(uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(uid), await Workout.getWorkoutYoutubeVideoTotal()]);
+    //let start = new Date();
+    //const result = await Workout.getWorkoutTable(uid, sex, ageGroup, weightGroup); // original version
+    // const result = await Workout.getWorkoutTablePure(uid); //optimized version
+    //let end = new Date();
+    //console.log(end-start)
+    const [result, workout_equation_result, workout_record_result, workout_ability_result, youtube_info_result] = await Promise.all([await Workout.getWorkoutTablePure(uid), await WorkoutEquation.getEquationTotal(sex, ageGroup, weightGroup), await Workout.getWorkoutRecordTotal(uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(uid), await Workout.getWorkoutYoutubeVideoTotal()]);
     const data = await Promise.all(result.map(async(rowdata) => {
       const default_intensity_result = await defaultIntensity(rowdata.inclination, rowdata.intercept, percentage, rowdata.min_step);
       const info = {
@@ -154,14 +153,21 @@ module.exports = {
         min_step: rowdata.min_step,
         tier: rowdata.tier,
         is_custom: rowdata.is_custom,
-        is_deleted: rowdata.is_deleted,
+        is_deleted: rowdata.is_deleted != undefined ? rowdata.is_deleted : null,
         video_url: rowdata.video_url,
         video_url_substitute: rowdata.video_url_substitute,
         reference_num: rowdata.reference_num,
-        equation: {
-          inclination: rowdata.inclination,
-          intercept: rowdata.intercept
-        },
+        equation: workout_equation_result[rowdata.workout_id] != undefined ?
+                  {
+                    inclination: workout_equation_result[rowdata.workout_id].inclination,
+                    intercept: workout_equation_result[rowdata.workout_id].intercept
+                  }
+                  :
+                  {
+                    inclination: null,
+                    intercept: null
+                  }
+        ,
         recent_records: workout_record_result[rowdata.workout_id] != undefined ? workout_record_result[rowdata.workout_id] : [],
         rest_time: 0,
         workout_ability: workout_ability_result[rowdata.workout_id] != undefined ? workout_ability_result[rowdata.workout_id] : [],
@@ -171,8 +177,6 @@ module.exports = {
       }
       return info;
     }));
-    let end = new Date();
-    console.log(end-start)
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
   },
   /*
