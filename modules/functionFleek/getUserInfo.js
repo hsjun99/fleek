@@ -8,15 +8,20 @@ module.exports = async (uid) => {
     const {name, sex, age, height, weight, percentage} = profileResult;
     const ageGroup = await ageGroupClassifier(age); // Conversion to Age Group
     const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to Weight Group
-    
+    const achievement = await User.getAchievement(uid, sex, weight);
     return {
         name: name,
         sex: sex,
         age: age,
         height: height,
         weight: weight,
+        skeletal_muscle_mass: profileResult.skeletal_muscle_mass,
+        body_fat_ratio: profileResult.body_fat_ratio,
         percentage: percentage,
         ageGroup: ageGroup,
-        weightGroup: weightGroup
+        weightGroup: weightGroup,
+        privacy_setting: profileResult.privacy_setting,
+        body_info_history: profileResult.body_info_history,
+        achievement: achievement
     }
 }

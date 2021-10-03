@@ -20,6 +20,8 @@ const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
 const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');
 const experienceClassifier = require('../modules/classifier/experienceClassifier');
 
+const wilksScoreCalculator = require('../modules/algorithm/wilksScoreCalculator');
+
 const timeFunction = require('../modules/function/timeFunction');
 
 const {Unregister} = require("../modules/auth/firebaseAuth");
@@ -347,16 +349,16 @@ const fleekUser = {
         }
     },
     getProfile: async (uid) => {
-        const fields = 'sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting';
+        const fields1 = 'sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting';
         const fields2 = 'userBodyInfoTracking_id, height, weight, skeletal_muscle_mass, body_fat_ratio, created_at';
-        const query = `SELECT ${fields} FROM ${table1}
+        const query1 = `SELECT ${fields1} FROM ${table1}
                         WHERE ${table1}.uid="${uid}"`;
         const query2 = `SELECT ${fields2} FROM ${table6}
                         WHERE ${table6}.userinfo_uid="${uid}"
                         ORDER BY created_at ASC`;
 
         try {
-            const result = await pool.queryParamSlave(query);
+            const [result, body_info_history] = await Promise.all([await pool.queryParamSlave(query1), await pool.queryParamMaster(query2)]) ;
             const sex = result[0].sex;
             const age = result[0].age;
             const height = result[0].height;
@@ -366,10 +368,50 @@ const fleekUser = {
             const percentage = result[0].percentage;
             const name = result[0].name;
             const privacy_setting = result[0].privacy_setting;
-            const body_info_history = await pool.queryParamMaster(query2);
+            //const body_info_history = await pool.queryParamMaster(query2);
             
 
             return {sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, body_info_history};
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getProfile ERROR: ", err);
+            throw err;
+        }
+    },
+    getAchievement: async (uid, sex, weight) => {
+        const fields1 = 'workout_workout_id, MAX(max_one_rm) AS max_one_rm';
+        const query1 = `SELECT ${fields1} FROM ${table4}
+                        INNER JOIN ${table7} ON ${table7}.session_id = ${table4}.session_session_id AND ${table7}.is_deleted != 1
+                        WHERE ${table4}.userinfo_uid="${uid}" AND ${table4}.workout_workout_id IN (29, 30, 200, 79, 81, 83)
+                        GROUP BY ${table4}.workout_workout_id`;
+
+        try {
+            const result1 = await pool.queryParamArrSlave(query1);
+            let benchpress_list=[], squat_list=[], deadlift_list=[];
+            await Promise.all(result1.map(async(rowdata) => {
+                if (rowdata.workout_workout_id == 29 || rowdata.workout_workout_id == 30) {
+                    benchpress_list.push(rowdata);
+                } else if (rowdata.workout_workout_id == 200) {
+                    squat_list.push(rowdata);
+                } else {
+                    deadlift_list.push(rowdata);
+                }
+            }));
+            let wilks_score=null;
+            if (!(benchpress_list.length == 0 || squat_list.length == 0 || deadlift_list.length == 0)) {
+                const [benchpress_one_rm, squat_one_rm, deadlift_one_rm] = await Promise.all([
+                    (await benchpress_list.reduce(async(prev, current) => (prev.max_one_rm > current.max_one_rm) ? prev : current)).max_one_rm,
+                    squat_list[0].max_one_rm,
+                    (await deadlift_list.reduce(async(prev, current) => (prev.max_one_rm > current.max_one_rm) ? prev : current)).max_one_rm,
+                ]);
+                wilks_score = await wilksScoreCalculator(benchpress_one_rm+squat_one_rm+deadlift_one_rm, sex, weight);
+            }
+            return {
+                wilks_score: wilks_score
+            }
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('getProfile ERROR: ', err.errno, err.code);

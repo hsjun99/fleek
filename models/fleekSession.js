@@ -577,8 +577,10 @@ const session = {
             const data = await restructure();
 
             await Promise.all(data.map(async(session, session_index) => {
+                const { sex, ageGroup, weightGroup, achievement } = await getUserInfo(session.uid);
+                //console.log(achievement)
+                data[session_index].achievement = achievement;
                 await Promise.all(session.session_detail.content.map(async(workout, workout_index) => {
-                    const { sex, ageGroup, weightGroup } = await getUserInfo(session.uid);
                     const { inclination, intercept } = await getWorkoutEquation(workout.workout_id, sex, ageGroup, weightGroup);
                     let percentage = null;
                     if (inclination != null && intercept != null && workout.workout_ability.max_one_rm != 0 && workout.workout_ability.max_one_rm != null) {
@@ -647,8 +649,9 @@ const session = {
             }
             const data = await restructure();
             await Promise.all(data.map(async(session, session_index) => {
+                const { sex, ageGroup, weightGroup, achievement } = await getUserInfo(session.uid);
+                data[session_index].achievement = achievement;
                 await Promise.all(session.session_detail.content.map(async(workout, workout_index) => {
-                    const { sex, ageGroup, weightGroup } = await getUserInfo(session.uid);
                     const { inclination, intercept } = await getWorkoutEquation(workout.workout_id, sex, ageGroup, weightGroup);
                     let percentage = null;
                     if (inclination != null && intercept != null && workout.workout_ability.max_one_rm != 0 && workout.workout_ability.max_one_rm != null) {
