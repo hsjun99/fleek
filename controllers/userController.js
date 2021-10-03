@@ -150,7 +150,7 @@ module.exports = {
         const uid = req.uid;
         const {height, weight, skeletal_muscle_mass, body_fat_ratio} = req.body;
         const result = await User.updateBodyInfo(uid, height, weight, skeletal_muscle_mass, body_fat_ratio);
-
+        console.log(weight);
         if (result== -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
         }

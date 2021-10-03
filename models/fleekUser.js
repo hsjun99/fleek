@@ -358,18 +358,20 @@ const fleekUser = {
                         ORDER BY created_at ASC`;
 
         try {
-            const [result, body_info_history] = await Promise.all([await pool.queryParamSlave(query1), await pool.queryParamMaster(query2)]) ;
+            const [result, body_info_history] = await Promise.all([await pool.queryParamMaster(query1), await pool.queryParamMaster(query2)]) ;
             const sex = result[0].sex;
             const age = result[0].age;
-            const height = result[0].height;
-            const weight = result[0].weight;
+            let height = result[0].height;
+            let weight = result[0].weight;
             const skeletal_muscle_mass = result[0].skeletal_muscle_mass;
             const body_fat_ratio = result[0].body_fat_ratio;
             const percentage = result[0].percentage;
             const name = result[0].name;
             const privacy_setting = result[0].privacy_setting;
-            //const body_info_history = await pool.queryParamMaster(query2);
-            
+            if (!(body_info_history.length == 0)){
+                height = body_info_history[body_info_history.length-1].height;
+                weight = body_info_history[body_info_history.length-1].weight;
+            } 
 
             return {sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, body_info_history};
         } catch (err) {

@@ -29,20 +29,17 @@ module.exports = {
     signup: async(req, res) => {
         const uid = req.uid;
         const {name, sex, age, height, weight, squat1RM, experience, goal} = req.body;
-        if (!String(name) || !String(sex) || !String(age) || !String(height) || !String(weight) || goal.length == 0){
+        if (!String(name) || !String(sex) || !String(age) || !String(height) || !String(weight)){
             return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.NULL_VALUE));
         }
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
 
         const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, squat1RM, experience, goal);
-
         await asyncForEach(initialUserRoutine, async(routine) => {
             await Template.postTemplateData(uid, routine.name, routine.detail);
         });
- 
         const result = await User.updateBodyInfo(uid, height, weight, null, null);
-
         if (acceptedUid == -1 || result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.SIGNUP_FAIL));
         }
