@@ -295,8 +295,14 @@ const session = {
                     // INSERT NEW Workout Logs
                     await connection.query(query3, [sets.reps, sets.weight, sets.duration, sets.distance, sets.iswarmup, workouts.workout_order, sets.set_order, workouts.rest_time, sets.set_type, sets.rpe, workouts.workout_id, session_id]);
                     if (result9[0].record_type == 4) {
-                        total_volume += sets.reps * sets.weight * result9[0].multiplier + body_weight;
-                        max_volume = Math.max(max_volume, sets.reps * sets.weight * result9[0].multiplier + body_weight);
+                        total_volume += sets.reps * (sets.weight+body_weight);
+                        max_volume = Math.max(max_volume, sets.reps * (sets.weight+body_weight));
+                    } else if (result9[0].record_type == 5) {
+                        total_volume += sets.reps * body_weight;
+                        max_volume = Math.max(max_volume, sets.reps * body_weight);
+                    } else if (result9[0].record_type == 6) {
+                        total_volume += sets.reps * (body_weight-sets.weight);
+                        max_volume = Math.max(max_volume, sets.reps * (body_weight-sets.weight));
                     } else {
                         total_volume += sets.reps * sets.weight * result9[0].multiplier;
                         max_volume = Math.max(max_volume, sets.reps * sets.weight * result9[0].multiplier);
@@ -387,8 +393,14 @@ const session = {
                     await asyncForEach(workouts.detail, async(sets) => {
                         await pool.queryParamArrMaster(query2, [sets.reps, sets.weight, sets.duration, sets.distance, sets.iswarmup, workouts.workout_order, sets.set_order, workouts.rest_time, sets.set_type, sets.rpe, workouts.workout_id, result1.insertId]);
                         if (result9[0].record_type == 4) {
-                            total_volume += sets.reps * sets.weight * result9[0].multiplier + body_weight;
-                            max_volume = Math.max(max_volume, sets.reps * sets.weight * result9[0].multiplier + body_weight);
+                            total_volume += sets.reps * (sets.weight+body_weight);
+                            max_volume = Math.max(max_volume, sets.reps * (sets.weight+body_weight));
+                        } else if (result9[0].record_type == 5) {
+                            total_volume += sets.reps * body_weight;
+                            max_volume = Math.max(max_volume, sets.reps * body_weight);
+                        } else if (result9[0].record_type == 6) {
+                            total_volume += sets.reps * (body_weight-sets.weight);
+                            max_volume = Math.max(max_volume, sets.reps * (body_weight-sets.weight));
                         } else {
                             total_volume += sets.reps * sets.weight * result9[0].multiplier;
                             max_volume = Math.max(max_volume, sets.reps * sets.weight * result9[0].multiplier);

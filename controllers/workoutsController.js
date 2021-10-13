@@ -140,7 +140,7 @@ module.exports = {
     const [result, workout_equation_result, workout_record_result, workout_ability_result, youtube_info_result] = await Promise.all([await Workout.getWorkoutTablePure(uid), await WorkoutEquation.getEquationTotal(sex, ageGroup, weightGroup), await Workout.getWorkoutRecordTotal(uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(uid), await Workout.getWorkoutYoutubeVideoTotal()]);
     const data = await Promise.all(result.map(async(rowdata) => {
       const default_intensity_result = await defaultIntensity(rowdata.inclination, rowdata.intercept, percentage, rowdata.min_step);
-      const info = {
+      let info = {
         workout_id: Number(rowdata.workout_id),
         english: rowdata.english,
         korean: rowdata.korean,
@@ -175,6 +175,8 @@ module.exports = {
         detail_plan: default_intensity_result.detail_plan,
         youtube_info: youtube_info_result[rowdata.workout_id] != undefined ? youtube_info_result[rowdata.workout_id] : []
       }
+      if (info.workout_id == 136) info.record_type = 5;
+      if (info.workout_id == 132) info.record_type = 6;
       return info;
     }));
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
