@@ -31,6 +31,19 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERTEMPLATE_SUCCESS, templateData));
     },
+    getUserTemplateWear: async(req, res) => {
+        const uid = req.uid;
+        let templateData;
+        // Get User Template Data
+        templateData = await Template.getUserTemplateWear(uid);
+        // DB Error Handling
+        if (templateData == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERTEMPLATE_FAIL));
+        }
+        console.log(JSON.stringify(templateData))
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERTEMPLATE_SUCCESS, templateData));
+    },
     getDefaultTemplate: async(req, res) => {
         // Get Default Template Data
         const templateData = await Template.getDefaultTemplate();

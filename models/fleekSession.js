@@ -348,14 +348,14 @@ const session = {
             throw err;
         }
     },
-    postSessionData: async (uid, body_weight, data, created_at, template_id, total_time, alphaProgramUsers_id, alphaProgram_progress) => {
-        const fields1 = 'userinfo_uid, created_at, templateUsers_template_id, alphaProgramUsers_alphaProgramUsers_id, alphaProgramUsers_progress, total_time';
+    postSessionData: async (uid, body_weight, data, created_at, template_id, total_time, alphaProgramUsers_id, alphaProgram_progress, device=null) => {
+        const fields1 = 'userinfo_uid, created_at, templateUsers_template_id, alphaProgramUsers_alphaProgramUsers_id, alphaProgramUsers_progress, total_time, device';
         const fields2 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, set_type, rpe, workout_workout_id, session_session_id';
         const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at';
-        const questions1 = '?, ?, ?, ?, ?, ?';
+        const questions1 = '?, ?, ?, ?, ?, ?, ?';
         const questions2 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
         const questions4 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
-        const values1 = [uid, created_at, template_id, alphaProgramUsers_id, alphaProgram_progress, total_time];
+        const values1 = [uid, created_at, template_id, alphaProgramUsers_id, alphaProgram_progress, total_time, device];
         // Insert into Session Table
         const query1 = `INSERT INTO ${table_session}(${fields1}) VALUES(${questions1})`;
         // Insert into Workoutlog Table
@@ -449,7 +449,7 @@ const session = {
             }
             await addWorkoutlog();
             await pool.queryParamMaster(query3);
-            await pool.queryParamMaster(query7);
+            //await pool.queryParamMaster(query7);
 
             const fields6 = 'total_volume, total_sets, total_reps';
             // Update Session Table - total volume, sets, reps

@@ -300,6 +300,63 @@ const template = {
             throw err;
         }
     },
+    getUserTemplateWear: async(uid) => {
+        const fields = 'name, templateUsers_id, workout_workout_id, rest_time, workout_detail';
+        const query = `SELECT ${fields} FROM ${table_templateUsers}
+                        INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.userinfo_uid = '${uid}' AND ${table_templateUsers}.is_deleted != 1`;
+        const fields2 = 'korean, record_type';
+        const durationToInt = async(set) => {
+            set.distance = parseInt(set.distance);
+            return set;
+        }
+        
+        try {
+            const result = await pool.queryParamSlave(query);
+            const restructure = async() => {
+                let data = [];
+                await asyncForEach(result, async(rowdata) => {
+                    let workout_detail = JSON.parse(rowdata.workout_detail);
+                    await Promise.all(workout_detail.map(async(set_detail, index) => {
+                        // If set_type is not defined in workout_detail
+                        if (!("set_type" in set_detail)) {
+                            workout_detail[index]["set_type"] = 0;
+                        }
+                        if (!("rpe" in set_detail)) {
+                            workout_detail[index]["rpe"] = null;
+                        }
+                    }))
+                    if (data.length == 0){
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
+                    }
+                    else if (data[data.length-1].template_id == rowdata.templateUsers_id){
+                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail});
+                    }
+                    else {
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
+                    }
+                });
+                return data;
+            }
+            const data = await restructure();
+            await Promise.all(data.map(async(template, index_template) => {
+                await Promise.all(template.detail.map(async(workout, index_workout) => {
+                    const query2 = `SELECT ${fields2} FROM ${table_workout}
+                                    WHERE workout_id = ${workout.workout_id}`;
+                    const result_workout_data = (await pool.queryParamSlave(query2))[0];
+                    data[index_template].detail[index_workout].workout_name = result_workout_data.korean;
+                    data[index_template].detail[index_workout].record_type = result_workout_data.record_type;
+                }));
+            }));
+            return data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getUserTemplate ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getUserTemplate ERROR: ", err);
+            throw err;
+        }
+    },
     getDefaultTemplate: async() => {
         const fields = 'templateDefaultGroup_id, name, target, split, popularity, templateDefault_id, workout_workout_id, sub_name, templateDefault_index';
         const query = `SELECT ${fields} FROM ${table_templateDefaultGroup}

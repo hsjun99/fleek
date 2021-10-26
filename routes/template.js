@@ -2,12 +2,15 @@ var express = require('express');
 var router = express.Router();
 
 const AuthUser = require('../middlewares/authUser');
+const AuthUserWear = require('../middlewares/authUserWear');
 const templateController = require('../controllers/templateController');
 
 
 router.post('/user', AuthUser.checkToken, templateController.savetemplate);
 
 router.get('/user', AuthUser.checkToken, templateController.getUserTemplate);
+
+router.get('/user/wear', AuthUserWear.checkUid, templateController.getUserTemplateWear);
 
 router.get('/default', AuthUser.checkToken, templateController.getDefaultTemplate);
 
