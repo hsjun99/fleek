@@ -40,7 +40,6 @@ module.exports = {
         if (templateData == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERTEMPLATE_FAIL));
         }
-        console.log(JSON.stringify(templateData))
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERTEMPLATE_SUCCESS, templateData));
     },

@@ -8,6 +8,8 @@ const sessionController = require('../controllers/sessionController');
 
 router.post('/save', AuthUser.checkToken, sessionController.saveSession);
 
+router.put('/modify', AuthUser.checkToken, sessionController.modifySession);
+
 router.post('/save/wear', AuthUserWear.checkUid, sessionController.saveSession);
 
 router.delete('/delete/:session_id', AuthUser.checkToken, sessionController.deleteSession);

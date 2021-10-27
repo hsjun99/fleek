@@ -15,7 +15,6 @@ module.exports = {
     saveSession: async (req, res) => {
         const uid = req.uid;
         const data = req.body;
-        console.log(JSON.stringify(data));
         const device = req.headers.device; // For Watch And Wear
         const now = moment();
         const {sex, weight, ageGroup, weightGroup} = await User.getProfile(uid);
@@ -54,6 +53,22 @@ module.exports = {
             // Success
             res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, sessionCalendarData));
         }
+    },
+    modifySession: async (req, res) => {
+        const uid = req.uid;
+        const data = req.body;
+        const device = req.headers.device; // For Watch And Wear
+
+        const {sex, weight, ageGroup, weightGroup} = await User.getProfile(uid);
+        
+        const result = await Session.modifySessionData(uid, data.session_id, weight, data.session, data.created_at, data.total_time, device);
+        // DB Error Handling
+        if (result != true) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
+        }
+        const sessionCalendarData = await Workout.getCalendarDataBySession(uid, sex, ageGroup, weightGroup, data.session_id);
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, sessionCalendarData));
     },
     deleteSession: async (req, res) => {
       //  await new Promise(resolve => setTimeout(resolve, 20000));

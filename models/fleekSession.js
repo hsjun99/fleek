@@ -260,11 +260,12 @@ const session = {
             throw err;
         }
     },
-    modifySessionData: async(uid, session_id, data, total_time) => {
+    modifySessionData: async(uid, session_id, body_weight, data, created_at, total_time, device=null) => {
         const fields3 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, set_type, rpe, workout_workout_id, session_session_id';
         const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at';
         const questions3 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
         const questions4 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
+    
         const query1 = `DELETE FROM ${table_workoutlog}
                         WHERE session_session_id = ${session_id}`;
         const query2 = `DELETE FROM ${table_workoutAbility}
@@ -283,6 +284,8 @@ const session = {
             await connection.query(query2);
         }
         const ts3 = async (connection) => {
+            let session_total_volume=0, session_total_sets=0, session_total_reps=0;
+            let session_total_distance=0, session_total_duration=0;
             await asyncForEach(data, async(workouts) => {
                 let max_one_rm=0, total_volume=0, max_volume=0, total_reps=0, max_weight=0;
                 let max_reps=0, max_duration=0, max_speed=0, total_distance=0, total_duration=0;
@@ -319,7 +322,17 @@ const session = {
                         max_speed = Math.max(max_speed, sets.distance / (sets.duration/60));
                     }
                 })
-                await connection.query(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workouts.workout_id, uid, result1.insertId, created_at]);
+                await connection.query(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workouts.workout_id, uid, session_id, created_at]);
+                /*
+                // Update UserWorkoutHistory Table - finish_num
+                const fields11 = 'add_num, finish_num, userinfo_uid, workout_workout_id';
+                const questions11 = `?, ?, ?, ?`;
+                const values11 = [0, 0, uid, workouts.workout_id];
+                const query11 = `INSERT IGNORE INTO ${table_userWorkoutHistory}(${fields11}) VALUES(${questions11})`;
+                const query5 = `UPDATE ${table_userWorkoutHistory} SET finish_num = finish_num+1 WHERE userinfo_uid = "${uid}" AND workout_workout_id="${workouts.workout_id}"`;
+                await connection.query(query11, values11);
+                await connection.query(query5);
+                */
                 
                 session_total_volume += total_volume;
                 session_total_sets += workouts.detail.length;
@@ -327,11 +340,12 @@ const session = {
                 session_total_distance += total_distance;
                 session_total_duration += total_duration;
             });
-            
-            const query5 = `UPDATE ${table_session}
-                            SET session_total_volume = ${session_total_volume}, session_total_sets = ${session_total_sets}, session_total_reps = ${session_total_reps}, session_total_distance = ${session_total_distance}, session_total_duration = ${session_total_duration}, total_time = ${total_time}
+
+            // UPDATE SESSION TABLE
+            const query6 = `UPDATE ${table_session}
+                            SET session_total_volume = ${session_total_volume}, session_total_sets = ${session_total_sets}, session_total_reps = ${session_total_reps}, session_total_distance = ${session_total_distance}, session_total_duration = ${session_total_duration}, total_time = ${total_time}, created_at = "${created_at}"
                             WHERE ${table_session}.session_id = ${session_id}`;
-            await connection.query(query5)
+            await connection.query(query6);
         }
         try {
             transactionArr.push(ts1);
