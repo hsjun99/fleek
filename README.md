@@ -41,3 +41,6 @@
 `백엔드` | Elastic Search | 서비스 내 검색 기능
 `백엔드` | Logstash |  데이터 파이프라인
 `서비스 전체` | Python | 데이터 가공 용도
+
+## 서비스 구성도
+<img src="https://user-images.githubusercontent.com/38935749/140639694-1e81a8fe-2b72-4793-8181-5eb979a94569.png" width="900">
