@@ -1,9 +1,11 @@
+const timeFunction = require('./function/timeFunction');
 module.exports = {
-    success: (status, message, data) => {
+    success: (status, message, data, currentTime) => {
         return {
             status: status,
             success: true,
             message: message,
+            update_time: currentTime,
             data: data
         }
     },

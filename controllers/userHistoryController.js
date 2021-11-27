@@ -10,7 +10,7 @@ const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
 const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');
 
 module.exports = {
-    getData: async (req, res) => {
+    getUserHistoryData: async (req, res) => {
         const uid = req.uid;
         const mobileLastUpdateTime = req.headers.last_update_time;
         

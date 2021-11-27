@@ -4,6 +4,9 @@ let resMessage = require('../modules/responseMessage');
 
 let Template = require("../models/fleekTemplate");
 
+const timeFunction = require('../modules/function/timeFunction');
+const moment = require('moment');
+
 module.exports = {
     savetemplate: async (req, res) => {
         const uid = req.uid;
@@ -15,9 +18,11 @@ module.exports = {
         if (templateIdx == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_TEMPLATE_FAIL));
         }
-
+        let update_time = Math.floor(Date.now() / 1000);
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, {template_id: templateIdx}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, [await Template.getUserTemplateByTemplateId(templateIdx)], update_time));
+
+        await Template.postTemplateSyncFirebase(uid, update_time);
     },
     getUserTemplate: async(req, res) => {
         const uid = req.uid;
@@ -28,8 +33,9 @@ module.exports = {
         if (templateData == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERTEMPLATE_FAIL));
         }
+        let update_time = Math.floor(Date.now() / 1000);
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERTEMPLATE_SUCCESS, templateData));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERTEMPLATE_SUCCESS, templateData, update_time));
     },
     getUserTemplateWear: async(req, res) => {
         const uid = req.uid;
@@ -63,9 +69,11 @@ module.exports = {
         if (templateIdx == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.UPDATE_USERTEMPLATE_FAIL));
         }
-
+        let update_time = Math.floor(Date.now() / 1000);
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, {template_id: templateIdx}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, [await Template.getUserTemplateByTemplateId(templateIdx)], update_time));
+
+        await Template.postTemplateSyncFirebase(uid, update_time);
     },
     importOtherUsersTemplate: async(req, res) => {
         const uid = req.uid;
@@ -76,11 +84,13 @@ module.exports = {
         if (templateIdx == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.UPDATE_USERTEMPLATE_FAIL));
         }
+        let update_time = Math.floor(Date.now() / 1000);
 
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, {template_id: templateIdx}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_TEMPLATE_SUCCESS, [await Template.getUserTemplateByTemplateId(templateIdx)], update_time));
 
         await Template.postOtherUsersTemplateDataFirebase(uid, template_id);
+        await Template.postTemplateSyncFirebase(uid, update_time);
     },
     updateUserTemplate: async(req, res) => {
         const uid = req.uid;
@@ -104,9 +114,11 @@ module.exports = {
         if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.UPDATE_USERTEMPLATE_FAIL));
         }
-
+        let update_time = Math.floor(Date.now() / 1000);
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.UPDATE_USERTEMPLATE_SUCCESS, {template_id: template_id}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.UPDATE_USERTEMPLATE_SUCCESS, [await Template.getUserTemplateByTemplateId(template_id)], update_time));
+
+        await Template.postTemplateSyncFirebase(uid, update_time);
     },
     deleteUserTemplate: async(req, res) => {
         const uid = req.uid;
@@ -129,8 +141,10 @@ module.exports = {
         if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DELETE_USERTEMPLATE_FAIL));
         }
-
+        let update_time = Math.floor(Date.now() / 1000);
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_USERTEMPLATE_SUCCESS, {template_id: template_id}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_USERTEMPLATE_SUCCESS, [{template_id: Number(template_id)}], update_time));
+
+        await Template.postTemplateSyncFirebase(uid, update_time);
     }
 }

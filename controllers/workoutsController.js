@@ -59,7 +59,8 @@ module.exports = {
   addCustomWorkout: async (req, res) => {
     const uid = req.uid;
     const { workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute } = req.body;
-
+    console.log(req.body);
+    console.log(muscle_secondary);
     const result = await Workout.postCustomWorkout(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute);
 
     if (result == -1) {
@@ -74,7 +75,7 @@ module.exports = {
       korean: workout_name,
       category: null,
       muscle_primary: muscle_primary,
-      muscle_secondary: [muscle_secondary, -1, -1, -1, -1, -1],
+      muscle_secondary: [muscle_secondary[0], -1, -1, -1, -1, -1],
       equipment: equipment,
       record_type: record_type,
       multiplier: multiplier,
@@ -94,7 +95,10 @@ module.exports = {
       plan: default_plan.plan,
       detail_plan: default_plan.detail_plan
     }
-    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, { custom_workout_info: custom_workout_info }));
+    let update_time = Math.floor(Date.now() / 1000);
+    console.log(custom_workout_info);
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, [custom_workout_info], update_time));
+    await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
   },
   deleteCustomWorkout: async (req, res) => {
     const uid = req.uid;
@@ -104,7 +108,9 @@ module.exports = {
     if (result == -1) {
       return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
     }
-    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS));
+    let update_time = Math.floor(Date.now() / 1000);
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, update_time));
+    await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
   },
   getWorkoutAbilityAndRecentRecords: async(req, res) => {
     const uid = req.uid;
@@ -139,7 +145,7 @@ module.exports = {
     //console.log(end-start)
     const [result, workout_equation_result, workout_record_result, workout_ability_result, youtube_info_result] = await Promise.all([await Workout.getWorkoutTablePure(uid), await WorkoutEquation.getEquationTotal(sex, ageGroup, weightGroup), await Workout.getWorkoutRecordTotal(uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(uid), await Workout.getWorkoutYoutubeVideoTotal()]);
     const data = await Promise.all(result.map(async(rowdata) => {
-      const default_intensity_result = await defaultIntensity(rowdata.inclination, rowdata.intercept, percentage, rowdata.min_step);
+      const default_intensity_result = await defaultIntensity(workout_equation_result[rowdata.workout_id] != undefined ? workout_equation_result[rowdata.workout_id].inclination : null, workout_equation_result[rowdata.workout_id] != undefined ? workout_equation_result[rowdata.workout_id].intercept : null, percentage, rowdata.min_step);
       let info = {
         workout_id: Number(rowdata.workout_id),
         english: rowdata.english,

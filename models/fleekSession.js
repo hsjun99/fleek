@@ -556,6 +556,22 @@ const session = {
             throw err;
         }
     },
+
+    postUserHistorySyncFirebase: async(uid, update_time) => {
+        const table_syncTable = await admin.database().ref('syncTable');
+        try {
+            await table_syncTable.child(uid).update({userHistory: update_time});
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getUserTemplate ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getUserTemplate ERROR: ", err);
+            throw err;
+        }
+    },
+
     getFirstSessionBatchData: async(uid) => {
         // const fields = `${table_session}.session_id, ${table_userinfo}.uid, ${table_userinfo}.name, ${table_templateUsers}.name AS template_name, ${table_session}.created_at AS date`;
         // const query = `SELECT ${fields} FROM ${table_session}

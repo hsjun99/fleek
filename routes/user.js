@@ -4,6 +4,7 @@ var router = express.Router();
 const AuthUser = require('../middlewares/authUser');
 const userController = require('../controllers/userController');
 const socialController = require('../controllers/socialController');
+const userHistoryController = require('../controllers/userHistoryController');
 const { Auth } = require('../modules/auth/firebaseAuth');
 
 router.get('/profile', AuthUser.checkToken, userController.getProfile);
@@ -39,6 +40,8 @@ router.post('/workoutmemo/:workout_id', AuthUser.checkToken, userController.post
 router.put('/workoutmemo/:userWorkoutMemo_id', AuthUser.checkToken, userController.updateUserWorkoutMemo);
 
 router.delete('/workoutmemo/:userWorkoutMemo_id', AuthUser.checkToken, userController.deleteUserWorkoutMemo);
+
+router.get('/userhistory', AuthUser.checkToken, userHistoryController.getUserHistoryData);
 
 //router.post('/fcmtoken/:fcm_token', AuthUser.checkToken, userController.initializeFcmToken);
 
