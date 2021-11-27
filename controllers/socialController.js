@@ -2,18 +2,9 @@ let util = require('../modules/util');
 let statusCode = require('../modules/statusCode');
 let resMessage = require('../modules/responseMessage');
 
-var moment = require("moment");
-
-const asyncForEach = require("../modules/function/asyncForEach");
-
 let Session = require("../models/fleekSession");
 let User = require('../models/fleekUser');
 let Template = require('../models/fleekTemplate');
-let Workout = require("../models/fleekWorkout");
-let Dashboard = require("../models/fleekDashboard");
-const { asyncify } = require('async');
-const dashboardController = require('./dashboardController');
-const { getUid } = require('../modules/auth/firebaseAuth');
 
 module.exports = {
     sessionStart: async(req, res) => {
@@ -42,7 +33,6 @@ module.exports = {
 
         const {name} = await User.getProfile(uid);
         await Session.sessionStop(uid, name, followers_list);
-
     },
     sessionFinish: async(req, res) => {
         const uid = req.uid;
@@ -92,25 +82,26 @@ module.exports = {
         }
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
-    
     },
     sessionLikeResponse: async(req, res) => {
         const uid = req.uid;
         const session_id = req.params.session_id;
         const emoji_type = req.params.emoji_type;
+
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS));
+        
         const {name, privacy_setting} = await User.getProfile(uid)
 
         let template_name;
         const template_id = await Template.getUserTemplateIdFromSessionId(session_id);
-        //await console.log(template_id)
+
         if (template_id == null) {
-            template_name = '익명의 루틴';
+            template_name = '자유 운동';
         } else {
             template_name = await Template.getUserTemplateName(template_id);
         }
-        //await console.log(template_name)
-        const flag = await Session.sessionLike(uid, session_id, emoji_type, name, privacy_setting, template_name);
+
+        await Session.sessionLike(uid, session_id, emoji_type, name, privacy_setting, template_name);
     },
     getFollowersAndFollowings: async (req, res) => {
         const uid = req.uid;

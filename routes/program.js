@@ -7,9 +7,9 @@ const programController = require('../controllers/programController');
 
 //router.post('/user', AuthUser.checkToken, templateController.savetemplate);
 
-router.get('/getall', AuthUser.checkToken, programController.getAllPrograms);
+// router.get('/getall', AuthUser.checkToken, programController.getAllPrograms);
 
-router.get('/geteach/:program_id', AuthUser.checkToken, programController.getProgramData);
+// router.get('/geteach/:program_id', AuthUser.checkToken, programController.getProgramData);
 
 //router.get('/default', AuthUser.checkToken, templateController.getDefaultTemplate);
 

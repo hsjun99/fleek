@@ -142,8 +142,13 @@ module.exports = {
         if (result== -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
         }
+
+        
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
+        
+        let update_time = Math.floor(Date.now() / 1000);
+        await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
 
     },
     updateBodyInfo: async(req, res) => {
@@ -157,6 +162,9 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
 
+        let update_time = Math.floor(Date.now() / 1000);
+        await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
+
     },
     updateBodyInfoRecord: async(req, res) => {
         const uid = req.uid;
@@ -168,6 +176,9 @@ module.exports = {
         }
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
+
+        let update_time = Math.floor(Date.now() / 1000);
+        await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
     },
     deleteBodyInfo: async(req, res) => {
         const uid = req.uid;
@@ -178,6 +189,9 @@ module.exports = {
         }
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
+
+        let update_time = Math.floor(Date.now() / 1000);
+        await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
     },
     postSuggestion: async(req, res) => {
         const uid = req.uid;
@@ -188,7 +202,6 @@ module.exports = {
         if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
         }
-
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
     },

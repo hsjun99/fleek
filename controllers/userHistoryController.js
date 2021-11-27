@@ -34,8 +34,9 @@ module.exports = {
                 return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_CALENDAR_FAIL));
             }
         }
-        
+        let update_time = Math.floor(Date.now() / 1000);
+    
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_CALENDAR_SUCCESS, data));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_CALENDAR_SUCCESS, data, update_time));
     }
 }

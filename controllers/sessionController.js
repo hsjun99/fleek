@@ -41,7 +41,7 @@ module.exports = {
             }));
             let template_name;
             if (data.template_id == null) {
-                template_name = '익명의 루틴';
+                template_name = '자유 운동';
             } else {
                 template_name = await Template.getUserTemplateName(data.template_id);
             }
@@ -113,7 +113,7 @@ module.exports = {
         let update_time = Math.floor(Date.now() / 1000);
 
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_SESSION_SUCCESS, {session_id: session_id}, update_time));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_SESSION_SUCCESS, [{session_id: Number(session_id)}], update_time));
 
         await Session.postUserHistorySyncFirebase(uid, update_time);
     }

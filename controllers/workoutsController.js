@@ -59,8 +59,7 @@ module.exports = {
   addCustomWorkout: async (req, res) => {
     const uid = req.uid;
     const { workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute } = req.body;
-    console.log(req.body);
-    console.log(muscle_secondary);
+
     const result = await Workout.postCustomWorkout(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute);
 
     if (result == -1) {
@@ -96,7 +95,7 @@ module.exports = {
       detail_plan: default_plan.detail_plan
     }
     let update_time = Math.floor(Date.now() / 1000);
-    console.log(custom_workout_info);
+    
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, [custom_workout_info], update_time));
     await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
   },
@@ -109,23 +108,28 @@ module.exports = {
       return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
     }
     let update_time = Math.floor(Date.now() / 1000);
+
+    await Template.postTemplateSyncFirebase(uid, update_time); // the deleted custom workout can be included in the existing template -> therefore, need update
+
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, update_time));
+
     await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
+    
   },
-  getWorkoutAbilityAndRecentRecords: async(req, res) => {
-    const uid = req.uid;
-    let workout_ids = req.query.wids;
-    if (typeof req.query.wids == "string") workout_ids = [workout_ids];
-    const data = await Promise.all(workout_ids.map(async(workout_id) => {
-      const result = await Promise.all([await Workout.getWorkoutRecordById(workout_id, uid), await WorkoutAbility.getAllWorkoutAbilityHistory(uid, workout_id)]);
-      return {
-        workout_id: Number(workout_id),
-        recent_records: result[0].recentRecords,
-        workout_ability: result[1]
-      };
-    }));
-    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
-  },
+  // getWorkoutAbilityAndRecentRecords: async(req, res) => {
+  //   const uid = req.uid;
+  //   let workout_ids = req.query.wids;
+  //   if (typeof req.query.wids == "string") workout_ids = [workout_ids];
+  //   const data = await Promise.all(workout_ids.map(async(workout_id) => {
+  //     const result = await Promise.all([await Workout.getWorkoutRecordById(workout_id, uid), await WorkoutAbility.getAllWorkoutAbilityHistory(uid, workout_id)]);
+  //     return {
+  //       workout_id: Number(workout_id),
+  //       recent_records: result[0].recentRecords,
+  //       workout_ability: result[1]
+  //     };
+  //   }));
+  //   res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
+  // },
   getWorkoutTableDataOptimize: async(req, res) => {
     const uid = req.uid;
     // Get Profile
@@ -185,7 +189,8 @@ module.exports = {
       if (info.workout_id == 132) info.record_type = 6;
       return info;
     }));
-    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
+    let update_time = Math.floor(Date.now() / 1000);
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data, update_time));
   },
   /*
   getWorkoutTableData: async (req, res) => {

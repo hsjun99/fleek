@@ -4,9 +4,6 @@ let resMessage = require('../modules/responseMessage');
 
 let Template = require("../models/fleekTemplate");
 
-const timeFunction = require('../modules/function/timeFunction');
-const moment = require('moment');
-
 module.exports = {
     savetemplate: async (req, res) => {
         const uid = req.uid;

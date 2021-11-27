@@ -8,7 +8,7 @@ const { Auth } = require('../modules/auth/firebaseAuth');
 
 //router.get('/geteach/:id', AuthUser.checkToken, workoutsController.getEach);
 
-router.get('/abilityandrecords', AuthUser.checkToken, workoutsController.getWorkoutAbilityAndRecentRecords);
+// router.get('/abilityandrecords', AuthUser.checkToken, workoutsController.getWorkoutAbilityAndRecentRecords);
 
 router.get('/geteachrecords/:id', AuthUser.checkToken, workoutsController.getEachUsersRecords);
 
