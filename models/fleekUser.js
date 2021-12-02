@@ -139,13 +139,13 @@ const fleekUser = {
             throw err;
         }
     },
-    postData: async (uid, name, sex, age, height, weight, created_at, squat1RM, experience, goal) => {
+    postData: async (uid, name, sex, age, height, weight, created_at, squat1RM, experience) => {
         const fields1 = 'uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at';
-        const fields2 = 'goal, userinfo_uid'
+        // const fields2 = 'goal, userinfo_uid'
         const questions1 = `?, ?, ?, ?, ?, ?, ?, ?, ?, ?`;
-        const questions2 = `?, ?`
+        // const questions2 = `?, ?`
         const query1 = `INSERT INTO ${table1}(${fields1}) VALUES(${questions1})`;
-        const query2 = `INSERT INTO ${table2}(${fields2}) VALUES(${questions2})`;
+        // const query2 = `INSERT INTO ${table2}(${fields2}) VALUES(${questions2})`;
         try {
             let percentage;
             if (squat1RM != null){
@@ -156,13 +156,13 @@ const fleekUser = {
                 percentage = await experienceClassifier(experience);
             }
             const values1 = [uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at];
-            const result = await pool.queryParamArrMaster(query1, values1);
-            const addGoals = async() => {
-                await asyncForEach(goal, async(elem) => {
-                    await pool.queryParamArrMaster(query2, [elem, uid]);
-                });
-            }
-            await addGoals();
+            await pool.queryParamArrMaster(query1, values1);
+            // const addGoals = async() => {
+            //     await asyncForEach(goal, async(elem) => {
+            //         await pool.queryParamArrMaster(query2, [elem, uid]);
+            //     });
+            // }
+            // await addGoals();
             return uid;
         } catch (err) {
             if (err.errno == 1062) {

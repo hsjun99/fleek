@@ -9,8 +9,6 @@ let User = require("../models/fleekUser");
 let Template = require('../models/fleekTemplate');
 let Workout = require('../models/fleekWorkout');
 
-let getUserInfo = require('../modules/functionFleek/getUserInfo');
-
 module.exports = {
     saveSession: async (req, res) => {
         const uid = req.uid;
@@ -18,23 +16,42 @@ module.exports = {
         const device = req.headers.device; // For Watch And Wear
         const now = moment();
         const {sex, weight, ageGroup, weightGroup} = await User.getProfile(uid);
-        // General Save
-        if (data.created_at == null) {
-            const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
-            // Post Session
-            const sessionIdx = await Session.postSessionData(uid, weight, data.session, created_at, data.template_id, data.total_time, data.alphaProgramUsers_id, data.alphaProgram_progress, device);
-            // DB Error Handling
-            if (sessionIdx == -1) {
-                return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
-            }
-            const sessionCalendarData = await Workout.getCalendarDataBySession(uid, sex, ageGroup, weightGroup, sessionIdx);
 
-            let update_time = Math.floor(Date.now() / 1000);
-            // Success
-            res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, sessionCalendarData, update_time));
+        // console.log(JSON.stringify(data));
+        if (data.template_id == null) data.template_id = null;
 
-            await Session.postUserHistorySyncFirebase(uid, update_time);
+        const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
+        console.log(data.total_time);
+        // Post Session
+        const sessionIdx = await Session.postSessionData(uid, weight, data.session, created_at, data.start_time, data.template_id, data.total_time, data.alphaProgramUsers_id, data.alphaProgram_progress, device);
+        // DB Error Handling
+        if (sessionIdx == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
+        } 
+        const sessionUserHistoryData = await Workout.getUserHistoryDataBySession(uid, sex, ageGroup, weightGroup, sessionIdx);
 
+        let update_time = Math.floor(Date.now() / 1000);
+
+        console.log(JSON.stringify(sessionUserHistoryData));
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, sessionUserHistoryData, update_time));
+
+        await Session.postUserHistorySyncFirebase(uid, update_time);
+
+        // const followers = await User.getFollowersWithoutPrivacySetting(uid);
+        // const followers_list = await Promise.all(followers.map(async follower => {
+        //     return follower.uid;
+        // }));
+        // let template_name;
+        // if (data.template_id == null) {
+        //     template_name = '자유 운동';
+        // } else {
+        //     template_name = await Template.getUserTemplateName(data.template_id);
+        // }
+        // const {name, privacy_setting} = await User.getProfile(uid);
+        // await Session.sessionFinish(uid, name, privacy_setting, followers_list, sessionIdx, template_name);
+
+        if (req.headers.send_notification == "true") {
             const followers = await User.getFollowersWithoutPrivacySetting(uid);
             const followers_list = await Promise.all(followers.map(async follower => {
                 return follower.uid;
@@ -47,35 +64,23 @@ module.exports = {
             }
             const {name, privacy_setting} = await User.getProfile(uid);
             await Session.sessionFinish(uid, name, privacy_setting, followers_list, sessionIdx, template_name);
-        } else { // Past Record Save
-            const sessionIdx = await Session.postSessionData(uid, weight, data.session, data.created_at, data.template_id, data.total_time, data.alphaProgramUsers_id, data.alphaProgram_progress);
-            // DB Error Handling
-            if (sessionIdx == -1) {
-                return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
-            }
-            const sessionCalendarData = await Workout.getCalendarDataBySession(uid, sex, ageGroup, weightGroup, sessionIdx);
-
-            let update_time = Math.floor(Date.now() / 1000);
-            // Success
-            res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, sessionCalendarData, update_time));
-
-            await Session.postUserHistorySyncFirebase(uid, update_time);
-
-            if (req.headers.is_general == "true") {
-                const followers = await User.getFollowersWithoutPrivacySetting(uid);
-                const followers_list = await Promise.all(followers.map(async follower => {
-                    return follower.uid;
-                }));
-                let template_name;
-                if (data.template_id == null) {
-                    template_name = '익명의 루틴';
-                } else {
-                    template_name = await Template.getUserTemplateName(data.template_id);
-                }
-                const {name, privacy_setting} = await User.getProfile(uid);
-                await Session.sessionFinish(uid, name, privacy_setting, followers_list, sessionIdx, template_name);
-            }
         }
+        // else {
+        //     const sessionIdx = await Session.postSessionData(uid, weight, data.session, data.created_at, data.template_id, data.total_time, data.alphaProgramUsers_id, data.alphaProgram_progress);
+        //     // DB Error Handling
+        //     if (sessionIdx == -1) {
+        //         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
+        //     }
+        //     const sessionCalendarData = await Workout.getCalendarDataBySession(uid, sex, ageGroup, weightGroup, sessionIdx);
+
+        //     let update_time = Math.floor(Date.now() / 1000);
+        //     // Success
+        //     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, sessionCalendarData, update_time));
+
+        //     await Session.postUserHistorySyncFirebase(uid, update_time);
+
+            
+        // }
     },
     modifySession: async (req, res) => {
         const uid = req.uid;
@@ -84,17 +89,17 @@ module.exports = {
 
         const {sex, weight, ageGroup, weightGroup} = await User.getProfile(uid);
         
-        const result = await Session.modifySessionData(uid, data.session_id, weight, data.session, data.created_at, data.total_time, device);
+        const result = await Session.modifySessionData(uid, data.session_id, weight, data.session, data.start_time, data.total_time, device);
         // DB Error Handling
         if (result != true) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
         }
-        const sessionCalendarData = await Workout.getCalendarDataBySession(uid, sex, ageGroup, weightGroup, data.session_id);
+        const sessionUserHistoryData = await Workout.getUserHistoryDataBySession(uid, sex, ageGroup, weightGroup, data.session_id);
 
         let update_time = Math.floor(Date.now() / 1000);
 
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, sessionCalendarData, update_time));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, sessionUserHistoryData, update_time));
 
         await Session.postUserHistorySyncFirebase(uid, update_time);
     },

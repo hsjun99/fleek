@@ -78,15 +78,15 @@ const template = {
     },
     postOtherUsersTemplateDataFirebase: async(uid, template_id) => {
         const table_usersFeed = await admin.database().ref('usersFeed');
-        const fields1 = 'userinfo_uid';
+        const fields1 = 'userinfo_uid, name';
         const query1 = `SELECT ${fields1} FROM ${table_templateUsers}
                         WHERE ${table_templateUsers}.templateUsers_id = ${template_id}`;
         try {
             const result = await pool.queryParamMaster(query1);
             const imported_uid = result[0].userinfo_uid;
-
+            let template_name = result[0].name;
             // Send Message
-            const message = await feedMessage.template_import(uid, template_id);
+            const message = await feedMessage.template_import(uid, template_id, template_name);
             await table_usersFeed.child(imported_uid).update({new_message: 1});
             await table_usersFeed.child(imported_uid).push().set(message);
 

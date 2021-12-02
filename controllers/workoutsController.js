@@ -60,6 +60,9 @@ module.exports = {
     const uid = req.uid;
     const { workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute } = req.body;
 
+    if (muscle_primary == null) muscle_primary = -1;
+    if (muscle_secondary[0] == null) muscle_secondary[0] = -1;
+
     const result = await Workout.postCustomWorkout(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute);
 
     if (result == -1) {
@@ -111,7 +114,7 @@ module.exports = {
 
     await Template.postTemplateSyncFirebase(uid, update_time); // the deleted custom workout can be included in the existing template -> therefore, need update
 
-    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, update_time));
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, [{workout_id: Number(workout_id)}], update_time));
 
     await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
     
@@ -131,6 +134,7 @@ module.exports = {
   //   res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
   // },
   getWorkoutTableDataOptimize: async(req, res) => {
+    let start = new Date();
     const uid = req.uid;
     // Get Profile
     const profileResult = await User.getProfile(uid);
@@ -148,8 +152,10 @@ module.exports = {
     //let end = new Date();
     //console.log(end-start)
     const [result, workout_equation_result, workout_record_result, workout_ability_result, youtube_info_result] = await Promise.all([await Workout.getWorkoutTablePure(uid), await WorkoutEquation.getEquationTotal(sex, ageGroup, weightGroup), await Workout.getWorkoutRecordTotal(uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(uid), await Workout.getWorkoutYoutubeVideoTotal()]);
-    const data = await Promise.all(result.map(async(rowdata) => {
+    let data = await Promise.all(result.map(async(rowdata) => {
       const default_intensity_result = await defaultIntensity(workout_equation_result[rowdata.workout_id] != undefined ? workout_equation_result[rowdata.workout_id].inclination : null, workout_equation_result[rowdata.workout_id] != undefined ? workout_equation_result[rowdata.workout_id].intercept : null, percentage, rowdata.min_step);
+      if (rowdata.muscle_p == null) rowdata.muscle_p = -1;
+      if (rowdata.muscle_s1 == null) rowdata.muscle_s1 = -1;
       let info = {
         workout_id: Number(rowdata.workout_id),
         english: rowdata.english,
@@ -161,7 +167,6 @@ module.exports = {
         record_type: rowdata.record_type,
         multiplier: rowdata.multiplier,
         min_step: rowdata.min_step,
-        tier: rowdata.tier,
         is_custom: rowdata.is_custom,
         is_deleted: rowdata.is_deleted != undefined ? rowdata.is_deleted : null,
         video_url: rowdata.video_url,
@@ -178,10 +183,7 @@ module.exports = {
                     intercept: null
                   }
         ,
-        recent_records: workout_record_result[rowdata.workout_id] != undefined ? workout_record_result[rowdata.workout_id] : [],
         rest_time: 0,
-        workout_ability: workout_ability_result[rowdata.workout_id] != undefined ? workout_ability_result[rowdata.workout_id] : [],
-        plan: default_intensity_result.plan,
         detail_plan: default_intensity_result.detail_plan,
         youtube_info: youtube_info_result[rowdata.workout_id] != undefined ? youtube_info_result[rowdata.workout_id] : []
       }
@@ -190,6 +192,7 @@ module.exports = {
       return info;
     }));
     let update_time = Math.floor(Date.now() / 1000);
+    // console.log(JSON.stringify(data_slice));
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data, update_time));
   },
   /*
@@ -269,6 +272,7 @@ module.exports = {
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, jsonFormatter.getOthersRecords(usersRecords, followsRecords)));
   },
   getall: async (req, res) => {
+    console.log("start");
     const uid = req.uid;
     let ids = req.query.ids;
     if (typeof req.query.ids == "string") ids = [ids]; // One element case handling -> Array
@@ -319,6 +323,7 @@ module.exports = {
 
     // Success
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, result));
+    console.log("end");
   },
   getAlgorithmData: async(req, res) => {
     const uid = req.uid;

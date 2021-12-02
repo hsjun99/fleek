@@ -96,11 +96,12 @@ module.exports = {
             created_at: await timeFunction.currentTime()
         }
     },
-    template_import: async(uid, template_id) => {
+    template_import: async(uid, template_id, template_name) => {
         return {
             type: "U_5",
             uid: uid,
             template_id: template_id,
+            template_name: template_name,
             created_at: await timeFunction.currentTime()
         }
     }

@@ -213,7 +213,7 @@ module.exports = {
 
         let data = {uid: uid, template: null, calendar_data: null, dashboard:{record:null, favorite_workouts:null}};
 
-        [data.template, data.calendar_data, data.dashboard.record, data.dashboard.favorite_workouts] = await Promise.all([Template.getUserTemplate(uid), Workout.getCalendarData(uid, sex, ageGroup, weightGroup), Dashboard.getDashboardRecords(uid), Dashboard.getFavoriteWorkouts(uid)]);
+        [data.template, data.calendar_data, data.dashboard.record, data.dashboard.favorite_workouts] = await Promise.all([Template.getUserTemplate(uid), Workout.getUserHistoryDataAll(uid, sex, ageGroup, weightGroup), Dashboard.getDashboardRecords(uid), Dashboard.getFavoriteWorkouts(uid)]);
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
     },
     getOthersFleekData: async(req, res) => {
@@ -223,26 +223,26 @@ module.exports = {
         const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)])
         // const ageGroup = await ageGroupClassifier(age); // Conversion to group
         // const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
-        const [workout_record_result, workout_ability_result] = await Promise.all([await Workout.getWorkoutRecordTotal(other_uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(other_uid)]);
-        const getOthersWorkoutData = async() => {
-            const result = await Workout.getWorkoutTable(other_uid, sex, ageGroup, weightGroup);
-            if (result == -1){
-                return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
-            }
-            const workout_data = await Promise.all(result.map(async rowdata => {
-                const info =  {
-                    workout_id: Number(rowdata.workout_id),
-                    equation: {
-                        inclination: rowdata.inclination,
-                        intercept: rowdata.intercept
-                    },
-                    recent_records: workout_record_result[rowdata.workout_id] != undefined ? workout_record_result[rowdata.workout_id] : [],
-                    workout_ability: workout_ability_result[rowdata.workout_id] != undefined ? workout_ability_result[rowdata.workout_id] : []
-                }
-                return info;
-            }));
-            return workout_data;
-        }
+        // const [workout_record_result, workout_ability_result] = await Promise.all([await Workout.getWorkoutRecordTotal(other_uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(other_uid)]);
+        // const getOthersWorkoutData = async() => {
+        //     const result = await Workout.getWorkoutTable(other_uid, sex, ageGroup, weightGroup);
+        //     if (result == -1){
+        //         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
+        //     }
+        //     const workout_data = await Promise.all(result.map(async rowdata => {
+        //         const info =  {
+        //             workout_id: Number(rowdata.workout_id),
+        //             equation: {
+        //                 inclination: rowdata.inclination,
+        //                 intercept: rowdata.intercept
+        //             },
+        //             recent_records: workout_record_result[rowdata.workout_id] != undefined ? workout_record_result[rowdata.workout_id] : [],
+        //             workout_ability: workout_ability_result[rowdata.workout_id] != undefined ? workout_ability_result[rowdata.workout_id] : []
+        //         }
+        //         return info;
+        //     }));
+        //     return workout_data;
+        // }
         const getOthersCustomWorkout = async() => {
             const result = await Workout.getOthersCustomWorkouts(other_uid, sex, ageGroup, weightGroup);
             if (result == -1){
@@ -276,8 +276,8 @@ module.exports = {
             return data;
         }
 
-        let data = {uid: other_uid, achievement: achievement, template: null, calendar_data: null, dashboard:{record:null, favorite_workouts:null}, workout_data:null, extra_custom_workout_table:null};
-        [data.template, data.calendar_data, data.dashboard.record, data.dashboard.favorite_workouts, data.workout_data, data.extra_custom_workout_table] = await Promise.all([Template.getUserTemplate(other_uid), Workout.getCalendarData(other_uid, sex, ageGroup, weightGroup), Dashboard.getDashboardRecords(other_uid), Dashboard.getFavoriteWorkouts(other_uid), getOthersWorkoutData(), getOthersCustomWorkout()]);
+        let data = {uid: other_uid, achievement: achievement, template: null, calendar_data: null, extra_custom_workout_table:null};
+        [data.template, data.calendar_data, data.extra_custom_workout_table] = await Promise.all([Template.getUserTemplate(other_uid), Workout.getUserHistoryDataAll(other_uid, sex, ageGroup, weightGroup), getOthersCustomWorkout()]);
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
     },

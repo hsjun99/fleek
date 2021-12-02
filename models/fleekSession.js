@@ -260,7 +260,7 @@ const session = {
             throw err;
         }
     },
-    modifySessionData: async(uid, session_id, body_weight, data, created_at, total_time, device=null) => {
+    modifySessionData: async(uid, session_id, body_weight, data, start_time, total_time, device=null) => {
         const fields3 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, set_type, rpe, workout_workout_id, session_session_id';
         const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at';
         const questions3 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
@@ -322,7 +322,7 @@ const session = {
                         max_speed = Math.max(max_speed, sets.distance / (sets.duration/60));
                     }
                 })
-                await connection.query(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workouts.workout_id, uid, session_id, created_at]);
+                await connection.query(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workouts.workout_id, uid, session_id, start_time]);
                 /*
                 // Update UserWorkoutHistory Table - finish_num
                 const fields11 = 'add_num, finish_num, userinfo_uid, workout_workout_id';
@@ -343,7 +343,7 @@ const session = {
 
             // UPDATE SESSION TABLE
             const query6 = `UPDATE ${table_session}
-                            SET session_total_volume = ${session_total_volume}, session_total_sets = ${session_total_sets}, session_total_reps = ${session_total_reps}, session_total_distance = ${session_total_distance}, session_total_duration = ${session_total_duration}, total_time = ${total_time}, created_at = "${created_at}"
+                            SET session_total_volume = ${session_total_volume}, session_total_sets = ${session_total_sets}, session_total_reps = ${session_total_reps}, session_total_distance = ${session_total_distance}, session_total_duration = ${session_total_duration}, total_time = ${total_time}, start_time = "${start_time}"
                             WHERE ${table_session}.session_id = ${session_id}`;
             await connection.query(query6);
         }
@@ -362,21 +362,21 @@ const session = {
             throw err;
         }
     },
-    postSessionData: async (uid, body_weight, data, created_at, template_id, total_time, alphaProgramUsers_id, alphaProgram_progress, device=null) => {
-        const fields1 = 'userinfo_uid, created_at, templateUsers_template_id, alphaProgramUsers_alphaProgramUsers_id, alphaProgramUsers_progress, total_time, device';
+    postSessionData: async (uid, body_weight, data, created_at, start_time, template_id, total_time, alphaProgramUsers_id, alphaProgram_progress, device=null) => {
+        const fields1 = 'userinfo_uid, created_at, start_time, templateUsers_template_id, alphaProgramUsers_alphaProgramUsers_id, alphaProgramUsers_progress, total_time, device';
         const fields2 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, rest_time, set_type, rpe, workout_workout_id, session_session_id';
         const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at';
-        const questions1 = '?, ?, ?, ?, ?, ?, ?';
+        const questions1 = '?, ?, ?, ?, ?, ?, ?, ?';
         const questions2 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
         const questions4 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
-        const values1 = [uid, created_at, template_id, alphaProgramUsers_id, alphaProgram_progress, total_time, device];
+        const values1 = [uid, created_at, start_time, template_id, alphaProgramUsers_id, alphaProgram_progress, total_time, device];
         // Insert into Session Table
         const query1 = `INSERT INTO ${table_session}(${fields1}) VALUES(${questions1})`;
         // Insert into Workoutlog Table
         const query2 = `INSERT INTO ${table_workoutlog}(${fields2}) VALUES(${questions2})`;
         // Update Template Table - lastdate
         const query3 = `UPDATE ${table_templateUsers}
-                        SET lastdate = CASE WHEN COALESCE(lastdate, '1000-01-01 00:00:00') < '${created_at}' THEN '${created_at}'
+                        SET lastdate = CASE WHEN COALESCE(lastdate, '1000-01-01 00:00:00') < '${start_time}' THEN '${start_time}'
                         ELSE lastdate
                         END
                         WHERE ${table_templateUsers}.templateUsers_id = ${template_id}`;
@@ -580,10 +580,10 @@ const session = {
         //                 WHERE ${table_session}.is_deleted != 1
         //                 ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC
         //                 LIMIT 50`;
-        const fields = `SESSION_BATCH.userinfo_uid, ${table_userinfo}.name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.total_time, SESSION_BATCH.device, max_one_rm, total_volume, max_volume, total_reps, max_weight`;
+        const fields = `SESSION_BATCH.userinfo_uid, ${table_userinfo}.name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.start_time, SESSION_BATCH.total_time, SESSION_BATCH.device, max_one_rm, total_volume, max_volume, total_reps, max_weight`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN 
-                        (SELECT session_id, userinfo_uid, ${table_session}.created_at, total_time, device, templateUsers_template_id FROM ${table_session}
+                        (SELECT session_id, userinfo_uid, ${table_session}.created_at, ${table_session}.start_time, total_time, device, templateUsers_template_id FROM ${table_session}
                         INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = userinfo_uid AND ${table_userinfo}.privacy_setting != 1
                         WHERE ${table_session}.is_deleted != 1
                         ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC
@@ -599,7 +599,7 @@ const session = {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
                     if (data.length == 0){
-                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, device: rowdata.device, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
+                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, device: rowdata.device, session_detail: {created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
                     }
                     else if (data[data.length-1].session_id == rowdata.session_session_id){
                         const L = data[data.length-1].session_detail.content.length
@@ -611,7 +611,7 @@ const session = {
                         }
                     }
                     else {
-                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, device: rowdata.device, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
+                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, device: rowdata.device, session_detail: {created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
                     }
                 });
                 return data;
@@ -651,10 +651,10 @@ const session = {
         //                         OR (${table_session}.created_at = (SELECT created_at FROM ${table_session} WHERE session_id = ${last_session_id}) AND session_id < ${last_session_id} ))
         //                 ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC
         //                 LIMIT 50`;
-        const fields = `SESSION_BATCH.userinfo_uid, ${table_userinfo}.name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.total_time, SESSION_BATCH.device, max_one_rm, total_volume, max_volume, total_reps, max_weight`;
+        const fields = `SESSION_BATCH.userinfo_uid, ${table_userinfo}.name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.start_time, SESSION_BATCH.total_time, SESSION_BATCH.device, max_one_rm, total_volume, max_volume, total_reps, max_weight`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN 
-                        (SELECT session_id, userinfo_uid, ${table_session}.created_at, total_time, device, templateUsers_template_id FROM ${table_session}
+                        (SELECT session_id, userinfo_uid, ${table_session}.created_at, ${table_session}.start_time, total_time, device, templateUsers_template_id FROM ${table_session}
                         INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = userinfo_uid AND ${table_userinfo}.privacy_setting != 1
                         WHERE (${table_session}.created_at < (SELECT created_at FROM ${table_session} WHERE session_id = ${last_session_id})
                                 OR (${table_session}.created_at = (SELECT created_at FROM ${table_session} WHERE session_id = ${last_session_id}) AND session_id < ${last_session_id} ))
@@ -672,7 +672,7 @@ const session = {
                 let data = [];
                 await asyncForEach(result, async(rowdata) => {
                     if (data.length == 0){
-                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, device: rowdata.device, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
+                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, device: rowdata.device, session_detail: {created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
                     }
                     else if (data[data.length-1].session_id == rowdata.session_session_id){
                         const L = data[data.length-1].session_detail.content.length
@@ -684,7 +684,7 @@ const session = {
                         }
                     }
                     else {
-                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, device: rowdata.device, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
+                        data.push({session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: rowdata.template_name, device: rowdata.device, session_detail: {created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight}}]}});
                     }
                 });
                 return data;

@@ -15,8 +15,6 @@ const authUser = {
             }
             const uid = await getUid(idToken);
             req.uid = uid;
-        } else {
-            req.uid = 'sXwP7BZONrcS02SBy2HvTbu5ha43'
         }
         next();
     }
