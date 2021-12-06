@@ -6,7 +6,6 @@ module.exports = {
         const now = moment();
         // const currenttime = await now.format("YYYY-MM-DD HH:mm:ss");
         const currenttime = await now.toISOString();
-        console.log(currenttime)
         return currenttime;
     },
     timeDiff_DHM: async(time) => {

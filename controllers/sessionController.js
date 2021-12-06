@@ -21,7 +21,7 @@ module.exports = {
         if (data.template_id == null) data.template_id = null;
 
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
-        console.log(data.total_time);
+     
         // Post Session
         const sessionIdx = await Session.postSessionData(uid, weight, data.session, created_at, data.start_time, data.template_id, data.total_time, data.alphaProgramUsers_id, data.alphaProgram_progress, device);
         // DB Error Handling
@@ -32,7 +32,6 @@ module.exports = {
 
         let update_time = Math.floor(Date.now() / 1000);
 
-        console.log(JSON.stringify(sessionUserHistoryData));
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, sessionUserHistoryData, update_time));
 
