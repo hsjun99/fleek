@@ -2,12 +2,19 @@ var express = require('express');
 var router = express.Router();
 
 const AuthUser = require('../middlewares/authUser');
+const AuthUserWear = require('../middlewares/authUserWear');
 const userController = require('../controllers/userController');
 const socialController = require('../controllers/socialController');
 const userHistoryController = require('../controllers/userHistoryController');
 const { Auth } = require('../modules/auth/firebaseAuth');
 
 router.get('/profile', AuthUser.checkToken, userController.getProfile);
+
+router.get('/setting', AuthUser.checkToken, userController.getSetting);
+
+router.get('/setting/wear', AuthUserWear.checkUid, userController.getSetting);
+
+router.put('/setting', AuthUser.checkToken, userController.updateSetting);
 
 router.post('/follow/:follow_uid', AuthUser.checkToken, userController.follow);
 

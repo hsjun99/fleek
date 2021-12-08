@@ -139,6 +139,35 @@ const fleekUser = {
             throw err;
         }
     },
+    getSetting: async(uid) => {
+        const fields1 = 'is_kilogram, is_meter';
+        const query1 = `SELECT ${fields1} FROM ${table1} WHERE ${table1}.uid="${uid}"`;
+        try {
+            const result1 = await pool.queryParamSlave(query1);
+            return result1[0];
+        } catch (err){
+            if (err.errno == 1062) {
+                console.log('checkName ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("checkName ERROR: ", err);
+            throw err;
+        }
+    },
+    updateSetting: async(uid, data) => {
+        const query1 = `UPDATE ${table1} SET is_kilogram = ${data.is_kilogram}, is_meter = ${data.is_meter} WHERE uid="${uid}"`;
+        try {
+            await pool.queryParamMaster(query1);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
     postData: async (uid, name, sex, age, height, weight, created_at, squat1RM, experience) => {
         const fields1 = 'uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at';
         // const fields2 = 'goal, userinfo_uid'

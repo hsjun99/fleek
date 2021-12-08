@@ -102,6 +102,30 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, following));
     },
+    getSetting: async(req, res) => {
+        const uid = req.uid;
+
+        const result = await User.getSetting(uid);
+
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, result));
+
+    },
+    updateSetting: async(req, res) => {
+        const uid = req.uid;
+        const data = req.body;
+        
+        const result = await User.updateSetting(uid, data);
+
+        if (result == -1 || !result) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
+    },
     getProfile: async(req, res) => {
         const uid = req.uid;
         
