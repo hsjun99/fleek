@@ -20,20 +20,23 @@ module.exports = {
 
         let data = [];
         
-        if (mobileLastUpdateTime == null || mobileLastUpdateTime == undefined) {
-            // Get Calendar Data
-            data = await Workout.getUserHistoryDataAll(uid, sex, ageGroup, weightGroup);
-            // DB Error Handling
-            if (data == -1) {
-                return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_CALENDAR_FAIL));
-            }
-        } else {
-            data = await Workout.getUserHistoryDataPartial(uid, sex, ageGroup, weightGroup, mobileLastUpdateTime);
-            // DB Error Handling
-            if (data == -1) {
-                return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_CALENDAR_FAIL));
-            }
+        // if (mobileLastUpdateTime == null || mobileLastUpdateTime == undefined) {
+
+        // Get Calendar Data
+        data = await Workout.getUserHistoryDataAll(uid, sex, ageGroup, weightGroup);
+        // DB Error Handling
+        if (data == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_CALENDAR_FAIL));
         }
+        
+        // }
+        // else {
+        //     data = await Workout.getUserHistoryDataPartial(uid, sex, ageGroup, weightGroup, mobileLastUpdateTime);
+        //     // DB Error Handling
+        //     if (data == -1) {
+        //         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_CALENDAR_FAIL));
+        //     }
+        // }
         let update_time = Math.floor(Date.now() / 1000);
     
         // Success

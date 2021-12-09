@@ -13,24 +13,22 @@ const table_session = 'session';
 
 const getUserInfo = require('../modules/functionFleek/getUserInfo');
 const getUserNextWorkoutPlanHierarchy = require('../modules/functionFleek/getUserNextWorkoutPlanHierarchy');
-const { CodeStarconnections } = require('aws-sdk');
+const getUserSetting = require('../modules/functionFleek/getUserSetting');
 
 var admin = require('firebase-admin');
 const feedMessage = require('../modules/feedMessage');
 
-const workout = require('./fleekWorkout');
-
-
 const template = {
     postTemplateData: async (uid, name, data) => {
         const fields1 = 'name, userinfo_uid';
-        const fields2 = 'workout_order, workout_workout_id, templateUsers_template_id, rest_time, workout_detail';
+        const fields2 = 'workout_order, workout_workout_id, templateUsers_template_id, rest_time, is_kilogram, is_meter, workout_detail';
         const questions1 = '?, ?';
-        const questions2 = '?, ?, ?, ?, ?'
+        const questions2 = '?, ?, ?, ?, ?, ?, ?'
         const values1 = [name, uid];
         const query1 = `INSERT INTO ${table_templateUsers}(${fields1}) VALUES(${questions1})`;
         const query2 = `INSERT INTO ${table_templateUsersDetails}(${fields2}) VALUES(${questions2})`;
 
+        let userSetting;
         // Transactions
         let transactionArr = new Array();
 
@@ -45,10 +43,11 @@ const template = {
             const {sex, percentage, ageGroup, weightGroup} = await getUserInfo(uid);
             await asyncForEach(data, async(workout) => {
                 const detail_plan = await getUserNextWorkoutPlanHierarchy(uid, workout, sex, ageGroup, weightGroup, percentage);
-                await connection.query(query2, [cnt++, workout, templateUsers_template_id, 0, JSON.stringify(detail_plan)])
+                await connection.query(query2, [cnt++, workout, templateUsers_template_id, 0, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(detail_plan)])
             });
         }
         try {
+            userSetting = await getUserSetting(uid);
             transactionArr.push(ts1);
             transactionArr.push(ts2);
             await pool.Transaction(transactionArr);
@@ -103,9 +102,9 @@ const template = {
     postOtherUsersTemplateData: async(uid, template_id) => {
         const fields1 = 'name, templateUsers_id, workout_workout_id, rest_time, workout_detail, is_custom'
         const fields2 = 'name, userinfo_uid';
-        const fields3 = 'workout_order, workout_workout_id, templateUsers_template_id, rest_time, workout_detail';
+        const fields3 = 'workout_order, workout_workout_id, templateUsers_template_id, rest_time, is_kilogram, is_meter, workout_detail';
         const questions2 = '?, ?';
-        const questions3 = '?, ?, ?, ?, ?'
+        const questions3 = '?, ?, ?, ?, ?, ?, ?'
         const query1 = `SELECT ${fields1} FROM ${table_templateUsers}
                         INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.templateUsers_id = ${template_id}
                         LEFT JOIN ${table_workout} ON ${table_templateUsersDetails}.workout_workout_id = ${table_workout}.workout_id`;
@@ -114,6 +113,8 @@ const template = {
         const query3 = `INSERT INTO ${table_templateUsersDetails}(${fields3}) VALUES(${questions3})`;
   
         let transactionArr = new Array();
+
+        let userSetting;
 
         let template_detail;
         let templateUsers_template_id;
@@ -145,7 +146,7 @@ const template = {
         const ts2 = async(connection) => {
             let cnt = 1;
             await asyncForEach(template_detail, async(workout) => {
-                await connection.query(query3, [cnt++, workout.workout_id, templateUsers_template_id, workout.rest_time, JSON.stringify(workout.workout_detail)]);
+                await connection.query(query3, [cnt++, workout.workout_id, templateUsers_template_id, workout.rest_time, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(workout.workout_detail)]);
                 if (workout.is_custom == 1){
                     const fields4 = 'workout_workout_id, userinfo_uid, created_at';
                     const values4 = [workout.workout_id, uid, await timeFunction.currentTime()];
@@ -157,6 +158,7 @@ const template = {
         }
         
         try {
+            userSetting = await getUserSetting(uid);
             transactionArr.push(ts1);
             transactionArr.push(ts2);
             await pool.Transaction(transactionArr);
@@ -173,9 +175,9 @@ const template = {
     postDefaultTemplateData: async(uid, default_template_group_id, index) => {
         const fields1 = 'sub_name, workout_workout_id'
         const fields2 = 'name, userinfo_uid';
-        const fields3 = 'workout_order, workout_workout_id, templateUsers_template_id, rest_time, workout_detail';
+        const fields3 = 'workout_order, workout_workout_id, templateUsers_template_id, rest_time, is_kilogram, is_meter, workout_detail';
         const questions2 = '?, ?';
-        const questions3 = '?, ?, ?, ?, ?'
+        const questions3 = '?, ?, ?, ?, ?, ?, ?'
         const query1 = `SELECT ${fields1} FROM ${table_templateDefault}
                         INNER JOIN ${table_templateDefaultDetails} ON ${table_templateDefault}.templateDefault_id = ${table_templateDefaultDetails}.templateDefault_template_id
                         WHERE ${table_templateDefault}.templateDefaultGroup_templateDefaultGroup_id = ${default_template_group_id} AND ${table_templateDefault}.templateDefault_index = ${index}`;
@@ -186,6 +188,8 @@ const template = {
                         WHERE ${table_templateDefaultGroup}.templateDefaultGroup_id = ${default_template_group_id}`;
         
         let transactionArr = new Array();
+
+        let userSetting;
 
         let name, workoutData=[];
         let templateUsers_template_id;
@@ -205,7 +209,7 @@ const template = {
             const {sex, percentage, ageGroup, weightGroup} = await getUserInfo(uid);
             await asyncForEach(workoutData, async(workout) => {
                 const detail_plan = await getUserNextWorkoutPlanHierarchy(uid, workout, sex, ageGroup, weightGroup, percentage);
-                await connection.query(query3, [cnt++, workout, templateUsers_template_id, 0, JSON.stringify(detail_plan)])
+                await connection.query(query3, [cnt++, workout, templateUsers_template_id, 0, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(detail_plan)])
             });
         }
         const ts3 = async(connection) => {
@@ -221,6 +225,7 @@ const template = {
             return data;
         }
         try {
+            userSetting = await getUserSetting(uid);
             transactionArr.push(ts1);
             transactionArr.push(ts2);
             transactionArr.push(ts3);

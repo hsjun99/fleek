@@ -17,7 +17,6 @@ module.exports = {
         const now = moment();
         const {sex, weight, ageGroup, weightGroup} = await User.getProfile(uid);
 
-        // console.log(JSON.stringify(data));
         if (data.template_id == null) data.template_id = null;
 
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
