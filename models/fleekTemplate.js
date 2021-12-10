@@ -21,9 +21,9 @@ const feedMessage = require('../modules/feedMessage');
 const template = {
     postTemplateData: async (uid, name, data) => {
         const fields1 = 'name, userinfo_uid';
-        const fields2 = 'workout_order, workout_workout_id, templateUsers_template_id, rest_time, is_kilogram, is_meter, workout_detail';
+        const fields2 = 'workout_order, super_set_label, workout_workout_id, templateUsers_template_id, rest_time, is_kilogram, is_meter, workout_detail';
         const questions1 = '?, ?';
-        const questions2 = '?, ?, ?, ?, ?, ?, ?'
+        const questions2 = '?, ?, ?, ?, ?, ?, ?, ?'
         const values1 = [name, uid];
         const query1 = `INSERT INTO ${table_templateUsers}(${fields1}) VALUES(${questions1})`;
         const query2 = `INSERT INTO ${table_templateUsersDetails}(${fields2}) VALUES(${questions2})`;
@@ -34,6 +34,8 @@ const template = {
 
         let templateUsers_template_id; // Insert ID
 
+        let insertData;
+
         const ts1 = async(connection) => {
             const result1 = await connection.query(query1, values1);
             templateUsers_template_id = result1.insertId;
@@ -41,12 +43,25 @@ const template = {
         const ts2 = async(connection) => {
             let cnt = 1;
             const {sex, percentage, ageGroup, weightGroup} = await getUserInfo(uid);
-            await asyncForEach(data, async(workout) => {
-                const detail_plan = await getUserNextWorkoutPlanHierarchy(uid, workout, sex, ageGroup, weightGroup, percentage);
-                await connection.query(query2, [cnt++, workout, templateUsers_template_id, 0, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(detail_plan)])
+            await asyncForEach(insertData, async(workout) => {
+                const detail_plan = await getUserNextWorkoutPlanHierarchy(uid, workout.workout_id, sex, ageGroup, weightGroup, percentage);
+                await connection.query(query2, [cnt++, workout.super_set_label, workout.workout_id, templateUsers_template_id, 0, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(detail_plan)])
             });
         }
         try {
+            if (data.length > 0) {
+                if ((typeof data[0]) == 'number') {
+                    insertData = await Promise.all(data.map(async (workout_id) => {
+                        return {
+                            "workout_id": workout_id,
+                            "super_set_label": 0
+                        };
+                    }));
+                } else {
+                    insertData = data;
+                }
+                console.log(insertData);
+            }
             userSetting = await getUserSetting(uid);
             transactionArr.push(ts1);
             transactionArr.push(ts2);
@@ -100,11 +115,11 @@ const template = {
         }
     },
     postOtherUsersTemplateData: async(uid, template_id) => {
-        const fields1 = 'name, templateUsers_id, workout_workout_id, rest_time, workout_detail, is_custom'
+        const fields1 = 'name, templateUsers_id, super_set_label, workout_workout_id, rest_time, workout_detail, is_custom'
         const fields2 = 'name, userinfo_uid';
-        const fields3 = 'workout_order, workout_workout_id, templateUsers_template_id, rest_time, is_kilogram, is_meter, workout_detail';
+        const fields3 = 'workout_order, super_set_label, workout_workout_id, templateUsers_template_id, rest_time, is_kilogram, is_meter, workout_detail';
         const questions2 = '?, ?';
-        const questions3 = '?, ?, ?, ?, ?, ?, ?'
+        const questions3 = '?, ?, ?, ?, ?, ?, ?, ?'
         const query1 = `SELECT ${fields1} FROM ${table_templateUsers}
                         INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.templateUsers_id = ${template_id}
                         LEFT JOIN ${table_workout} ON ${table_templateUsersDetails}.workout_workout_id = ${table_workout}.workout_id`;
@@ -123,13 +138,13 @@ const template = {
             let data = [];
             await asyncForEach(result, async(rowdata) => {
                 if (data.length == 0){
-                    data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, is_custom: rowdata.is_custom, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)}]});
+                    data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, is_custom: rowdata.is_custom, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)}]});
                 }
                 else if (data[data.length-1].template_id == rowdata.templateUsers_id){
-                    data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, is_custom: rowdata.is_custom, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)});
+                    data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, is_custom: rowdata.is_custom, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)});
                 }
                 else {
-                    data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, is_custom: rowdata.is_custom, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)}]});
+                    data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, is_custom: rowdata.is_custom, rest_time: rowdata.rest_time, workout_detail: JSON.parse(rowdata.workout_detail)}]});
                 }
             });
             return data;
@@ -146,7 +161,7 @@ const template = {
         const ts2 = async(connection) => {
             let cnt = 1;
             await asyncForEach(template_detail, async(workout) => {
-                await connection.query(query3, [cnt++, workout.workout_id, templateUsers_template_id, workout.rest_time, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(workout.workout_detail)]);
+                await connection.query(query3, [cnt++, workout.super_set_label, workout.workout_id, templateUsers_template_id, workout.rest_time, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(workout.workout_detail)]);
                 if (workout.is_custom == 1){
                     const fields4 = 'workout_workout_id, userinfo_uid, created_at';
                     const values4 = [workout.workout_id, uid, await timeFunction.currentTime()];
@@ -175,9 +190,9 @@ const template = {
     postDefaultTemplateData: async(uid, default_template_group_id, index) => {
         const fields1 = 'sub_name, workout_workout_id'
         const fields2 = 'name, userinfo_uid';
-        const fields3 = 'workout_order, workout_workout_id, templateUsers_template_id, rest_time, is_kilogram, is_meter, workout_detail';
+        const fields3 = 'workout_order, super_set_label, workout_workout_id, templateUsers_template_id, rest_time, is_kilogram, is_meter, workout_detail';
         const questions2 = '?, ?';
-        const questions3 = '?, ?, ?, ?, ?, ?, ?'
+        const questions3 = '?, ?, ?, ?, ?, ?, ?, ?'
         const query1 = `SELECT ${fields1} FROM ${table_templateDefault}
                         INNER JOIN ${table_templateDefaultDetails} ON ${table_templateDefault}.templateDefault_id = ${table_templateDefaultDetails}.templateDefault_template_id
                         WHERE ${table_templateDefault}.templateDefaultGroup_templateDefaultGroup_id = ${default_template_group_id} AND ${table_templateDefault}.templateDefault_index = ${index}`;
@@ -209,7 +224,7 @@ const template = {
             const {sex, percentage, ageGroup, weightGroup} = await getUserInfo(uid);
             await asyncForEach(workoutData, async(workout) => {
                 const detail_plan = await getUserNextWorkoutPlanHierarchy(uid, workout, sex, ageGroup, weightGroup, percentage);
-                await connection.query(query3, [cnt++, workout, templateUsers_template_id, 0, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(detail_plan)])
+                await connection.query(query3, [cnt++, 0, workout, templateUsers_template_id, 0, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(detail_plan)])
             });
         }
         const ts3 = async(connection) => {
@@ -273,7 +288,7 @@ const template = {
         }
     },
     getUserTemplateByTemplateId: async(template_id) => {
-        const fields = 'name, templateUsers_id, workout_workout_id, rest_time, lastdate, workout_detail';
+        const fields = 'name, templateUsers_id, super_set_label, workout_workout_id, rest_time, lastdate, workout_detail';
         const query = `SELECT ${fields} FROM ${table_templateUsers}
                         INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.templateUsers_id = ${template_id} AND ${table_templateUsers}.is_deleted != 1`;
         const durationToInt = async(set) => {
@@ -297,13 +312,13 @@ const template = {
                         }
                     }))
                     if (data.length == 0){
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
                     }
                     else if (data[data.length-1].template_id == rowdata.templateUsers_id){
-                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail});
+                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, rest_time: rowdata.rest_time, workout_detail: workout_detail});
                     }
                     else {
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
                     }
                 });
                 return data;
@@ -320,7 +335,7 @@ const template = {
         }
     },
     getUserTemplate: async(uid) => {
-        const fields = 'name, templateUsers_id, workout_workout_id, rest_time, lastdate, workout_detail';
+        const fields = 'name, templateUsers_id, super_set_label, workout_workout_id, rest_time, lastdate, workout_detail';
         const query = `SELECT ${fields} FROM ${table_templateUsers}
                         INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.userinfo_uid = '${uid}' AND ${table_templateUsers}.is_deleted != 1`;
         const durationToInt = async(set) => {
@@ -345,13 +360,13 @@ const template = {
                         }
                     }))
                     if (data.length == 0){
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
                     }
                     else if (data[data.length-1].template_id == rowdata.templateUsers_id){
-                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail});
+                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, rest_time: rowdata.rest_time, workout_detail: workout_detail});
                     }
                     else {
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
                     }
                 });
                 return data;
@@ -368,7 +383,7 @@ const template = {
         }
     },
     getUserTemplateWear: async(uid) => {
-        const fields = 'name, templateUsers_id, workout_workout_id, is_kilogram, is_meter, rest_time, workout_detail';
+        const fields = 'name, templateUsers_id, super_set_label, workout_workout_id, is_kilogram, is_meter, rest_time, workout_detail';
         const query = `SELECT ${fields} FROM ${table_templateUsers}
                         INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.userinfo_uid = '${uid}' AND ${table_templateUsers}.is_deleted != 1`;
         const fields2 = 'korean, record_type';
@@ -394,13 +409,13 @@ const template = {
                         }
                     }))
                     if (data.length == 0){
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, is_kilogram: rowdata.is_kilogram, is_meter: rowdata.is_meter, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, is_kilogram: rowdata.is_kilogram, is_meter: rowdata.is_meter, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
                     }
                     else if (data[data.length-1].template_id == rowdata.templateUsers_id){
-                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, is_kilogram: rowdata.is_kilogram, is_meter: rowdata.is_meter, rest_time: rowdata.rest_time, workout_detail: workout_detail});
+                        data[data.length-1].detail.push({workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, is_kilogram: rowdata.is_kilogram, is_meter: rowdata.is_meter, rest_time: rowdata.rest_time, workout_detail: workout_detail});
                     }
                     else {
-                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, is_kilogram: rowdata.is_kilogram, is_meter: rowdata.is_meter, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
+                        data.push({name: rowdata.name, template_id: rowdata.templateUsers_id, detail: [{workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, is_kilogram: rowdata.is_kilogram, is_meter: rowdata.is_meter, rest_time: rowdata.rest_time, workout_detail: workout_detail}]});
                     }
                 });
                 return data;
@@ -465,8 +480,8 @@ const template = {
         }
     },
     updateUserTemplate: async(uid, template_id, name, data) => {
-        const fields2 = 'workout_order, workout_workout_id, is_kilogram, is_meter, rest_time, templateUsers_template_id, workout_detail';
-        const questions2 = '?, ?, ?, ?, ?, ?, ?'
+        const fields2 = 'workout_order, super_set_label, workout_workout_id, is_kilogram, is_meter, rest_time, templateUsers_template_id, workout_detail';
+        const questions2 = '?, ?, ?, ?, ?, ?, ?, ?'
 
         const query1 = `DELETE T_details
                         FROM ${table_templateUsersDetails} T_details
@@ -486,7 +501,10 @@ const template = {
         const ts2 = async (connection) => {
             let cnt = 1;
             await asyncForEach(data, async(workout) => {
-                await connection.query(query2, [cnt++, workout.workout_id, workout.is_kilogram, workout.is_meter, workout.rest_time, Number(template_id), JSON.stringify(workout.workout_detail)]);
+                if (workout.super_set_label == null || workout.super_set_label == undefined) {
+                    workout.super_set_label = 0;
+                }
+                await connection.query(query2, [cnt++, workout.super_set_label, workout.workout_id, workout.is_kilogram, workout.is_meter, workout.rest_time, Number(template_id), JSON.stringify(workout.workout_detail)]);
             });
         };
         const ts3 = async (connection) => {

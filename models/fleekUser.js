@@ -64,6 +64,20 @@ const fleekUser = {
         }
     },
     */
+    updateUserTimeZone: (uid, timezone) => {
+        const query1 = `UPDATE ${table1} SET timezone = '${timezone}' WHERE uid = '${uid}'`;
+        try {
+            pool.queryParamMaster(query1);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
     updatePrivacySetting: async(uid, privacyMode) => {
         const query1 = `UPDATE ${table1} SET privacy_setting = ${privacyMode}
                         WHERE uid="${uid}"`;

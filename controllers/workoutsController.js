@@ -134,7 +134,6 @@ module.exports = {
   //   res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
   // },
   getWorkoutTableDataOptimize: async(req, res) => {
-    let start = new Date();
     const uid = req.uid;
     // Get Profile
     const profileResult = await User.getProfile(uid);

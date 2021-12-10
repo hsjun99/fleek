@@ -1,6 +1,8 @@
 var express = require('express');
 var router = express.Router();
 
+const UserTimeZone = require('../middlewares/userTimeZone');
+
 const AuthUser = require('../middlewares/authUser');
 const workoutsController = require('../controllers/workoutsController');
 const { Auth } = require('../modules/auth/firebaseAuth');
@@ -24,7 +26,7 @@ router.get('/algorithm/data/:workout_id', AuthUser.checkToken, workoutsControlle
 
 router.get('/substitute/:workout_id', AuthUser.checkToken, workoutsController.getSubstituteWorkout);
 
-router.get('/table', AuthUser.checkToken, workoutsController.getWorkoutTableDataOptimize);
+router.get('/table', AuthUser.checkToken, UserTimeZone.extractTimezone, workoutsController.getWorkoutTableDataOptimize);
 
 router.post('/customworkout', AuthUser.checkToken, workoutsController.addCustomWorkout);
 
