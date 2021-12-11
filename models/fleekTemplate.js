@@ -529,7 +529,68 @@ const template = {
             console.log("updateUserTemplate ERROR: ", err);
             throw err;
         }
-    },/*
+    },
+    // updateUserTemplateFromSession: async(uid, template_id, data) => {
+    //     const fields0 = '';
+    //     const fields2 = 'workout_order, super_set_label, workout_workout_id, is_kilogram, is_meter, rest_time, templateUsers_template_id, workout_detail';
+    //     const questions2 = '?, ?, ?, ?, ?, ?, ?, ?'
+
+
+    //     const query0 = `SELECT ${       } FROM ${table_templateUsers}
+    //                     WHERE ${table_templateUsers}.templateUsers_id = ${template_id} AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
+    //     const query1 = `DELETE T_details
+    //                     FROM ${table_templateUsersDetails} T_details
+    //                     INNER JOIN ${table_templateUsers} ON T_details.templateUsers_template_id = ${table_templateUsers}.templateUsers_id AND ${table_templateUsers}.userinfo_uid = '${uid}'
+    //                     WHERE T_details.templateUsers_template_id=${template_id}`;
+    //     const query2 = `INSERT INTO ${table_templateUsersDetails}(${fields2}) VALUES(${questions2})`;
+    //     // const query4 = `UPDATE ${table_templateUsers} SET is_deleted = 1
+    //     //                 WHERE ${table_templateUsers}.templateUsers_id = '${template_id}' AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
+
+    //     // Transactions
+    //     let transactionArr = new Array();
+    //     const ts1 = async (connection) => {
+    //         await connection.query(query1);
+    //     };
+    //     const ts2 = async (connection) => {
+    //         let cnt = 1;
+    //         await asyncForEach(data, async(workout) => {
+    //             workout.super_set_label = (workout.super_set_label == null || workout.super_set_label == undefined) ? 0 : workout.super_set_label;
+    //             workout.is_kilogram = (workout.is_kilogram == null || workout.is_kilogram == undefined) ? 1 : workout.is_kilogram;
+    //             workout.is_meter = (workout.is_meter == null || workout.is_meter == undefined) ? 1 : workout.is_meter;
+
+    //             let template_detail = []
+    //             if (workout.detail.length != 0) {
+    //                 template_detail = await Promise.all(workout.detail.map(async (detail) => {
+    //                     return {
+    //                         "set_order": detail.set_order,
+    //                         "reps": detail.reps,
+    //                         "weight": detail.weight,
+    //                         "duration": detail.duration,
+    //                         "distance": detail.distance,
+    //                         "set_type": detail.set_type,
+    //                         "rpe": detail.rpe
+    //                     }
+    //                 }));
+    //             }
+    //             await connection.query(query2, [cnt++, workout.super_set_label, workout.workout_id, workout.is_kilogram, workout.is_meter, workout.rest_time, Number(template_id), JSON.stringify(template_detail)]);
+    //         });
+    //     };
+        
+    //     try {   
+    //         transactionArr.push(ts1);
+    //         transactionArr.push(ts2);
+    //         await pool.Transaction(transactionArr);
+    //         return template_id;
+    //     } catch (err) {
+    //         if (err.errno == 1062) {
+    //             console.log('updateUserTemplate ERROR: ', err.errno, err.code);
+    //             return -1;
+    //         }
+    //         console.log("updateUserTemplate ERROR: ", err);
+    //         throw err;
+    //     }
+    // },
+    /*
     updateUserTemplate: async(uid, template_id, name, data) => {
         const fields2 = 'workout_order, workout_workout_id, templateUsers_template_id, workout_detail';
         const questions2 = '?, ?, ?, ?'

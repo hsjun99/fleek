@@ -20,6 +20,8 @@ router.post('/otherusers/:template_id', AuthUser.checkToken, templateController.
 
 router.put('/user/:template_id', AuthUser.checkToken, templateController.updateUserTemplate);
 
+router.put('/user/wear/:template_id', AuthUserWear.checkUid, templateController.updateUserTemplate);
+
 router.delete('/user/:template_id', AuthUser.checkToken, templateController.deleteUserTemplate);
 
 module.exports = router;

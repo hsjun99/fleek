@@ -35,6 +35,7 @@ module.exports = {
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, sessionUserHistoryData, update_time));
 
         await Session.postUserHistorySyncFirebase(uid, update_time);
+        await Template.postTemplateSyncFirebase(uid, update_time);
 
         // const followers = await User.getFollowersWithoutPrivacySetting(uid);
         // const followers_list = await Promise.all(followers.map(async follower => {
