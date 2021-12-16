@@ -80,12 +80,12 @@ const workout = {
             throw err;
         }
     },
-    postCustomWorkout: async(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute) => {
-        const fields1 = 'korean, english, category, muscle_p, muscle_s1, equipment, record_type, multiplier, video_url, video_url_substitute, is_custom';
+    postCustomWorkout: async(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute, reference_num) => {
+        const fields1 = 'korean, english, category, muscle_p, muscle_s1, equipment, record_type, multiplier, video_url, video_url_substitute, is_custom, reference_num';
         const fields2 = 'workout_workout_id, userinfo_uid, created_at';
-        const questions1 = `?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?`;
+        const questions1 = `?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?`;
         const questions2 = `?, ?, ?`
-        const values1 = [workout_name, 'custom', '-', muscle_primary, muscle_secondary[0], equipment, record_type, multiplier, video_url, video_url_substitute, 1];
+        const values1 = [workout_name, 'custom', '-', muscle_primary, muscle_secondary[0], equipment, record_type, multiplier, video_url, video_url_substitute, 1, reference_num];
         const query1 = `INSERT INTO ${table_workout}(${fields1}) VALUES(${questions1})`;
 
         let transactionArr = new Array();
@@ -105,6 +105,24 @@ const workout = {
             transactionArr.push(ts1);
             transactionArr.push(ts2);
             await pool.Transaction(transactionArr);
+
+            return workout_id;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
+    updateCustomWorkout: async(uid, workout_id, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute, reference_num) => {
+        const query1 = `UPDATE ${table_workout}
+                        SET korean = '${workout_name}', muscle_p = '${muscle_primary}', muscle_s1 = '${muscle_secondary[0]}', equipment = '${equipment}', record_type = '${record_type}', multiplier = '${multiplier}', video_url = '${video_url}', video_url_substitute = '${video_url_substitute}', reference_num = '${reference_num}'
+                        WHERE workout_id = ${workout_id} AND is_custom = 1`;
+
+        try {
+            await pool.queryParamMaster(query1);
 
             return workout_id;
         } catch (err) {

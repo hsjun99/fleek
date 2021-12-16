@@ -439,7 +439,7 @@ const fleekUser = {
             await Promise.all(result1.map(async(rowdata) => {
                 if (rowdata.workout_workout_id == 29 || rowdata.workout_workout_id == 30) {
                     benchpress_list.push(rowdata);
-                } else if (rowdata.workout_workout_id == 200) {
+                } else if (rowdata.workout_workout_id == 200 || rowdata.workout_workout_id == 3101) {
                     squat_list.push(rowdata);
                 } else {
                     deadlift_list.push(rowdata);

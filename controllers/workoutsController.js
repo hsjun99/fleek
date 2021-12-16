@@ -58,12 +58,12 @@ module.exports = {
     },*/
   addCustomWorkout: async (req, res) => {
     const uid = req.uid;
-    const { workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute } = req.body;
+    const { workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute, reference_num } = req.body;
 
     if (muscle_primary == null) muscle_primary = -1;
     if (muscle_secondary[0] == null) muscle_secondary[0] = -1;
 
-    const result = await Workout.postCustomWorkout(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute);
+    const result = await Workout.postCustomWorkout(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute, reference_num);
 
     if (result == -1) {
       return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
@@ -86,19 +86,61 @@ module.exports = {
       is_custom: 1,
       video_url: video_url,
       video_url_substitute: video_url_substitute,
-      reference_num: null,
+      reference_num: reference_num,
       equation: {
         inclination: null,
         intercept: null
       },
-      recent_records: [],
       rest_time: 0,
-      workout_ability: [],
       plan: default_plan.plan,
       detail_plan: default_plan.detail_plan
     }
     let update_time = Math.floor(Date.now() / 1000);
     
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, [custom_workout_info], update_time));
+    await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
+  },
+  updateCustomWorkout: async (req, res) => {
+    const uid = req.uid;
+    const { workout_id, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute, reference_num } = req.body;
+
+    if (muscle_primary == null) muscle_primary = -1;
+    if (muscle_secondary[0] == null) muscle_secondary[0] = -1;
+
+    const result = await Workout.updateCustomWorkout(uid, workout_id, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute, reference_num);
+
+    if (result == -1) {
+      return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+    }
+
+    const default_plan = await defaultIntensity(null, null, 0, 0);
+
+    const custom_workout_info = {
+      workout_id: workout_id,
+      english: 'custom',
+      korean: workout_name,
+      category: null,
+      muscle_primary: muscle_primary,
+      muscle_secondary: [muscle_secondary[0], -1, -1, -1, -1, -1],
+      equipment: equipment,
+      record_type: record_type,
+      multiplier: multiplier,
+      min_step: 0,
+      tier: null,
+      is_custom: 1,
+      video_url: video_url,
+      video_url_substitute: video_url_substitute,
+      reference_num: reference_num,
+      equation: {
+        inclination: null,
+        intercept: null
+      },
+      rest_time: 0,
+      plan: default_plan.plan,
+      detail_plan: default_plan.detail_plan
+    }
+    let update_time = Math.floor(Date.now() / 1000);
+    console.log(JSON.stringify(custom_workout_info))
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, [custom_workout_info], update_time));
     await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
   },

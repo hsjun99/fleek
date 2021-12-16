@@ -30,6 +30,8 @@ router.get('/table', AuthUser.checkToken, UserTimeZone.extractTimezone, workouts
 
 router.post('/customworkout', AuthUser.checkToken, workoutsController.addCustomWorkout);
 
+router.put('/customworkout', AuthUser.checkToken, workoutsController.updateCustomWorkout);
+
 router.delete('/customworkout/:workout_id', AuthUser.checkToken, workoutsController.deleteCustomWorkout);
 
 //router.get('/table/:other_uid', AuthUser.checkToken, workoutsController.getOthersWorkoutData);
