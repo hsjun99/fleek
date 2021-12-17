@@ -22,7 +22,7 @@ module.exports = {
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
      
         // Post Session
-        const sessionIdx = await Session.postSessionData(uid, weight, data.session, created_at, data.start_time, data.template_id, data.total_time, data.alphaProgramUsers_id, data.alphaProgram_progress, device);
+        const sessionIdx = await Session.postSessionData(uid, weight, data.session, created_at, data.start_time, data.name, data.template_id, data.total_time, data.alphaProgramUsers_id, data.alphaProgram_progress, device);
         // DB Error Handling
         if (sessionIdx == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
