@@ -24,7 +24,7 @@ const code_follow = {
 }
 
 module.exports = {
-    unregister: async(req, res) => {
+    unregister: async (req, res) => {
         const uid = req.uid;
 
         const result = await User.unregister(uid);
@@ -37,7 +37,7 @@ module.exports = {
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.FOLLOW_SUCCESS));
 
     },
-    follow: async(req, res) => {
+    follow: async (req, res) => {
         const uid = req.uid;
         const follow_uid = req.params.follow_uid;
         // Name -> Uid Conversion
@@ -50,22 +50,22 @@ module.exports = {
 */
         //***********Exception Handling***********
         // (1) Invalid User
-        if (!follow_uid){
-            return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.INVALID_USER, {code: code_follow.invalid_user}));
+        if (!follow_uid) {
+            return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.INVALID_USER, { code: code_follow.invalid_user }));
         }
         // (2) Self Follow
         if (uid == follow_uid) {
-            return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.FOLLOW_FAIL, {code: code_follow.self}));
+            return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.FOLLOW_FAIL, { code: code_follow.self }));
         }
         // Check Current Following Status
         const flag = await User.checkFollow(uid, follow_uid);
         // DB Error Handling
-        if (flag == -1){
+        if (flag == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.FOLLOW_FAIL));
         }
         // (3) Already Following
-        if (flag){
-            return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.FOLLOW_FAIL, {code: code_follow.already_follow}));
+        if (flag) {
+            return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.FOLLOW_FAIL, { code: code_follow.already_follow }));
         }
         //****************************************
         // Do Follow
@@ -75,12 +75,12 @@ module.exports = {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.FOLLOW_FAIL));
         }
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.FOLLOW_SUCCESS, {code: code_follow.success}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.FOLLOW_SUCCESS, { code: code_follow.success }));
 
-        const {name, privacy_setting} = await User.getProfile(uid);
+        const { name, privacy_setting } = await User.getProfile(uid);
         await User.addFollowFirebase(uid, follow_uid, name, privacy_setting);
     },
-    unfollow: async(req, res) => {
+    unfollow: async (req, res) => {
         const uid = req.uid;
         const unfollow_uid = req.params.unfollow_uid;
         const result = await User.deleteFollow(uid, unfollow_uid);
@@ -90,7 +90,7 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.FOLLOW_SUCCESS));
     },
-    getAllFollowing: async(req, res) => {
+    getAllFollowing: async (req, res) => {
         const uid = req.uid;
         const following = await User.getFollows(uid);
 
@@ -102,7 +102,7 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, following));
     },
-    getSetting: async(req, res) => {
+    getSetting: async (req, res) => {
         const uid = req.uid;
 
         const result = await User.getSetting(uid);
@@ -114,10 +114,12 @@ module.exports = {
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, result));
 
     },
-    updateSetting: async(req, res) => {
+    updateSetting: async (req, res) => {
         const uid = req.uid;
-        const data = req.body;
-        
+        let data = req.body;
+
+        if (data.lang_code == undefined || data.lang_code == null) data.lang_code = 1;
+
         const result = await User.updateSetting(uid, data);
 
         if (result == -1 || !result) {
@@ -126,9 +128,9 @@ module.exports = {
 
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
     },
-    getProfile: async(req, res) => {
+    getProfile: async (req, res) => {
         const uid = req.uid;
-        
+
         //const profileData = await User.getProfile(uid);
         const profileData = await getUserInfo(uid);
 
@@ -140,7 +142,7 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, profileData));
     },
-    updateName: async(req, res) => {
+    updateName: async (req, res) => {
         const uid = req.uid;
         const newName = req.params.new_name;
 
@@ -157,30 +159,30 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
     },
-    updateHeightWeight: async(req, res) => {
+    updateHeightWeight: async (req, res) => {
         const uid = req.uid;
         const height = req.params.height;
         const weight = req.params.weight;
 
         const result = await User.updateHeightWeight(uid, height, weight);
-        if (result== -1) {
+        if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
         }
 
-        
+
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
-        
+
         let update_time = Math.floor(Date.now() / 1000);
         await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
 
     },
-    updateBodyInfo: async(req, res) => {
+    updateBodyInfo: async (req, res) => {
         const uid = req.uid;
-        const {height, weight, skeletal_muscle_mass, body_fat_ratio} = req.body;
+        const { height, weight, skeletal_muscle_mass, body_fat_ratio } = req.body;
         const result = await User.updateBodyInfo(uid, height, weight, skeletal_muscle_mass, body_fat_ratio);
         console.log(weight);
-        if (result== -1) {
+        if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
         }
         // Success
@@ -190,10 +192,10 @@ module.exports = {
         await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
 
     },
-    updateBodyInfoRecord: async(req, res) => {
+    updateBodyInfoRecord: async (req, res) => {
         const uid = req.uid;
         const userBodyInfoTracking_id = req.params.body_info_id;
-        const {height, weight, skeletal_muscle_mass, body_fat_ratio} = req.body;
+        const { height, weight, skeletal_muscle_mass, body_fat_ratio } = req.body;
         const result = await User.updateBodyInfoRecord(uid, userBodyInfoTracking_id, height, weight, skeletal_muscle_mass, body_fat_ratio);
         if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
@@ -204,7 +206,7 @@ module.exports = {
         let update_time = Math.floor(Date.now() / 1000);
         await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
     },
-    deleteBodyInfo: async(req, res) => {
+    deleteBodyInfo: async (req, res) => {
         const uid = req.uid;
         const userBodyInfoTracking_id = req.params.body_info_id;
         const result = await User.deleteBodyInfo(uid, userBodyInfoTracking_id);
@@ -217,7 +219,7 @@ module.exports = {
         let update_time = Math.floor(Date.now() / 1000);
         await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
     },
-    postSuggestion: async(req, res) => {
+    postSuggestion: async (req, res) => {
         const uid = req.uid;
         const content = req.body.data;
 
@@ -229,21 +231,21 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
     },
-    getSelfFleekData: async(req, res) => {
+    getSelfFleekData: async (req, res) => {
         const uid = req.uid;
         const profileResult = await User.getProfile(uid);
         const { sex, age, weight } = profileResult;
         const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)])
 
-        let data = {uid: uid, template: null, calendar_data: null, dashboard:{record:null, favorite_workouts:null}};
+        let data = { uid: uid, template: null, calendar_data: null, dashboard: { record: null, favorite_workouts: null } };
 
         [data.template, data.calendar_data, data.dashboard.record, data.dashboard.favorite_workouts] = await Promise.all([Template.getUserTemplate(uid), Workout.getUserHistoryDataAll(uid, sex, ageGroup, weightGroup), Dashboard.getDashboardRecords(uid), Dashboard.getFavoriteWorkouts(uid)]);
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
     },
-    getOthersFleekData: async(req, res) => {
+    getOthersFleekData: async (req, res) => {
         //const uid = req.uid;
         const other_uid = req.params.other_uid;
-        const {sex, age, weight, achievement}  = await getUserInfo(other_uid);        
+        const { sex, age, weight, achievement } = await getUserInfo(other_uid);
         const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)])
         // const ageGroup = await ageGroupClassifier(age); // Conversion to group
         // const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
@@ -267,50 +269,50 @@ module.exports = {
         //     }));
         //     return workout_data;
         // }
-        const getOthersCustomWorkout = async() => {
+        const getOthersCustomWorkout = async () => {
             const result = await Workout.getOthersCustomWorkouts(other_uid, sex, ageGroup, weightGroup);
-            if (result == -1){
+            if (result == -1) {
                 return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
             }
             const data = await Promise.all(result.map(async rowdata => {
                 //const workoutRecord = await Workout.getWorkoutRecordById(rowdata.workout_id, uid);
-                const info =  {
-                  workout_id: Number(rowdata.workout_id),
-                  english: rowdata.english,
-                  korean: rowdata.korean,
-                  category: rowdata.category,
-                  muscle_primary: rowdata.muscle_p,
-                  muscle_secondary: [rowdata.muscle_s1, rowdata.muscle_s2, rowdata.muscle_s3, rowdata.muscle_s4, rowdata.muscle_s5, rowdata.muscle_s6],
-                  equipment: rowdata.equipment,
-                  record_type: rowdata.record_type,
-                  multiplier: rowdata.multiplier,
-                  min_step: rowdata.min_step,
-                  tier: rowdata.tier,
-                  is_custom: rowdata.is_custom,
-                  video_url: rowdata.video_url,
-                  video_url_substitute: rowdata.video_url_substitute,
-                  reference_num: rowdata.reference_num,
-                  rest_time: 0,
-                  //workout_ability: temp[1],
-                  //plan: temp[2].plan,
-                  //detail_plan: temp[2].detail_plan
+                const info = {
+                    workout_id: Number(rowdata.workout_id),
+                    english: rowdata.english,
+                    korean: rowdata.korean,
+                    category: rowdata.category,
+                    muscle_primary: rowdata.muscle_p,
+                    muscle_secondary: [rowdata.muscle_s1, rowdata.muscle_s2, rowdata.muscle_s3, rowdata.muscle_s4, rowdata.muscle_s5, rowdata.muscle_s6],
+                    equipment: rowdata.equipment,
+                    record_type: rowdata.record_type,
+                    multiplier: rowdata.multiplier,
+                    min_step: rowdata.min_step,
+                    tier: rowdata.tier,
+                    is_custom: rowdata.is_custom,
+                    video_url: rowdata.video_url,
+                    video_url_substitute: rowdata.video_url_substitute,
+                    reference_num: rowdata.reference_num,
+                    rest_time: 0,
+                    //workout_ability: temp[1],
+                    //plan: temp[2].plan,
+                    //detail_plan: temp[2].detail_plan
                 }
                 return info;
             }))
             return data;
         }
 
-        let data = {uid: other_uid, achievement: achievement, template: null, calendar_data: null, extra_custom_workout_table:null};
+        let data = { uid: other_uid, achievement: achievement, template: null, calendar_data: null, extra_custom_workout_table: null };
         [data.template, data.calendar_data, data.extra_custom_workout_table] = await Promise.all([Template.getUserTemplate(other_uid), Workout.getUserHistoryDataAll(other_uid, sex, ageGroup, weightGroup), getOthersCustomWorkout()]);
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
     },
-    updatePrivacySetting: async(req, res) => {
+    updatePrivacySetting: async (req, res) => {
         const uid = req.uid;
         const privacyMode = req.params.privacy_mode;
 
         const result = await User.updatePrivacySetting(uid, privacyMode);
-        
+
         if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
         }
@@ -318,7 +320,7 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
     },
-    getUserWorkoutMemo: async(req, res) => {
+    getUserWorkoutMemo: async (req, res) => {
         const uid = req.uid;
         const workout_id = req.params.workout_id;
 
@@ -331,7 +333,7 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, result));
     },
-    postUserWorkoutMemo: async(req, res) => {
+    postUserWorkoutMemo: async (req, res) => {
         const uid = req.uid;
         const workout_id = req.params.workout_id;
         const content = req.body.content;
@@ -343,9 +345,9 @@ module.exports = {
         }
         console.log(result.insertId)
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, {userWorkoutMemo_id: result.insertId}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, { userWorkoutMemo_id: result.insertId }));
     },
-    updateUserWorkoutMemo: async(req, res) => {
+    updateUserWorkoutMemo: async (req, res) => {
         const uid = req.uid;
         const userWorkoutMemo_id = req.params.userWorkoutMemo_id;
         const content = req.body.content;
@@ -359,7 +361,7 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
     },
-    deleteUserWorkoutMemo: async(req, res) => {
+    deleteUserWorkoutMemo: async (req, res) => {
         const uid = req.uid;
         const userWorkoutMemo_id = req.params.userWorkoutMemo_id;
 

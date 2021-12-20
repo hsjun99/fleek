@@ -25,18 +25,19 @@ const ttl = 60 * 60 * 1; // cache for 1 Hour
 const cache = new CacheService(ttl); // Create a new cache service instance
 
 const workout = {
-    getWorkoutYoutubeVideoTotal: async() => {
+    getWorkoutYoutubeVideoTotal: async (langCode) => {
         const fields = 'workout_workout_id, video_id, video_title, channel_name';
         const query = `SELECT ${fields} FROM ${table_workoutYoutube}
-                        ORDER BY workout_workout_id`;          
+                        WHERE lang_code = ${langCode}
+                        ORDER BY workout_workout_id`;
         try {
             const result = await pool.queryParamSlave(query);
             let temp = {};
-            await asyncForEach(result, async(rowdata) => {
-                if (temp[rowdata.workout_workout_id] == undefined){       
-                    temp[rowdata.workout_workout_id] = [{video_id: rowdata.video_id, video_title: rowdata.video_title, channel_name: rowdata.channel_name}];
+            await asyncForEach(result, async (rowdata) => {
+                if (temp[rowdata.workout_workout_id] == undefined) {
+                    temp[rowdata.workout_workout_id] = [{ video_id: rowdata.video_id, video_title: rowdata.video_title, channel_name: rowdata.channel_name }];
                 } else {
-                    temp[rowdata.workout_workout_id].push({video_id: rowdata.video_id, video_title: rowdata.video_title, channel_name: rowdata.channel_name});
+                    temp[rowdata.workout_workout_id].push({ video_id: rowdata.video_id, video_title: rowdata.video_title, channel_name: rowdata.channel_name });
                 }
             })
             return temp;
@@ -49,11 +50,11 @@ const workout = {
             throw err;
         }
     },
-    getWorkoutYoutubeVideo: async(workout_id) => {
+    getWorkoutYoutubeVideo: async (workout_id) => {
         const fields = 'video_id, video_title, channel_name';
         const query = `SELECT ${fields} FROM ${table_workoutYoutube}
                         WHERE ${table_workoutYoutube}.workout_workout_id = ${workout_id}`;
-                            
+
         try {
             const data = await pool.queryParamSlave(query);
             return data
@@ -66,10 +67,10 @@ const workout = {
             throw err;
         }
     },
-    postWorkoutInfoSyncFirebase: async(uid, update_time) => {
+    postWorkoutInfoSyncFirebase: async (uid, update_time) => {
         const table_syncTable = await admin.database().ref('syncTable');
         try {
-            await table_syncTable.child(uid).update({workoutInfo: update_time});
+            await table_syncTable.child(uid).update({ workoutInfo: update_time });
             return true;
         } catch (err) {
             if (err.errno == 1062) {
@@ -80,7 +81,7 @@ const workout = {
             throw err;
         }
     },
-    postCustomWorkout: async(uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute, reference_num) => {
+    postCustomWorkout: async (uid, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute, reference_num) => {
         const fields1 = 'korean, english, category, muscle_p, muscle_s1, equipment, record_type, multiplier, video_url, video_url_substitute, is_custom, reference_num';
         const fields2 = 'workout_workout_id, userinfo_uid, created_at';
         const questions1 = `?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?`;
@@ -91,11 +92,11 @@ const workout = {
         let transactionArr = new Array();
         let workout_id;
 
-        const ts1 = async(connection) => {
+        const ts1 = async (connection) => {
             const result1 = await connection.query(query1, values1);
             workout_id = result1.insertId;
         }
-        const ts2 = async(connection) => {
+        const ts2 = async (connection) => {
             const values2 = [workout_id, uid, await timeFunction.currentTime()];
             const query2 = `INSERT INTO ${table_customWorkout}(${fields2}) VALUES(${questions2})`;
             await connection.query(query2, values2);
@@ -116,7 +117,7 @@ const workout = {
             throw err;
         }
     },
-    updateCustomWorkout: async(uid, workout_id, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute, reference_num) => {
+    updateCustomWorkout: async (uid, workout_id, workout_name, muscle_primary, muscle_secondary, equipment, record_type, multiplier, video_url, video_url_substitute, reference_num) => {
         const query1 = `UPDATE ${table_workout}
                         SET korean = '${workout_name}', muscle_p = '${muscle_primary}', muscle_s1 = '${muscle_secondary[0]}', equipment = '${equipment}', record_type = '${record_type}', multiplier = '${multiplier}', video_url = '${video_url}', video_url_substitute = '${video_url_substitute}', reference_num = '${reference_num}'
                         WHERE workout_id = ${workout_id} AND is_custom = 1`;
@@ -134,17 +135,17 @@ const workout = {
             throw err;
         }
     },
-    deleteCustomWorkout: async(uid, workout_id, template_data) => {
+    deleteCustomWorkout: async (uid, workout_id, template_data) => {
         const query1 = `UPDATE ${table_customWorkout} SET is_deleted = 1 WHERE workout_workout_id = ${workout_id} AND userinfo_uid = '${uid}'`;
-        
+
         // Transactions
         let transactionArr = new Array();
-        const ts1 = async(connection) => {
+        const ts1 = async (connection) => {
             await connection.query(query1);
         }
-        const ts2 = async(connection) => {
-            await Promise.all(template_data.map(async(template) => {
-                let detail_final = await Promise.all(template.detail.map(async(detail) => {
+        const ts2 = async (connection) => {
+            await Promise.all(template_data.map(async (template) => {
+                let detail_final = await Promise.all(template.detail.map(async (detail) => {
                     if (detail.workout_id == workout_id) {
                         return null;
                     } else {
@@ -156,7 +157,7 @@ const workout = {
                 // Update Template Detail
                 const fields3 = 'workout_order, workout_workout_id, rest_time, templateUsers_template_id, workout_detail';
                 const question3 = '?, ?, ?, ?, ?'
-                
+
                 const query2 = `DELETE T_details
                                 FROM ${table_templateUsersDetails} T_details
                                 INNER JOIN ${table_templateUsers} ON T_details.templateUsers_template_id = ${table_templateUsers}.templateUsers_id AND ${table_templateUsers}.userinfo_uid = '${uid}'
@@ -166,7 +167,7 @@ const workout = {
                                 WHERE ${table_templateUsers}.templateUsers_id = '${template.template_id}' AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
                 await connection.query(query2);
                 let cnt = 1;
-                await asyncForEach(detail_final, async(workout) => {
+                await asyncForEach(detail_final, async (workout) => {
                     await connection.query(query3, [cnt++, workout.workout_id, workout.rest_time, Number(template.template_id), JSON.stringify(workout.workout_detail)]);
                 });
                 if (detail_final.length == 0) {
@@ -189,7 +190,7 @@ const workout = {
             throw err;
         }
     },
-    getOthersCustomWorkouts: async(other_uid, sex, ageGroup, weightGroup) => {
+    getOthersCustomWorkouts: async (other_uid, sex, ageGroup, weightGroup) => {
         const fields = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, inclination, intercept`;
         const query = `SELECT ${fields} FROM ${table_workout}
                         LEFT JOIN ${table_equation} ON ${table_workout}.workout_id = ${table_equation}.workout_workout_id
@@ -210,10 +211,10 @@ const workout = {
             throw err;
         }
     },
-    getWorkoutInfo: async(workout_id) => {
+    getWorkoutInfo: async (workout_id) => {
         const query = `SELECT * FROM ${table_workout}
                         WHERE ${table_workout}.workout_id = ${workout_id}`;
-                            
+
         try {
             const data = await pool.queryParamSlave(query);
             return {
@@ -233,7 +234,7 @@ const workout = {
                 video_url: data[0].video_url,
                 video_url_substitute: data[0].video_url_substitute,
                 reference_num: data[0].reference_num,
-                
+
             }
         } catch (err) {
             if (err.errno == 1062) {
@@ -244,7 +245,7 @@ const workout = {
             throw err;
         }
     },
-    getWorkoutTablePure: async(uid) => {
+    getWorkoutTablePure: async (uid) => {
         const fields1 = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num`;
         const fields2 = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, ${table_customWorkout}.is_deleted`;
         const query1 = `SELECT ${fields1} FROM ${table_workout}
@@ -273,7 +274,7 @@ const workout = {
             throw err;
         }
     },
-    getWorkoutTable: async(uid, sex, ageGroup, weightGroup) => {
+    getWorkoutTable: async (uid, sex, ageGroup, weightGroup) => {
         const fields = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, inclination, intercept, ${table_customWorkout}.is_deleted, userinfo_uid`;
         const query = `SELECT ${fields} FROM ${table_workout}
                         LEFT JOIN ${table_equation} ON ${table_workout}.workout_id = ${table_equation}.workout_workout_id
@@ -284,8 +285,8 @@ const workout = {
                             AND (${table_customWorkout}.userinfo_uid = '${uid}' OR is_custom = 0)
                                     `;
 
-                        //AND (is_custom = 0
-                        //OR (is_custom = 1 AND ${table_customWorkout}.is_deleted != 1))
+        //AND (is_custom = 0
+        //OR (is_custom = 1 AND ${table_customWorkout}.is_deleted != 1))
         try {
             const result = await pool.queryParamSlave(query);
             return result;
@@ -298,7 +299,7 @@ const workout = {
             throw err;
         }
     },
-    getCalendarDataBySession: async(uid, sex, ageGroup, weightGroup, session_id) => {
+    getCalendarDataBySession: async (uid, sex, ageGroup, weightGroup, session_id) => {
         const fields = `${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time, inclination, intercept`;
         const query = `SELECT ${fields} FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.session_id = ${session_id}
@@ -306,30 +307,30 @@ const workout = {
                         LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
                         LEFT JOIN ${table_equation} ON ${table_equation}.workout_workout_id = ${table_workoutlog}.workout_workout_id AND (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}")
                         ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
-        
+
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
-            const restructure = async() => {
+            const restructure = async () => {
                 let data = [];
-                await asyncForEach(result, async(rowdata) => {
-                    let percentage=null;
+                await asyncForEach(result, async (rowdata) => {
+                    let percentage = null;
                     if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
                         percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
                     }
-                    if (data.length == 0){
-                        data.push({session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}}]}});
+                    if (data.length == 0) {
+                        data.push({ session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, session_detail: { date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } }] } });
                     }
-                    else if (data[data.length-1].session_id == rowdata.session_session_id){
-                        const L = data[data.length-1].session_detail.content.length
-                        if (data[data.length-1].session_detail.content[L-1].workout_id == rowdata.workout_workout_id) {
-                            data[data.length-1].session_detail.content[L-1].sets.push({reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance});
+                    else if (data[data.length - 1].session_id == rowdata.session_session_id) {
+                        const L = data[data.length - 1].session_detail.content.length
+                        if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
+                            data[data.length - 1].session_detail.content[L - 1].sets.push({ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance });
                         }
                         else {
-                            data[data.length-1].session_detail.content.push({workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}});
+                            data[data.length - 1].session_detail.content.push({ workout_id: rowdata.workout_workout_id, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } });
                         }
                     }
                     else {
-                        data.push({session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}}]}});
+                        data.push({ session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, session_detail: { date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } }] } });
                     }
                 });
                 return data;
@@ -345,7 +346,7 @@ const workout = {
             throw err;
         }
     },
-    getCalendarData: async(uid, sex, ageGroup, weightGroup) => {
+    getCalendarData: async (uid, sex, ageGroup, weightGroup) => {
         const fields = `${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time, inclination, intercept`;
         const query = `SELECT ${fields} FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
@@ -353,7 +354,7 @@ const workout = {
                         LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
                         LEFT JOIN ${table_equation} ON ${table_equation}.workout_workout_id = ${table_workoutlog}.workout_workout_id AND (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}")
                         ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
-        
+
         // const query = `SELECT ${fields} FROM ${table_workoutlog}
         //                 INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
         //                 LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = ${table_session}.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
@@ -362,27 +363,27 @@ const workout = {
         //                 ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
-            const restructure = async() => {
+            const restructure = async () => {
                 let data = [];
-                await asyncForEach(result, async(rowdata) => {
-                    let percentage=null;
+                await asyncForEach(result, async (rowdata) => {
+                    let percentage = null;
                     if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
                         percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
                     }
-                    if (data.length == 0){
-                        data.push({session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}}]}});
+                    if (data.length == 0) {
+                        data.push({ session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, session_detail: { date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } }] } });
                     }
-                    else if (data[data.length-1].session_id == rowdata.session_session_id){
-                        const L = data[data.length-1].session_detail.content.length
-                        if (data[data.length-1].session_detail.content[L-1].workout_id == rowdata.workout_workout_id) {
-                            data[data.length-1].session_detail.content[L-1].sets.push({reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance});
+                    else if (data[data.length - 1].session_id == rowdata.session_session_id) {
+                        const L = data[data.length - 1].session_detail.content.length
+                        if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
+                            data[data.length - 1].session_detail.content[L - 1].sets.push({ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance });
                         }
                         else {
-                            data[data.length-1].session_detail.content.push({workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}});
+                            data[data.length - 1].session_detail.content.push({ workout_id: rowdata.workout_workout_id, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } });
                         }
                     }
                     else {
-                        data.push({session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}}]}});
+                        data.push({ session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, session_detail: { date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } }] } });
                     }
                 });
                 return data;
@@ -398,7 +399,7 @@ const workout = {
             throw err;
         }
     },
-    getUserHistoryDataBySession: async(uid, sex, ageGroup, weightGroup, session_id) => {
+    getUserHistoryDataBySession: async (uid, sex, ageGroup, weightGroup, session_id) => {
         const fields = `${table_session}.name AS session_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.super_set_label, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name AS template_name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.start_time, ${table_session}.total_time, inclination, intercept`;
         const query = `SELECT ${fields} FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.session_id = ${session_id}
@@ -406,31 +407,31 @@ const workout = {
                         LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
                         LEFT JOIN ${table_equation} ON ${table_equation}.workout_workout_id = ${table_workoutlog}.workout_workout_id AND (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}")
                         ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
-        
+
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
-            const restructure = async() => {
+            const restructure = async () => {
                 let data = [];
-                await asyncForEach(result, async(rowdata) => {
+                await asyncForEach(result, async (rowdata) => {
                     // rowdata.max_heart_rate = 50;
-                    let percentage=null;
+                    let percentage = null;
                     if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
                         percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
                     }
-                    if (data.length == 0){
-                        data.push({session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), session_detail: {created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}}]}});
+                    if (data.length == 0) {
+                        data.push({ session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } }] } });
                     }
-                    else if (data[data.length-1].session_id == rowdata.session_session_id){
-                        const L = data[data.length-1].session_detail.content.length
-                        if (data[data.length-1].session_detail.content[L-1].workout_id == rowdata.workout_workout_id) {
-                            data[data.length-1].session_detail.content[L-1].sets.push({reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance});
+                    else if (data[data.length - 1].session_id == rowdata.session_session_id) {
+                        const L = data[data.length - 1].session_detail.content.length
+                        if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
+                            data[data.length - 1].session_detail.content[L - 1].sets.push({ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance });
                         }
                         else {
-                            data[data.length-1].session_detail.content.push({workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}});
+                            data[data.length - 1].session_detail.content.push({ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } });
                         }
                     }
                     else {
-                        data.push({session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), session_detail: {created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}}]}});
+                        data.push({ session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } }] } });
                     }
                 });
                 return data;
@@ -446,38 +447,38 @@ const workout = {
             throw err;
         }
     },
-    getUserHistoryDataAll: async(uid, sex, ageGroup, weightGroup) => {
+    getUserHistoryDataAll: async (uid, sex, ageGroup, weightGroup) => {
         const fields = `${table_session}.name AS session_name, ${table_session}.device, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.super_set_label, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name AS template_name, workout_order, set_order, ${table_session}.created_at, ${table_session}.start_time, ${table_session}.total_time, inclination, intercept`;
         const query = `SELECT ${fields} FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
                         LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
                         LEFT JOIN ${table_equation} ON ${table_equation}.workout_workout_id = ${table_workoutlog}.workout_workout_id AND (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}")
                         ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
-        
+
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
-            const restructure = async() => {
+            const restructure = async () => {
                 let data = [];
-                await asyncForEach(result, async(rowdata) => {
+                await asyncForEach(result, async (rowdata) => {
                     // rowdata.max_heart_rate = 50;
                     // let percentage=null;
                     // if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
                     //     percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
                     // }
-                    if (data.length == 0){
-                        data.push({session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: {start_time: rowdata.start_time, created_at: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]}]}});
+                    if (data.length == 0) {
+                        data.push({ session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { start_time: rowdata.start_time, created_at: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }] }] } });
                     }
-                    else if (data[data.length-1].session_id == rowdata.session_session_id){
-                        const L = data[data.length-1].session_detail.content.length
-                        if (data[data.length-1].session_detail.content[L-1].workout_id == rowdata.workout_workout_id) {
-                            data[data.length-1].session_detail.content[L-1].sets.push({reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance});
+                    else if (data[data.length - 1].session_id == rowdata.session_session_id) {
+                        const L = data[data.length - 1].session_detail.content.length
+                        if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
+                            data[data.length - 1].session_detail.content[L - 1].sets.push({ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance });
                         }
                         else {
-                            data[data.length-1].session_detail.content.push({workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]});
+                            data[data.length - 1].session_detail.content.push({ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }] });
                         }
                     }
                     else {
-                        data.push({session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: {start_time: rowdata.start_time, created_at: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]}]}});
+                        data.push({ session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { start_time: rowdata.start_time, created_at: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }] }] } });
                     }
                 });
                 return data;
@@ -493,7 +494,7 @@ const workout = {
             throw err;
         }
     },
-    getUserHistoryDataPartial: async(uid, sex, ageGroup, weightGroup, mobileLastUpdateTime) => {
+    getUserHistoryDataPartial: async (uid, sex, ageGroup, weightGroup, mobileLastUpdateTime) => {
         const fields = `${table_session}.device, ${table_session}.is_deleted, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id,  ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time, inclination, intercept`;
         const query = `SELECT ${fields} FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.last_update IS NOT NULL AND ${table_session}.last_update > ${mobileLastUpdateTime}
@@ -501,30 +502,30 @@ const workout = {
                         LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
                         LEFT JOIN ${table_equation} ON ${table_equation}.workout_workout_id = ${table_workoutlog}.workout_workout_id AND (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}")
                         ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
-        
+
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
-            const restructure = async() => {
+            const restructure = async () => {
                 let data = [];
-                await asyncForEach(result, async(rowdata) => {
-                    let percentage=null;
+                await asyncForEach(result, async (rowdata) => {
+                    let percentage = null;
                     if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
                         percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
                     }
-                    if (data.length == 0){
-                        data.push({session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, device: rowdata.device, is_deleted: rowdata.is_deleted, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}}]}});
+                    if (data.length == 0) {
+                        data.push({ session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, device: rowdata.device, is_deleted: rowdata.is_deleted, session_detail: { date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } }] } });
                     }
-                    else if (data[data.length-1].session_id == rowdata.session_session_id){
-                        const L = data[data.length-1].session_detail.content.length
-                        if (data[data.length-1].session_detail.content[L-1].workout_id == rowdata.workout_workout_id) {
-                            data[data.length-1].session_detail.content[L-1].sets.push({reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance});
+                    else if (data[data.length - 1].session_id == rowdata.session_session_id) {
+                        const L = data[data.length - 1].session_detail.content.length
+                        if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
+                            data[data.length - 1].session_detail.content[L - 1].sets.push({ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance });
                         }
                         else {
-                            data[data.length-1].session_detail.content.push({workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}});
+                            data[data.length - 1].session_detail.content.push({ workout_id: rowdata.workout_workout_id, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } });
                         }
                     }
                     else {
-                        data.push({session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, device: rowdata.device, is_deleted: rowdata.is_deleted, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}}]}});
+                        data.push({ session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, device: rowdata.device, is_deleted: rowdata.is_deleted, session_detail: { date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } }] } });
                     }
                 });
                 return data;
@@ -540,7 +541,7 @@ const workout = {
             throw err;
         }
     },
-    getUserHistoryDataBySessionId: async(uid, sessionId, sex, ageGroup, weightGroup) => {
+    getUserHistoryDataBySessionId: async (uid, sessionId, sex, ageGroup, weightGroup) => {
         const fields = `${table_session}.device, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time, inclination, intercept`;
         const query = `SELECT ${fields} FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.session_id = ${sessionId} AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
@@ -548,30 +549,30 @@ const workout = {
                         LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
                         LEFT JOIN ${table_equation} ON ${table_equation}.workout_workout_id = ${table_workoutlog}.workout_workout_id AND (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}")
                         ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
-        
+
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
-            const restructure = async() => {
+            const restructure = async () => {
                 let data = [];
-                await asyncForEach(result, async(rowdata) => {
-                    let percentage=null;
+                await asyncForEach(result, async (rowdata) => {
+                    let percentage = null;
                     if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
                         percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
                     }
-                    if (data.length == 0){
-                        data.push({session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, device: rowdata.device, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, max_heart_rate: rowdata.max_heart_rate, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}}]}});
+                    if (data.length == 0) {
+                        data.push({ session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, device: rowdata.device, session_detail: { date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } }] } });
                     }
-                    else if (data[data.length-1].session_id == rowdata.session_session_id){
-                        const L = data[data.length-1].session_detail.content.length
-                        if (data[data.length-1].session_detail.content[L-1].workout_id == rowdata.workout_workout_id) {
-                            data[data.length-1].session_detail.content[L-1].sets.push({reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance});
+                    else if (data[data.length - 1].session_id == rowdata.session_session_id) {
+                        const L = data[data.length - 1].session_detail.content.length
+                        if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
+                            data[data.length - 1].session_detail.content[L - 1].sets.push({ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance });
                         }
                         else {
-                            data[data.length-1].session_detail.content.push({workout_id: rowdata.workout_workout_id, max_heart_rate: rowdata.max_heart_rate, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}});
+                            data[data.length - 1].session_detail.content.push({ workout_id: rowdata.workout_workout_id, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } });
                         }
                     }
                     else {
-                        data.push({session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, device: rowdata.device, session_detail: {date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{workout_id: rowdata.workout_workout_id, max_heart_rate: rowdata.max_heart_rate, sets: [{reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}], workout_ability: {max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage}}]}});
+                        data.push({ session_id: rowdata.session_session_id, template_id: rowdata.templateUsers_id, template_name: rowdata.name, device: rowdata.device, session_detail: { date: rowdata.created_at, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight, percentage: percentage } }] } });
                     }
                 });
                 return data;
@@ -593,7 +594,7 @@ const workout = {
                         WHERE ${table_workout}.workout_id = ${workout_id}`;
         try {
             const result = await pool.queryParamSlave(query);
-            if (result.length==0) return -1;
+            if (result.length == 0) return -1;
             return result[0].record_type;
         } catch (err) {
             if (err.errno == 1062) {
@@ -613,7 +614,7 @@ const workout = {
                                     OR (${table_equation}.sex="${sex}" AND (${table_equation}.age="${age}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weight}"))`;
         try {
             const result = await pool.queryParamSlave(query);
-            if (result.length==0) return -1;
+            if (result.length == 0) return -1;
             return result[0];
         } catch (err) {
             if (err.errno == 1062) {
@@ -632,18 +633,18 @@ const workout = {
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
             let temp = {};
-            await asyncForEach(result, async(rowdata) => {
+            await asyncForEach(result, async (rowdata) => {
                 if (temp[rowdata.workout_workout_id] == undefined) {
                     temp[rowdata.workout_workout_id] = [];
                 }
-                if (temp[rowdata.workout_workout_id].length == 0){       
-                    temp[rowdata.workout_workout_id].push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
+                if (temp[rowdata.workout_workout_id].length == 0) {
+                    temp[rowdata.workout_workout_id].push([{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at }]);
                 }
-                else if (temp[rowdata.workout_workout_id][temp[rowdata.workout_workout_id].length-1][0].session_id == rowdata.session_session_id){
-                    temp[rowdata.workout_workout_id][temp[rowdata.workout_workout_id].length-1].push({reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at});
+                else if (temp[rowdata.workout_workout_id][temp[rowdata.workout_workout_id].length - 1][0].session_id == rowdata.session_session_id) {
+                    temp[rowdata.workout_workout_id][temp[rowdata.workout_workout_id].length - 1].push({ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at });
                 }
                 else {
-                    temp[rowdata.workout_workout_id].push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
+                    temp[rowdata.workout_workout_id].push([{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at }]);
                 }
             })
             return temp;
@@ -664,24 +665,24 @@ const workout = {
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
             let rest_time = 0; // default;
-            const restructure = async() => {
+            const restructure = async () => {
                 let data = [];
-                await asyncForEach(result, async(rowdata) => {
-                    if (data.length == 0){       
-                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
+                await asyncForEach(result, async (rowdata) => {
+                    if (data.length == 0) {
+                        data.push([{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at }]);
                     }
-                    else if (data[data.length-1][0].session_id == rowdata.session_session_id){
-                        data[data.length-1].push({reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at});
+                    else if (data[data.length - 1][0].session_id == rowdata.session_session_id) {
+                        data[data.length - 1].push({ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at });
                     }
                     else {
-                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance, set_type:rowdata.set_type, rpe:rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at}]);
+                        data.push([{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe, session_id: rowdata.session_session_id, created_at: rowdata.created_at }]);
                     }
                 });
                 return data;
             }
             const recentRecords = await restructure();
             if (result.length > 0) rest_time = result[0].rest_time;
-            return {recentRecords, rest_time};
+            return { recentRecords, rest_time };
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
@@ -736,17 +737,17 @@ const workout = {
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
-            const restructure = async() => {
+            const restructure = async () => {
                 let data = [];
-                await asyncForEach(result, async(rowdata) => {
-                    if (data.length == 0){
-                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance}]);
+                await asyncForEach(result, async (rowdata) => {
+                    if (data.length == 0) {
+                        data.push([{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }]);
                     }
-                    else if (data[data.length-1][0].session_id == rowdata.session_session_id){
-                        data[data.length-1].push({reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance});
+                    else if (data[data.length - 1][0].session_id == rowdata.session_session_id) {
+                        data[data.length - 1].push({ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance });
                     }
                     else {
-                        data.push([{reps:rowdata.reps, weight:rowdata.weight, duration:rowdata.duration, distance:rowdata.distance}]);
+                        data.push([{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }]);
                     }
                 });
                 return data;
@@ -783,25 +784,25 @@ const workout = {
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
-            const restructure = async() => {
+            const restructure = async () => {
                 let data = [];
-                await asyncForEach(result, async(rowdata) => {
+                await asyncForEach(result, async (rowdata) => {
                     const timeDiffArr = await timeFunction.timeDiff_DHM(rowdata.created_at);
-                    if (data.length == 0){
-                        data.push({name: rowdata.name, session_id: rowdata.session_id, time: timeDiffArr, log: [{reps:rowdata.reps, weight:rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]});
+                    if (data.length == 0) {
+                        data.push({ name: rowdata.name, session_id: rowdata.session_id, time: timeDiffArr, log: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }] });
                     }
-                    else if (data[data.length-1].session_id == rowdata.session_id){
-                        data[data.length-1].log.push({reps:rowdata.reps, weight:rowdata.weight, duration: rowdata.duration, distance: rowdata.distance});
+                    else if (data[data.length - 1].session_id == rowdata.session_id) {
+                        data[data.length - 1].log.push({ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance });
                     }
                     else {
-                        data.push({name: rowdata.name, session_id: rowdata.session_id, time: timeDiffArr, log: [{reps:rowdata.reps, weight:rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]});
+                        data.push({ name: rowdata.name, session_id: rowdata.session_id, time: timeDiffArr, log: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }] });
                     }
                 });
                 return data;
             }
             const data = await restructure();
             return data;
-            
+
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('getUsersWorkoutRecordById ERROR: ', err.errno, err.code);
@@ -828,25 +829,25 @@ const workout = {
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`; // INNER JOIN ${table_follows} ON ${table_userinfo}.uid = ${table_follows}.follow_uid AND ${table_follows}.userinfo_uid = ${uid}
         try {
             let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
-            const restructure = async() => {
+            const restructure = async () => {
                 let data = [];
-                await asyncForEach(result, async(rowdata) => {
+                await asyncForEach(result, async (rowdata) => {
                     const timeDiffArr = await timeFunction.timeDiff_DHM(rowdata.created_at);
-                    if (data.length == 0){
-                        data.push({name: rowdata.name, session_id: rowdata.session_id, time: timeDiffArr, log: [{reps:rowdata.reps, weight:rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]});
+                    if (data.length == 0) {
+                        data.push({ name: rowdata.name, session_id: rowdata.session_id, time: timeDiffArr, log: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }] });
                     }
-                    else if (data[data.length-1].session_id == rowdata.session_id){
-                        data[data.length-1].log.push({reps:rowdata.reps, weight:rowdata.weight, duration: rowdata.duration, distance: rowdata.distance});
+                    else if (data[data.length - 1].session_id == rowdata.session_id) {
+                        data[data.length - 1].log.push({ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance });
                     }
                     else {
-                        data.push({name: rowdata.name, session_id: rowdata.session_id, time: timeDiffArr, log: [{reps:rowdata.reps, weight:rowdata.weight, duration: rowdata.duration, distance: rowdata.distance}]});
+                        data.push({ name: rowdata.name, session_id: rowdata.session_id, time: timeDiffArr, log: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance }] });
                     }
                 });
                 return data;
             }
             const data = await restructure();
             return data;
-            
+
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('getFollowsWorkoutRecordById ERROR: ', err.errno, err.code);
@@ -856,7 +857,7 @@ const workout = {
             throw err;
         }
     },
-    updateUserWorkoutHistoryAdd: async(uid, workout_id) => {
+    updateUserWorkoutHistoryAdd: async (uid, workout_id) => {
         const fields1 = 'add_num, finish_num, userinfo_uid, workout_workout_id';
         const questions1 = `?, ?, ?, ?`;
         const values1 = [0, 0, uid, workout_id];
@@ -875,7 +876,7 @@ const workout = {
             throw err;
         }
     },
-    updateUserWorkoutHistoryFinish: async(uid, workout_id) => {
+    updateUserWorkoutHistoryFinish: async (uid, workout_id) => {
         const query = `UPDATE ${table_userWorkoutHistory} SET finish_num = finish_num+1 WHERE userinfo_uid = "${uid}" AND workout_workout_id="${workout_id}"`;
         try {
             const result = await pool.queryParamMaster(query);
@@ -928,17 +929,17 @@ const workout = {
         const fields1 = 'category, muscle_p, muscle_s1, tier';
         const query1 = `SELECT ${fields1} FROM ${table_workout}
                         WHERE workout_id = ${workout_id}`;
-        try{
+        try {
             const result1 = await pool.queryParamSlave(query1);
-            const fields2 = `workout_id, (0.6*("${result1[0].category}"=category) + 0.2*(${result1[0].muscle_p}=muscle_p) + 0.15*(${result1[0].muscle_s1}=muscle_s1) + ${Math.random()*2-1}*(${result1[0].tier}=tier)) AS SCORE`;
+            const fields2 = `workout_id, (0.6*("${result1[0].category}"=category) + 0.2*(${result1[0].muscle_p}=muscle_p) + 0.15*(${result1[0].muscle_s1}=muscle_s1) + ${Math.random() * 2 - 1}*(${result1[0].tier}=tier)) AS SCORE`;
             const query2 = `SELECT ${fields2} FROM ${table_workout}
                             WHERE workout_id != ${workout_id} AND workout_id != 135
                             ORDER BY SCORE DESC
                             LIMIT 10`;
             const result2 = await pool.queryParamSlave(query2);
-            const restructure = async() => {
+            const restructure = async () => {
                 let data = [];
-                await asyncForEach(result2, async(rowdata) => {
+                await asyncForEach(result2, async (rowdata) => {
                     data.push(rowdata.workout_id);
                 });
                 return data;

@@ -12,7 +12,7 @@ let Template = require("../models/fleekTemplate");
 const initialUserRoutine = require('../modules/algorithm/initialUserRoutine');
 
 module.exports = {
-    checkuser: async(req, res) => {
+    checkuser: async (req, res) => {
         const uid = req.uid;
         const exist = await User.checkUser(uid);
 
@@ -20,23 +20,24 @@ module.exports = {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.SIGNUP_FAIL));
         }
 
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, {user: exist}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, { user: exist }));
 
         const fcm_token = req.body.fcm_token;
         await User.addFcmToken(uid, fcm_token);
     },
-    signup: async(req, res) => {
+    signup: async (req, res) => {
         const uid = req.uid;
-        const {name, sex, age, height, weight, squat1RM, experience} = req.body;
-        if (!String(name) || !String(sex) || !String(age) || !String(weight) || !String(height)){
+        const langCode = req.params.lang_code;
+        const { name, sex, age, height, weight, squat1RM, experience } = req.body;
+        if (!String(name) || !String(sex) || !String(age) || !String(weight) || !String(height)) {
             return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.NULL_VALUE));
         }
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
-    
-        const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, squat1RM, experience);
-        
-        await asyncForEach(initialUserRoutine, async(routine) => {
+
+        const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, squat1RM, experience, langCode);
+
+        await asyncForEach(initialUserRoutine, async (routine) => {
             await Template.postTemplateData(uid, routine.name, routine.detail);
         });
 
@@ -47,8 +48,8 @@ module.exports = {
         }
 
         await User.addFollow(uid, 'kakao:1810981552'); // 플릭이 친구추가
- 
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, {uid: acceptedUid}));
+
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, { uid: acceptedUid }));
     },
     kakaosignin: async (req, res) => {
         //Authentication Code 받아 돌려줄 api 
@@ -58,7 +59,7 @@ module.exports = {
     },
     kakaotoken: async (req, res) => {
         //발급 받은 kakao AccessCode로 사용자 확인후 firebase 로 custom token 생성하기 위한 api
-        kakao_auth.createFirebaseToken(req.body["accessToken"],(result)=>{
+        kakao_auth.createFirebaseToken(req.body["accessToken"], (result) => {
             res.send(result);
         });
     },
@@ -71,6 +72,6 @@ module.exports = {
         if (unique == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.CHECK_UNIQUE_FAIL));
         }
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.CHECK_UNIQUE_SUCCESS, {unique: unique}));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.CHECK_UNIQUE_SUCCESS, { unique: unique }));
     }
 }
