@@ -25,6 +25,8 @@ const getWorkoutInfo = require('../modules/functionFleek/getWorkoutInfo');
 const getUserInfo = require('../modules/functionFleek/getUserInfo');
 const getRpeByRepsWeight = require('../modules/functionFleek/getRpeByRepsWeight');
 
+const aboutLanguage = require('../modules/function/aboutLanguage');
+
 
 module.exports = {
   /*
@@ -96,7 +98,7 @@ module.exports = {
       detail_plan: default_plan.detail_plan
     }
     let update_time = Math.floor(Date.now() / 1000);
-    
+
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, [custom_workout_info], update_time));
     await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
   },
@@ -156,10 +158,10 @@ module.exports = {
 
     await Template.postTemplateSyncFirebase(uid, update_time); // the deleted custom workout can be included in the existing template -> therefore, need update
 
-    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, [{workout_id: Number(workout_id)}], update_time));
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, [{ workout_id: Number(workout_id) }], update_time));
 
     await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
-    
+
   },
   // getWorkoutAbilityAndRecentRecords: async(req, res) => {
   //   const uid = req.uid;
@@ -175,8 +177,9 @@ module.exports = {
   //   }));
   //   res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, data));
   // },
-  getWorkoutTableDataOptimize: async(req, res) => {
+  getWorkoutTableDataOptimize: async (req, res) => {
     const uid = req.uid;
+    const langCode = req.lang_code;
     // Get Profile
     const profileResult = await User.getProfile(uid);
     if (profileResult == -1) {
@@ -186,19 +189,21 @@ module.exports = {
     const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)])
     //const ageGroup = await ageGroupClassifier(age); // Conversion to group
     //const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
-    
+
     //let start = new Date();
     //const result = await Workout.getWorkoutTable(uid, sex, ageGroup, weightGroup); // original version
     // const result = await Workout.getWorkoutTablePure(uid); //optimized version
     //let end = new Date();
     //console.log(end-start)
-    const [result, workout_equation_result, workout_record_result, workout_ability_result, youtube_info_result] = await Promise.all([await Workout.getWorkoutTablePure(uid), await WorkoutEquation.getEquationTotal(sex, ageGroup, weightGroup), await Workout.getWorkoutRecordTotal(uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(uid), await Workout.getWorkoutYoutubeVideoTotal()]);
-    let data = await Promise.all(result.map(async(rowdata) => {
+    let [result, workout_equation_result, youtube_info_result] = await Promise.all([await Workout.getWorkoutTablePure(uid), await WorkoutEquation.getEquationTotal(sex, ageGroup, weightGroup), await Workout.getWorkoutYoutubeVideoTotal(langCode)]);
+    let data = await Promise.all(result.map(async (rowdata) => {
       const default_intensity_result = await defaultIntensity(workout_equation_result[rowdata.workout_id] != undefined ? workout_equation_result[rowdata.workout_id].inclination : null, workout_equation_result[rowdata.workout_id] != undefined ? workout_equation_result[rowdata.workout_id].intercept : null, percentage, rowdata.min_step);
       if (rowdata.muscle_p == null) rowdata.muscle_p = -1;
       if (rowdata.muscle_s1 == null) rowdata.muscle_s1 = -1;
+      rowdata = await aboutLanguage.rowdataWorkoutTable(langCode, rowdata);
       let info = {
         workout_id: Number(rowdata.workout_id),
+        name: rowdata.name,
         english: rowdata.english,
         korean: rowdata.korean,
         category: rowdata.category,
@@ -214,15 +219,15 @@ module.exports = {
         video_url_substitute: rowdata.video_url_substitute,
         reference_num: rowdata.reference_num,
         equation: workout_equation_result[rowdata.workout_id] != undefined ?
-                  {
-                    inclination: workout_equation_result[rowdata.workout_id].inclination,
-                    intercept: workout_equation_result[rowdata.workout_id].intercept
-                  }
-                  :
-                  {
-                    inclination: null,
-                    intercept: null
-                  }
+          {
+            inclination: workout_equation_result[rowdata.workout_id].inclination,
+            intercept: workout_equation_result[rowdata.workout_id].intercept
+          }
+          :
+          {
+            inclination: null,
+            intercept: null
+          }
         ,
         rest_time: 0,
         detail_plan: default_intensity_result.detail_plan,
@@ -366,19 +371,19 @@ module.exports = {
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, result));
     console.log("end");
   },
-  getAlgorithmData: async(req, res) => {
+  getAlgorithmData: async (req, res) => {
     const uid = req.uid;
     const workout_id = req.params.workout_id;
 
-    const {percentage, sex, ageGroup, weightGroup} = await getUserInfo(uid)
-    const {inclination, intercept} = await WorkoutEquation.getEquation(workout_id, sex, ageGroup, weightGroup);
+    const { percentage, sex, ageGroup, weightGroup } = await getUserInfo(uid)
+    const { inclination, intercept } = await WorkoutEquation.getEquation(workout_id, sex, ageGroup, weightGroup);
     const [max_one_rm, workoutData] = await Promise.all([await WorkoutAbility.getWorkoutMaxOneRm(uid, workout_id, percentage, inclination, intercept), await Workout.getWorkoutInfo(workout_id)]);
     const { min_step } = workoutData;
     const most_recent_record = await Workout.getMostRecentWorkoutRecordById(workout_id, uid);
-    const data = await Promise.all(fleekIntensity.map(async(algo) => {
+    const data = await Promise.all(fleekIntensity.map(async (algo) => {
       const algo_index = fleekIntensity.findIndex(algorithm => algorithm.algorithm_id == algo.algorithm_id);
 
-      let algorithm_id=algo.algorithm_id, algorithm_name=algo.algorithm_name, content_data=fleekIntensity[algo_index].algorithm_content;
+      let algorithm_id = algo.algorithm_id, algorithm_name = algo.algorithm_name, content_data = fleekIntensity[algo_index].algorithm_content;
       let availability, detail_data;
 
       if (algo.algorithm_id == 0) {
@@ -392,20 +397,20 @@ module.exports = {
           detail_data = await fleekIntensityRecentRecord(most_recent_record[0], most_recent_max_one_rm, min_step);
         }
       } else {
-        if ((inclination == null || intercept == null) && most_recent_record.length == 0){
+        if ((inclination == null || intercept == null) && most_recent_record.length == 0) {
           availability = 0;
           detail_data = null;
         } else {
           availability = 1;
-          detail_data = await Promise.all([0, 1, 2, 3, 4].map(async(intensity) => {
-            const data_by_intensity = await Promise.all(fleekIntensity[algo_index].algorithm_detail[intensity].weights.map(async(weight_param, index) => {
+          detail_data = await Promise.all([0, 1, 2, 3, 4].map(async (intensity) => {
+            const data_by_intensity = await Promise.all(fleekIntensity[algo_index].algorithm_detail[intensity].weights.map(async (weight_param, index) => {
               const reps = fleekIntensity[algo_index].algorithm_detail[intensity].reps[index];
               const weight = roundNumber.roundNum(weight_param * max_one_rm, min_step);
               let rpe;
-              if (weight == null || !isFinite(weight)){
+              if (weight == null || !isFinite(weight)) {
                 rpe = null;
               } else {
-                rpe = await getRpeByRepsWeight(reps, weight/max_one_rm);
+                rpe = await getRpeByRepsWeight(reps, weight / max_one_rm);
               }
               return { reps: reps, weight: weight, rpe: rpe };
             }));
@@ -413,7 +418,7 @@ module.exports = {
           }));
         }
       }
-      return {availability: availability, algorithm_id: algorithm_id, algorithm_name: algorithm_name, algorithm_content: content_data, detail_plan: detail_data};
+      return { availability: availability, algorithm_id: algorithm_id, algorithm_name: algorithm_name, algorithm_content: content_data, detail_plan: detail_data };
 
     }));
     // Success

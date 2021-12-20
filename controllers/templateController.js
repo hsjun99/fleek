@@ -21,7 +21,7 @@ module.exports = {
 
         await Template.postTemplateSyncFirebase(uid, update_time);
     },
-    getUserTemplate: async(req, res) => {
+    getUserTemplate: async (req, res) => {
         const uid = req.uid;
         let templateData;
         // Get User Template Data
@@ -34,11 +34,12 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERTEMPLATE_SUCCESS, templateData, update_time));
     },
-    getUserTemplateWear: async(req, res) => {
+    getUserTemplateWear: async (req, res) => {
         const uid = req.uid;
+        const langCode = req.lang_code;
         let templateData;
         // Get User Template Data
-        templateData = await Template.getUserTemplateWear(uid);
+        templateData = await Template.getUserTemplateWear(uid, langCode);
         // DB Error Handling
         if (templateData == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERTEMPLATE_FAIL));
@@ -46,9 +47,10 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERTEMPLATE_SUCCESS, templateData));
     },
-    getDefaultTemplate: async(req, res) => {
+    getDefaultTemplate: async (req, res) => {
         // Get Default Template Data
-        const templateData = await Template.getDefaultTemplate();
+        const langCode = req.lang_code;
+        const templateData = await Template.getDefaultTemplate(langCode);
         // DB Error Handling
         if (templateData == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_DEFAULTTEMPLATE_FAIL));
@@ -57,7 +59,7 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DEFAULTTEMPLATE_SUCCESS, templateData));
     },
-    importDefaultTemplate: async(req, res) => {
+    importDefaultTemplate: async (req, res) => {
         const uid = req.uid;
         const default_template_group_id = req.params.group_id;
         const index = req.params.index;
@@ -72,7 +74,7 @@ module.exports = {
 
         await Template.postTemplateSyncFirebase(uid, update_time);
     },
-    importOtherUsersTemplate: async(req, res) => {
+    importOtherUsersTemplate: async (req, res) => {
         const uid = req.uid;
         const template_id = req.params.template_id;
 
@@ -89,7 +91,7 @@ module.exports = {
         await Template.postOtherUsersTemplateDataFirebase(uid, template_id);
         await Template.postTemplateSyncFirebase(uid, update_time);
     },
-    updateUserTemplate: async(req, res) => {
+    updateUserTemplate: async (req, res) => {
         const uid = req.uid;
         const template_id = req.params.template_id;
         const data = req.body;
@@ -117,7 +119,7 @@ module.exports = {
 
         await Template.postTemplateSyncFirebase(uid, update_time);
     },
-    deleteUserTemplate: async(req, res) => {
+    deleteUserTemplate: async (req, res) => {
         const uid = req.uid;
         const template_id = req.params.template_id;
 
@@ -140,7 +142,7 @@ module.exports = {
         }
         let update_time = Math.floor(Date.now() / 1000);
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_USERTEMPLATE_SUCCESS, [{template_id: Number(template_id)}], update_time));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_USERTEMPLATE_SUCCESS, [{ template_id: Number(template_id) }], update_time));
 
         await Template.postTemplateSyncFirebase(uid, update_time);
     }
