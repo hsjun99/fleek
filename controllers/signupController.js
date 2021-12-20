@@ -27,7 +27,7 @@ module.exports = {
     },
     signup: async (req, res) => {
         const uid = req.uid;
-        const langCode = req.params.lang_code;
+        const langCode = req.lang_code;
         const { name, sex, age, height, weight, squat1RM, experience } = req.body;
         if (!String(name) || !String(sex) || !String(age) || !String(weight) || !String(height)) {
             return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.NULL_VALUE));
