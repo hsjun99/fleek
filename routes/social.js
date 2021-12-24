@@ -9,6 +9,8 @@ router.get('/allsession', AuthUser.checkToken, socialController.getAllSession);
 
 router.get('/sessionbatch/:last_session_id', AuthUser.checkToken, socialController.getSessionBatch);
 
+router.get('/sessionbatch/global/:last_session_id', AuthUser.checkToken, socialController.getSessionBatchGlobal);
+
 // router.get('/alluser', AuthUser.checkToken, socialController.getAllUser);
 
 router.post('/startsession', AuthUser.checkToken, socialController.sessionStart);

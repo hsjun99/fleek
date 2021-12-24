@@ -75,6 +75,7 @@ module.exports = {
 
     const custom_workout_info = {
       workout_id: result,
+      name: workout_name,
       english: 'custom',
       korean: workout_name,
       category: null,
@@ -119,6 +120,7 @@ module.exports = {
 
     const custom_workout_info = {
       workout_id: workout_id,
+      name: workout_name,
       english: 'custom',
       korean: workout_name,
       category: null,
@@ -201,6 +203,7 @@ module.exports = {
       if (rowdata.muscle_p == null) rowdata.muscle_p = -1;
       if (rowdata.muscle_s1 == null) rowdata.muscle_s1 = -1;
       rowdata = await aboutLanguage.rowdataWorkoutTable(langCode, rowdata);
+      if (rowdata.is_custom == 1) rowdata.name = rowdata.korean;
       let info = {
         workout_id: Number(rowdata.workout_id),
         name: rowdata.name,
@@ -318,7 +321,6 @@ module.exports = {
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERSRECORDS_SUCCESS, jsonFormatter.getOthersRecords(usersRecords, followsRecords)));
   },
   getall: async (req, res) => {
-    console.log("start");
     const uid = req.uid;
     let ids = req.query.ids;
     if (typeof req.query.ids == "string") ids = [ids]; // One element case handling -> Array
@@ -369,21 +371,23 @@ module.exports = {
 
     // Success
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, result));
-    console.log("end");
   },
   getAlgorithmData: async (req, res) => {
     const uid = req.uid;
     const workout_id = req.params.workout_id;
+    const langCode = req.lang_code;
 
     const { percentage, sex, ageGroup, weightGroup } = await getUserInfo(uid)
     const { inclination, intercept } = await WorkoutEquation.getEquation(workout_id, sex, ageGroup, weightGroup);
     const [max_one_rm, workoutData] = await Promise.all([await WorkoutAbility.getWorkoutMaxOneRm(uid, workout_id, percentage, inclination, intercept), await Workout.getWorkoutInfo(workout_id)]);
     const { min_step } = workoutData;
     const most_recent_record = await Workout.getMostRecentWorkoutRecordById(workout_id, uid);
-    const data = await Promise.all(fleekIntensity.map(async (algo) => {
-      const algo_index = fleekIntensity.findIndex(algorithm => algorithm.algorithm_id == algo.algorithm_id);
 
-      let algorithm_id = algo.algorithm_id, algorithm_name = algo.algorithm_name, content_data = fleekIntensity[algo_index].algorithm_content;
+    const fleekAlgo = fleekIntensity(langCode);
+    const data = await Promise.all(fleekAlgo.map(async (algo) => {
+      const algo_index = fleekAlgo.findIndex(algorithm => algorithm.algorithm_id == algo.algorithm_id);
+
+      let algorithm_id = algo.algorithm_id, algorithm_name = algo.algorithm_name, content_data = fleekAlgo[algo_index].algorithm_content;
       let availability, detail_data;
 
       if (algo.algorithm_id == 0) {
@@ -403,8 +407,8 @@ module.exports = {
         } else {
           availability = 1;
           detail_data = await Promise.all([0, 1, 2, 3, 4].map(async (intensity) => {
-            const data_by_intensity = await Promise.all(fleekIntensity[algo_index].algorithm_detail[intensity].weights.map(async (weight_param, index) => {
-              const reps = fleekIntensity[algo_index].algorithm_detail[intensity].reps[index];
+            const data_by_intensity = await Promise.all(fleekAlgo[algo_index].algorithm_detail[intensity].weights.map(async (weight_param, index) => {
+              const reps = fleekAlgo[algo_index].algorithm_detail[intensity].reps[index];
               const weight = roundNumber.roundNum(weight_param * max_one_rm, min_step);
               let rpe;
               if (weight == null || !isFinite(weight)) {

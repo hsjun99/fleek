@@ -252,29 +252,35 @@ const fleekUser = {
                 await table_usersFeed.child(follow_uid).push().set(message);
             }
 
+            // const fields1 = 'uid, lang_code'
+            // const query1 = `SELECT ${fields1} FROM ${table_userinfo} 
+            //                 WHERE userinfo_uid = ${follow_uid}`;
+            // const result1 = await pool.queryParamSlave(query1);
+
             if (privacy_mode == 0) {
-                const fields2 = 'token_value';
-                const query2 = `SELECT ${fields2} FROM ${table8}
-                                WHERE ${table8}.userinfo_uid = '${follow_uid}'`;
-                const result2 = await pool.queryParamSlave(query2);
-                const token_list = await Promise.all(result2.map(async data => {
-                    return data.token_value;
-                }));
-                const message_background = {
-                    notification: {
-                        title: '플릭(Fleek)',
-                        body: `${name}님이 팔로우하였습니다! 확인해보세요!!`
-                    }
-                }
-                const message_foreground = {
-                    data: {
-                        title: '플릭(Fleek)',
-                        body: `${name}님이 팔로우하였습니다! 확인해보세요!!`
-                    }
-                }
-                if (token_list.length != 0) {
-                    await firebaseCM(token_list, message_background, message_foreground);
-                }
+                // await firebaseCM(result1, "userFollow", [name]);
+                // const fields2 = 'token_value';
+                // const query2 = `SELECT ${fields2} FROM ${table8}
+                //                 WHERE ${table8}.userinfo_uid = '${follow_uid}'`;
+                // const result2 = await pool.queryParamSlave(query2);
+                // const token_list = await Promise.all(result2.map(async data => {
+                //     return data.token_value;
+                // }));
+                // const message_background = {
+                //     notification: {
+                //         title: '플릭(Fleek)',
+                //         body: `${name}님이 팔로우하였습니다! 확인해보세요!!`
+                //     }
+                // }
+                // const message_foreground = {
+                //     data: {
+                //         title: '플릭(Fleek)',
+                //         body: `${name}님이 팔로우하였습니다! 확인해보세요!!`
+                //     }
+                // }
+                // if (token_list.length != 0) {
+                //     await firebaseCM(token_list, message_background, message_foreground);
+                // }
             }
             return true;
         } catch (err) {

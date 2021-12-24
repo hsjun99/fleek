@@ -57,6 +57,7 @@ module.exports = {
     workoutNameTemplateWear: async (langCode, result) => {
         switch (langCode.toString()) {
             case "0":
+                if (result.is_custom == 1) return result.korean;
                 if (result.english.indexOf('(') == -1) {
                     return result.english;
                 } else {
@@ -69,6 +70,7 @@ module.exports = {
                     return result.korean.substring(0, result.korean.indexOf('('));
                 }
             default:
+                if (result.is_custom == 1) return result.korean;
                 if (result.english.indexOf('(') == -1) {
                     return result.english;
                 } else {
