@@ -276,8 +276,10 @@ module.exports = {
             }
             const data = await Promise.all(result.map(async rowdata => {
                 //const workoutRecord = await Workout.getWorkoutRecordById(rowdata.workout_id, uid);
+                if (rowdata.is_custom == 1) rowdata.name = rowdata.korean;
                 const info = {
                     workout_id: Number(rowdata.workout_id),
+                    name: rowdata.korean,
                     english: rowdata.english,
                     korean: rowdata.korean,
                     category: rowdata.category,

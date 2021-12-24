@@ -11,6 +11,8 @@ let Template = require("../models/fleekTemplate");
 
 const initialUserRoutine = require('../modules/algorithm/initialUserRoutine');
 
+const getUserInfo = require('../modules/functionFleek/getUserInfo');
+
 module.exports = {
     checkuser: async (req, res) => {
         const uid = req.uid;
@@ -37,8 +39,9 @@ module.exports = {
 
         const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, squat1RM, experience, langCode);
 
-        await asyncForEach(initialUserRoutine, async (routine) => {
-            await Template.postTemplateData(uid, routine.name, routine.detail);
+        const userInfo = await getUserInfo(uid);
+        await asyncForEach((await initialUserRoutine.initRoutines(langCode, userInfo.sex, userInfo.ageGroup, userInfo.weightGroup, userInfo.percentage)), async (routine) => {
+            await Template.postTemplateDataDetail(uid, routine.name, routine.detail);
         });
 
         const result = await User.updateBodyInfo(uid, height, weight, null, null);
@@ -46,8 +49,11 @@ module.exports = {
         if (acceptedUid == -1 || result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.SIGNUP_FAIL));
         }
-
-        await User.addFollow(uid, 'kakao:1810981552'); // 플릭이 친구추가
+        if (langCode == 1) {
+            await User.addFollow(uid, 'kakao:1810981552'); // 플릭이 친구추가
+        } else {
+            await User.addFollow(uid, '08pSskg6dSca5f2bzwdWAhO6tBs1'); // Fleek Add Following
+        }
 
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.SIGNUP_SUCCESS, { uid: acceptedUid }));
     },

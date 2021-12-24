@@ -20,6 +20,46 @@ const feedMessage = require('../modules/feedMessage');
 const aboutLanguage = require('../modules/function/aboutLanguage');
 
 const template = {
+    postTemplateDataDetail: async (uid, name, data) => {
+        const fields1 = 'name, userinfo_uid';
+        const fields2 = 'workout_order, super_set_label, workout_workout_id, templateUsers_template_id, rest_time, is_kilogram, is_meter, workout_detail';
+        const questions1 = '?, ?';
+        const questions2 = '?, ?, ?, ?, ?, ?, ?, ?'
+        const values1 = [name, uid];
+        const query1 = `INSERT INTO ${table_templateUsers}(${fields1}) VALUES(${questions1})`;
+        const query2 = `INSERT INTO ${table_templateUsersDetails}(${fields2}) VALUES(${questions2})`;
+
+        let userSetting;
+        // Transactions
+        let transactionArr = new Array();
+
+        let templateUsers_template_id; // Insert ID
+
+        const ts1 = async (connection) => {
+            const result1 = await connection.query(query1, values1);
+            templateUsers_template_id = result1.insertId;
+        }
+        const ts2 = async (connection) => {
+            let cnt = 1;
+            await asyncForEach(data, async (workout) => {
+                await connection.query(query2, [cnt++, workout.super_set_label, workout.workout_id, templateUsers_template_id, workout.rest_time, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(workout.workout_detail)])
+            });
+        }
+        try {
+            userSetting = await getUserSetting(uid);
+            transactionArr.push(ts1);
+            transactionArr.push(ts2);
+            await pool.Transaction(transactionArr);
+            return templateUsers_template_id;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('postTemplateData ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("postTemplateData ERROR: ", err);
+            throw err;
+        }
+    },
     postTemplateData: async (uid, name, data) => {
         const fields1 = 'name, userinfo_uid';
         const fields2 = 'workout_order, super_set_label, workout_workout_id, templateUsers_template_id, rest_time, is_kilogram, is_meter, workout_detail';
@@ -168,7 +208,10 @@ const template = {
                     const values4 = [workout.workout_id, uid, await timeFunction.currentTime()];
                     const questions4 = '?, ?, ?'
                     const query4 = `INSERT IGNORE INTO ${table_customWorkout}(${fields4}) VALUES(${questions4})`;
+                    const query5 = `UPDATE ${table_customWorkout}
+                                    SET is_deleted = 0 WHERE workout_workout_id = ${workout.workout_id} AND userinfo_uid = '${uid}'`
                     await connection.query(query4, values4);
+                    await connection.query(query5);
                 }
             });
         }
@@ -387,7 +430,7 @@ const template = {
         const fields = 'name, templateUsers_id, super_set_label, workout_workout_id, is_kilogram, is_meter, rest_time, workout_detail';
         const query = `SELECT ${fields} FROM ${table_templateUsers}
                         INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.userinfo_uid = '${uid}' AND ${table_templateUsers}.is_deleted != 1`;
-        const fields2 = 'korean, english, record_type';
+        const fields2 = 'korean, english, record_type, is_custom';
         const durationToInt = async (set) => {
             set.distance = parseInt(set.distance);
             return set;
