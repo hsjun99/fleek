@@ -10,6 +10,8 @@ const { Auth } = require('../modules/auth/firebaseAuth');
 
 router.get('/profile', AuthUser.checkToken, userController.getProfile);
 
+router.get('/profile/wear', AuthUserWear.checkUid, userController.getProfileWear);
+
 router.get('/setting', AuthUser.checkToken, userController.getSetting);
 
 router.get('/setting/wear', AuthUserWear.checkUid, userController.getSetting);

@@ -10,6 +10,7 @@ let WorkoutAbility = require('../models/fleekWorkoutAbility');
 let UserWorkoutMemo = require('../models/fleekUserWorkoutMemo');
 
 const getUserInfo = require('../modules/functionFleek/getUserInfo');
+const getUserInfoWear = require('../modules/functionFleek/getUserInfoWear');
 
 const defaultIntensity = require('../modules/algorithm/defaultIntensity');
 
@@ -133,6 +134,19 @@ module.exports = {
 
         //const profileData = await User.getProfile(uid);
         const profileData = await getUserInfo(uid);
+
+        // DB Error Handling
+        if (profileData == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL, profileData));
+    },
+    getProfileWear: async (req, res) => {
+        const uid = req.uid;
+
+        const profileData = await getUserInfoWear(uid);
 
         // DB Error Handling
         if (profileData == -1) {

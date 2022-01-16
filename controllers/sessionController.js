@@ -15,18 +15,18 @@ module.exports = {
         const data = req.body;
         const device = req.headers.device; // For Watch And Wear
         const now = moment();
-        const {sex, weight, ageGroup, weightGroup} = await User.getProfile(uid);
+        const { sex, weight, ageGroup, weightGroup } = await User.getProfile(uid);
 
         if (data.template_id == null) data.template_id = null;
 
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
-     
+
         // Post Session
         const sessionIdx = await Session.postSessionData(uid, weight, data.session, created_at, data.start_time, data.name, data.template_id, data.total_time, data.alphaProgramUsers_id, data.alphaProgram_progress, device);
         // DB Error Handling
         if (sessionIdx == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
-        } 
+        }
         const sessionUserHistoryData = await Workout.getUserHistoryDataBySession(uid, sex, ageGroup, weightGroup, sessionIdx);
 
         let update_time = Math.floor(Date.now() / 1000);
@@ -61,7 +61,7 @@ module.exports = {
             } else {
                 template_name = await Template.getUserTemplateName(data.template_id);
             }
-            const {name, privacy_setting} = await User.getProfile(uid);
+            const { name, privacy_setting } = await User.getProfile(uid);
             await Session.sessionFinish(uid, name, privacy_setting, followers_list, sessionIdx, template_name);
         }
         // else {
@@ -78,7 +78,7 @@ module.exports = {
 
         //     await Session.postUserHistorySyncFirebase(uid, update_time);
 
-            
+
         // }
     },
     modifySession: async (req, res) => {
@@ -86,8 +86,8 @@ module.exports = {
         const data = req.body;
         const device = req.headers.device; // For Watch And Wear
 
-        const {sex, weight, ageGroup, weightGroup} = await User.getProfile(uid);
-        
+        const { sex, weight, ageGroup, weightGroup } = await User.getProfile(uid);
+
         const result = await Session.modifySessionData(uid, data.session_id, weight, data.session, data.start_time, data.total_time, device);
         // DB Error Handling
         if (result != true) {
@@ -103,7 +103,7 @@ module.exports = {
         await Session.postUserHistorySyncFirebase(uid, update_time);
     },
     deleteSession: async (req, res) => {
-      //  await new Promise(resolve => setTimeout(resolve, 20000));
+        //  await new Promise(resolve => setTimeout(resolve, 20000));
         const uid = req.uid;
         const session_id = req.params.session_id;
 
@@ -117,7 +117,7 @@ module.exports = {
         let update_time = Math.floor(Date.now() / 1000);
 
         // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_SESSION_SUCCESS, [{session_id: Number(session_id)}], update_time));
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_SESSION_SUCCESS, [{ session_id: Number(session_id) }], update_time));
 
         await Session.postUserHistorySyncFirebase(uid, update_time);
     }

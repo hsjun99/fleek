@@ -27,6 +27,7 @@ const timeFunction = require('../modules/function/timeFunction');
 const { Unregister } = require("../modules/auth/firebaseAuth");
 
 const feedMessage = require('../modules/feedMessage');
+const { LexRuntime } = require('aws-sdk');
 
 const fleekUser = {
     unregister: async (uid) => {
@@ -403,14 +404,41 @@ const fleekUser = {
             const age = result[0].age;
             let height = result[0].height;
             let weight = result[0].weight;
-            const skeletal_muscle_mass = result[0].skeletal_muscle_mass;
-            const body_fat_ratio = result[0].body_fat_ratio;
+            let skeletal_muscle_mass;// = result[0].skeletal_muscle_mass;
+            let body_fat_ratio;// = result[0].body_fat_ratio;
             const percentage = result[0].percentage;
             const name = result[0].name;
             const privacy_setting = result[0].privacy_setting;
             if (!(body_info_history.length == 0)) {
-                height = body_info_history[body_info_history.length - 1].height;
-                weight = body_info_history[body_info_history.length - 1].weight;
+                height = (() => {
+                    let index = body_info_history.length - 1;
+                    while (body_info_history[index].height == null && index > 0) {
+                        index -= 1;
+                    }
+                    return body_info_history[index].height;
+                })();
+                weight = (() => {
+                    let index = body_info_history.length - 1;
+                    while (body_info_history[index].weight == null && index > 0) {
+                        index -= 1;
+                    }
+                    return body_info_history[index].weight;
+                })();
+                skeletal_muscle_mass = (() => {
+                    let index = body_info_history.length - 1;
+                    while (body_info_history[index].skeletal_muscle_mass == null && index > 0) {
+                        index -= 1;
+                    }
+                    return body_info_history[index].skeletal_muscle_mass;
+                })();
+                body_fat_ratio = (() => {
+                    let index = body_info_history.length - 1;
+                    while (body_info_history[index].body_fat_ratio == null && index > 0) {
+                        index -= 1;
+                    }
+                    return body_info_history[index].body_fat_ratio;
+                })();//body_info_history[body_info_history.length - 1].body_fat_ratio;
+
             }
 
             return { sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, body_info_history };
