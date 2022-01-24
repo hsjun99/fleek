@@ -54,17 +54,17 @@ module.exports = {
         const { name } = await User.getProfile(uid);
         await Session.sessionFinish(uid, name, followers_list);
     },
-    getAllSession: async (req, res) => {
-        const uid = req.uid;
-        // Post Session
-        const data = await Session.getAllSessionData(uid);
-        // DB Error Handling
-        if (data == -1) {
-            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
-        }
-        // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
-    },
+    // getAllSession: async (req, res) => {
+    //     const uid = req.uid;
+    //     // Post Session
+    //     const data = await Session.getAllSessionData(uid);
+    //     // DB Error Handling
+    //     if (data == -1) {
+    //         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
+    //     }
+    //     // Success
+    //     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
+    // },
     getSessionBatch: async (req, res) => {
         const uid = req.uid;
         const last_session_id = req.params.last_session_id;
@@ -72,17 +72,6 @@ module.exports = {
         let data;
         if (last_session_id == "init") {
             data = await Session.getFirstSessionBatchData(uid, langCode);
-
-
-            // if (uid == 'kakao:1810981552') {
-            //     const userInfo = await getUserInfo(uid);
-            //     await asyncForEach((await initialUserRoutine.initRoutines(1, userInfo.sex, userInfo.ageGroup, userInfo.weightGroup, userInfo.percentage)), async (routine) => {
-            //         await Template.postTemplateDataDetail(uid, routine.name, routine.detail);
-            //     });
-            // }
-
-
-
         } else {
             data = await Session.getNextSessionBatchData(uid, last_session_id, langCode);
         }
@@ -109,15 +98,15 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
     },
-    getAllUser: async (req, res) => {
-        const uid = req.uid;
-        const data = await User.getAllUser(uid);
-        if (data == -1) {
-            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
-        }
-        // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
-    },
+    // getAllUser: async (req, res) => {
+    //     const uid = req.uid;
+    //     const data = await User.getAllUser(uid);
+    //     if (data == -1) {
+    //         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
+    //     }
+    //     // Success
+    //     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
+    // },
     sessionLikeResponse: async (req, res) => {
         const uid = req.uid;
         const session_id = req.params.session_id;
@@ -138,11 +127,11 @@ module.exports = {
 
         await Session.sessionLike(uid, session_id, emoji_type, name, privacy_setting, template_name);
     },
-    getFollowersAndFollowings: async (req, res) => {
-        const uid = req.uid;
-        const [data_followers, data_followings] = await Promise.all([await User.getFollowers(uid), await User.getFollowings(uid)]);
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, { followers: data_followers, followings: data_followings }));
-    },
+    // getFollowersAndFollowings: async (req, res) => {
+    //     const uid = req.uid;
+    //     const [data_followers, data_followings] = await Promise.all([await User.getFollowers(uid), await User.getFollowings(uid)]);
+    //     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, { followers: data_followers, followings: data_followings }));
+    // },
     getFollowers: async (req, res) => {
         //await new Promise(resolve => setTimeout(resolve, 20000));
         const uid = req.uid;
