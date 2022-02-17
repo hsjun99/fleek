@@ -27,7 +27,13 @@ module.exports = {
         if (sessionIdx == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
         }
-        const sessionUserHistoryData = await Workout.getUserHistoryDataBySession(uid, sex, ageGroup, weightGroup, sessionIdx);
+        let sessionUserHistoryData;
+
+        if (device != null && device != undefined) {
+            sessionUserHistoryData = await Workout.getUserHistoryDataBySessionWear(uid, sex, ageGroup, weightGroup, sessionIdx);
+        } else {
+            sessionUserHistoryData = await Workout.getUserHistoryDataBySession(uid, sex, ageGroup, weightGroup, sessionIdx);
+        }
 
         let update_time = Math.floor(Date.now() / 1000);
 
