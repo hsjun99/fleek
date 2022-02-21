@@ -390,7 +390,7 @@ const fleekUser = {
         }
     },
     getProfile: async (uid) => {
-        const fields1 = 'sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting';
+        const fields1 = 'sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, profile_url';
         const fields2 = 'userBodyInfoTracking_id, height, weight, skeletal_muscle_mass, body_fat_ratio, created_at';
         const query1 = `SELECT ${fields1} FROM ${table1}
                         WHERE ${table1}.uid="${uid}"`;
@@ -409,6 +409,7 @@ const fleekUser = {
             const percentage = result[0].percentage;
             const name = result[0].name;
             const privacy_setting = result[0].privacy_setting;
+            const profile_url = result[0].profile_url;
             if (!(body_info_history.length == 0)) {
                 height = (() => {
                     let index = body_info_history.length - 1;
@@ -441,7 +442,7 @@ const fleekUser = {
 
             }
 
-            return { sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, body_info_history };
+            return { sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, body_info_history, profile_url };
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('getProfile ERROR: ', err.errno, err.code);

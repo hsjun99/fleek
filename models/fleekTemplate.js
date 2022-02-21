@@ -254,7 +254,7 @@ const template = {
         let templateUsers_template_id;
 
         const ts1 = async (connection) => {
-            const result1 = await pool.queryParamMaster(query1);
+            const result1 = await pool.queryParamSlave(query1);
             name = result1[0].sub_name;
             await asyncForEach(result1, async (rowdata) => {
                 workoutData.push(rowdata.workout_workout_id);
@@ -690,7 +690,7 @@ const template = {
         const query = `SELECT templateUsers_id FROM ${table_templateUsers}
                         WHERE ${table_templateUsers}.templateUsers_id = ${template_id} AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
         try {
-            const result = await pool.queryParamMaster(query);
+            const result = await pool.queryParamSlave(query);
             if (result.length == 0) return false;
             return true;
         } catch (err) {
