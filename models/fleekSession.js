@@ -531,8 +531,6 @@ const session = {
         const query = `UPDATE ${table_session} SET is_deleted=1
                         WHERE ${table_session}.session_id = ${session_id} AND ${table_session}.userinfo_uid = "${uid}"`;
 
-
-
         // Transactions
         let transactionArr = new Array();
 
@@ -603,7 +601,7 @@ const session = {
                         LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = SESSION_BATCH.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
                         ORDER BY SESSION_BATCH.created_at DESC, SESSION_BATCH.session_id DESC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {
-            let result = await pool.queryParamMaster(query);
+            let result = await pool.queryParamSlave(query);
             const restructure = async () => {
                 let data = [];
                 await asyncForEach(result, async (rowdata) => {
@@ -677,7 +675,7 @@ const session = {
                         LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = SESSION_BATCH.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
                         ORDER BY SESSION_BATCH.created_at DESC, SESSION_BATCH.session_id DESC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {
-            let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
+            let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
             const restructure = async () => {
                 let data = [];
                 await asyncForEach(result, async (rowdata) => {
@@ -748,7 +746,7 @@ const session = {
         try {
             var start = new Date()
 
-            let result = await pool.queryParamMaster(query);
+            let result = await pool.queryParamSlave(query);
             console.log(new Date() - start)
             const restructure = async () => {
                 let data = [];
@@ -836,7 +834,7 @@ const session = {
         //                 ON SESSION_BATCH.session_id = ${table_workoutlog}.session_session_id`;
 
         try {
-            let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
+            let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
             const restructure = async () => {
                 let data = [];
                 await asyncForEach(result, async (rowdata) => {
@@ -891,7 +889,7 @@ const session = {
                         LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
                         ORDER BY ${table_session}.created_at DESC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {
-            let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
+            let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
             const restructure = async () => {
                 let data = [];
                 await asyncForEach(result, async (rowdata) => {
