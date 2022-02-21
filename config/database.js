@@ -1,10 +1,14 @@
 //const { config } = require("aws-sdk");
 const mysql = require("promise-mysql");
 const ssmPromise = require("../modules/auth/awsparamStore.js");
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const DB_master = async () => {
     return new Promise(async (resolve, reject) => {
         await ssmPromise.then(configAWS => {
+            console.log(process.env.REGION)
             const configDB = {
                 host: configAWS.host_master,
                 port: configAWS.port_master,
@@ -24,7 +28,7 @@ const DB_slave = async () => {
     return new Promise(async (resolve, reject) => {
         await ssmPromise.then(configAWS => {
             const configDB = {
-                host: configAWS.host_slave,
+                host: process.env.REGION == 'TOKYO' ? configAWS.host_slave : configAWS.host_slave_US,
                 port: configAWS.port_slave,
                 user: configAWS.user_slave,
                 password: configAWS.password_slave,
