@@ -19,6 +19,7 @@ const DB_master = async () => {
     })
 }
 
+
 const DB_slave = async () => {
     return new Promise(async (resolve, reject) => {
         await ssmPromise.then(configAWS => {
