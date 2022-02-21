@@ -388,7 +388,7 @@ const template = {
         }
 
         try {
-            const result = await pool.queryParamMaster(query);
+            const result = await pool.queryParamSlave(query);
             const restructure = async () => {
                 let data = [];
                 await asyncForEach(result, async (rowdata) => {

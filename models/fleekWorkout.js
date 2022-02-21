@@ -504,7 +504,7 @@ const workout = {
                         ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
 
         try {
-            let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
+            let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
             const restructure = async () => {
                 let data = [];
                 await asyncForEach(result, async (rowdata) => {

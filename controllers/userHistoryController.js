@@ -13,13 +13,13 @@ module.exports = {
     getUserHistoryData: async (req, res) => {
         const uid = req.uid;
         const mobileLastUpdateTime = req.headers.last_update_time;
-        
+
         const profileResult = await User.getProfile(uid);
         const { sex, age, weight } = profileResult;
         const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)]);
 
         let data = [];
-        
+
         // if (mobileLastUpdateTime == null || mobileLastUpdateTime == undefined) {
 
         // Get Calendar Data
@@ -28,7 +28,7 @@ module.exports = {
         if (data == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_CALENDAR_FAIL));
         }
-        
+
         // }
         // else {
         //     data = await Workout.getUserHistoryDataPartial(uid, sex, ageGroup, weightGroup, mobileLastUpdateTime);
@@ -38,7 +38,7 @@ module.exports = {
         //     }
         // }
         let update_time = Math.floor(Date.now() / 1000);
-    
+
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_CALENDAR_SUCCESS, data, update_time));
     }
