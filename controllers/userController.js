@@ -259,7 +259,7 @@ module.exports = {
     getOthersFleekData: async (req, res) => {
         //const uid = req.uid;
         const other_uid = req.params.other_uid;
-        const { sex, age, weight, achievement } = await getUserInfo(other_uid);
+        const { sex, age, weight, achievement, profile_url } = await getUserInfo(other_uid);
         const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)])
         // const ageGroup = await ageGroupClassifier(age); // Conversion to group
         // const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
@@ -318,7 +318,7 @@ module.exports = {
             return data;
         }
 
-        let data = { uid: other_uid, achievement: achievement, template: null, calendar_data: null, extra_custom_workout_table: null };
+        let data = { uid: other_uid, profile_url: profile_url, achievement: achievement, template: null, calendar_data: null, extra_custom_workout_table: null };
         [data.template, data.calendar_data, data.extra_custom_workout_table] = await Promise.all([Template.getUserTemplate(other_uid), Workout.getUserHistoryDataAll(other_uid, sex, ageGroup, weightGroup), getOthersCustomWorkout()]);
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));

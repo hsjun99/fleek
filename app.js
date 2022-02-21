@@ -16,6 +16,7 @@ var dashboardRouter = require('./routes/dashboard');
 var userRouter = require('./routes/user');
 var socialRouter = require('./routes/social');
 var adminRouter = require('./routes/admin');
+var imageRouter = require('./routes/image');
 
 var admin = require('firebase-admin');
 
@@ -55,6 +56,7 @@ app.use('/dashboard', dashboardRouter);
 app.use('/user', userRouter);
 app.use('/social', socialRouter);
 app.use('/admin', adminRouter);
+app.use('/image', imageRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

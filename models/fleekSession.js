@@ -589,10 +589,10 @@ const session = {
         //                 WHERE ${table_session}.is_deleted != 1
         //                 ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC
         //                 LIMIT 50`;
-        const fields = `SESSION_BATCH.userinfo_uid, ${table_userinfo}.name, SESSION_BATCH.name AS session_name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.super_set_label, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.start_time, SESSION_BATCH.total_time, SESSION_BATCH.device, max_one_rm, total_volume, max_volume, total_reps, max_weight`;
+        const fields = `SESSION_BATCH.userinfo_uid, SESSION_BATCH.profile_url, ${table_userinfo}.name, SESSION_BATCH.name AS session_name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.super_set_label, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.start_time, SESSION_BATCH.total_time, SESSION_BATCH.device, max_one_rm, total_volume, max_volume, total_reps, max_weight`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN 
-                        (SELECT session_id, userinfo_uid, ${table_session}.name, ${table_session}.created_at, ${table_session}.start_time, total_time, device, templateUsers_template_id FROM ${table_session}
+                        (SELECT session_id, userinfo_uid, profile_url, ${table_session}.name, ${table_session}.created_at, ${table_session}.start_time, total_time, device, templateUsers_template_id FROM ${table_session}
                         INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = userinfo_uid AND ${table_userinfo}.privacy_setting != 1
                         WHERE ${table_session}.is_deleted != 1 AND ${table_session}.session_total_sets != 0
                         ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC
@@ -609,7 +609,7 @@ const session = {
                 await asyncForEach(result, async (rowdata) => {
                     // rowdata.max_heart_rate = 50;
                     if (data.length == 0) {
-                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
+                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, profile_url: rowdata.profile_url, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
                     }
                     else if (data[data.length - 1].session_id == rowdata.session_session_id) {
                         const L = data[data.length - 1].session_detail.content.length
@@ -621,7 +621,7 @@ const session = {
                         }
                     }
                     else {
-                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
+                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, profile_url: rowdata.profile_url, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
                     }
                 });
                 return data;
@@ -661,10 +661,10 @@ const session = {
         //                         OR (${table_session}.created_at = (SELECT created_at FROM ${table_session} WHERE session_id = ${last_session_id}) AND session_id < ${last_session_id} ))
         //                 ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC
         //                 LIMIT 50`;
-        const fields = `SESSION_BATCH.userinfo_uid, ${table_userinfo}.name, SESSION_BATCH.name AS session_name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.super_set_label, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.start_time, SESSION_BATCH.total_time, SESSION_BATCH.device, max_one_rm, total_volume, max_volume, total_reps, max_weight`;
+        const fields = `SESSION_BATCH.userinfo_uid, SESSION_BATCH.profile_url, ${table_userinfo}.name, SESSION_BATCH.name AS session_name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.super_set_label, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.start_time, SESSION_BATCH.total_time, SESSION_BATCH.device, max_one_rm, total_volume, max_volume, total_reps, max_weight`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN 
-                        (SELECT session_id, userinfo_uid, ${table_session}.name, ${table_session}.created_at, ${table_session}.start_time, total_time, device, templateUsers_template_id FROM ${table_session}
+                        (SELECT session_id, userinfo_uid, profile_url, ${table_session}.name, ${table_session}.created_at, ${table_session}.start_time, total_time, device, templateUsers_template_id FROM ${table_session}
                         INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = userinfo_uid AND ${table_userinfo}.privacy_setting != 1
                         WHERE (${table_session}.created_at < (SELECT created_at FROM ${table_session} WHERE session_id = ${last_session_id})
                                 OR (${table_session}.created_at = (SELECT created_at FROM ${table_session} WHERE session_id = ${last_session_id}) AND session_id < ${last_session_id} ))
@@ -684,7 +684,7 @@ const session = {
                     // rowdata.max_heart_rate = 50;
                     // console.log(rowdata.max_heart_rate)
                     if (data.length == 0) {
-                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
+                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, profile_url: rowdata.profile_url, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
                     }
                     else if (data[data.length - 1].session_id == rowdata.session_session_id) {
                         const L = data[data.length - 1].session_detail.content.length
@@ -696,7 +696,7 @@ const session = {
                         }
                     }
                     else {
-                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
+                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, profile_url: rowdata.profile_url, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
                     }
                 });
                 return data;
@@ -732,10 +732,10 @@ const session = {
         //                 WHERE ${table_session}.is_deleted != 1
         //                 ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC
         //                 LIMIT 50`;
-        const fields = `SESSION_BATCH.userinfo_uid, ${table_userinfo}.name, SESSION_BATCH.name AS session_name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.super_set_label, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.start_time, SESSION_BATCH.total_time, SESSION_BATCH.device, max_one_rm, total_volume, max_volume, total_reps, max_weight`;
+        const fields = `SESSION_BATCH.userinfo_uid, SESSION_BATCH.profile_url, ${table_userinfo}.name, SESSION_BATCH.name AS session_name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.super_set_label, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.start_time, SESSION_BATCH.total_time, SESSION_BATCH.device, max_one_rm, total_volume, max_volume, total_reps, max_weight`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN 
-                        (SELECT session_id, userinfo_uid, ${table_session}.name, ${table_session}.created_at, ${table_session}.start_time, total_time, device, templateUsers_template_id FROM ${table_session}
+                        (SELECT session_id, userinfo_uid, profile_url, ${table_session}.name, ${table_session}.created_at, ${table_session}.start_time, total_time, device, templateUsers_template_id FROM ${table_session}
                         INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = userinfo_uid AND ${table_userinfo}.privacy_setting != 1 AND ${table_userinfo}.lang_code = ${langCode}
                         WHERE ${table_session}.is_deleted != 1 AND ${table_session}.session_total_sets != 0
                         ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC
@@ -746,13 +746,16 @@ const session = {
                         LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = SESSION_BATCH.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
                         ORDER BY SESSION_BATCH.created_at DESC, SESSION_BATCH.session_id DESC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
         try {
+            var start = new Date()
+
             let result = await pool.queryParamMaster(query);
+            console.log(new Date() - start)
             const restructure = async () => {
                 let data = [];
                 await asyncForEach(result, async (rowdata) => {
                     // rowdata.max_heart_rate = 50;
                     if (data.length == 0) {
-                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
+                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, profile_url: rowdata.profile_url, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
                     }
                     else if (data[data.length - 1].session_id == rowdata.session_session_id) {
                         const L = data[data.length - 1].session_detail.content.length
@@ -764,12 +767,13 @@ const session = {
                         }
                     }
                     else {
-                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
+                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, profile_url: rowdata.profile_url, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
                     }
                 });
                 return data;
             }
             const data = await restructure();
+            console.log(new Date() - start)
 
             await Promise.all(data.map(async (session, session_index) => {
                 const { sex, ageGroup, weightGroup, achievement } = await getUserInfo(session.uid);
@@ -784,6 +788,7 @@ const session = {
                     data[session_index].session_detail.content[workout_index].workout_ability.percentage = percentage;
                 }));
             }));
+            console.log(new Date() - start)
             return data;
         } catch (err) {
             if (err.errno == 1062) {
@@ -804,10 +809,10 @@ const session = {
         //                         OR (${table_session}.created_at = (SELECT created_at FROM ${table_session} WHERE session_id = ${last_session_id}) AND session_id < ${last_session_id} ))
         //                 ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC
         //                 LIMIT 50`;
-        const fields = `SESSION_BATCH.userinfo_uid, ${table_userinfo}.name, SESSION_BATCH.name AS session_name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.super_set_label, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.start_time, SESSION_BATCH.total_time, SESSION_BATCH.device, max_one_rm, total_volume, max_volume, total_reps, max_weight`;
+        const fields = `SESSION_BATCH.userinfo_uid, SESSION_BATCH.profile_url, ${table_userinfo}.name, SESSION_BATCH.name AS session_name, ${table_templateUsers}.name AS template_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.set_type, ${table_workoutlog}.rpe, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.super_set_label, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.session_session_id, workout_order, set_order, SESSION_BATCH.created_at, SESSION_BATCH.start_time, SESSION_BATCH.total_time, SESSION_BATCH.device, max_one_rm, total_volume, max_volume, total_reps, max_weight`;
         const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN 
-                        (SELECT session_id, userinfo_uid, ${table_session}.name, ${table_session}.created_at, ${table_session}.start_time, total_time, device, templateUsers_template_id FROM ${table_session}
+                        (SELECT session_id, userinfo_uid, profile_url, ${table_session}.name, ${table_session}.created_at, ${table_session}.start_time, total_time, device, templateUsers_template_id FROM ${table_session}
                         INNER JOIN ${table_userinfo} ON ${table_userinfo}.uid = userinfo_uid AND ${table_userinfo}.privacy_setting != 1 AND ${table_userinfo}.lang_code = ${langCode}
                         WHERE (${table_session}.created_at < (SELECT created_at FROM ${table_session} WHERE session_id = ${last_session_id})
                                 OR (${table_session}.created_at = (SELECT created_at FROM ${table_session} WHERE session_id = ${last_session_id}) AND session_id < ${last_session_id} ))
@@ -838,7 +843,7 @@ const session = {
                     // rowdata.max_heart_rate = 50;
                     // console.log(rowdata.max_heart_rate)
                     if (data.length == 0) {
-                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
+                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, profile_url: rowdata.profile_url, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
                     }
                     else if (data[data.length - 1].session_id == rowdata.session_session_id) {
                         const L = data[data.length - 1].session_detail.content.length
@@ -850,7 +855,7 @@ const session = {
                         }
                     }
                     else {
-                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
+                        data.push({ session_id: rowdata.session_session_id, uid: rowdata.userinfo_uid, profile_url: rowdata.profile_url, name: rowdata.name, template_name: (rowdata.session_name != null ? rowdata.session_name : rowdata.template_name), device: rowdata.device, session_detail: { created_at: rowdata.created_at, start_time: rowdata.start_time, total_workout_time: rowdata.total_time, content: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, max_heart_rate: rowdata.max_heart_rate, sets: [{ reps: rowdata.reps, weight: rowdata.weight, duration: rowdata.duration, distance: rowdata.distance, set_type: rowdata.set_type, rpe: rowdata.rpe }], workout_ability: { max_one_rm: rowdata.max_one_rm, total_volume: rowdata.total_volume, max_volume: rowdata.max_volume, total_reps: rowdata.total_reps, max_weight: rowdata.max_weight } }] } });
                     }
                 });
                 return data;
