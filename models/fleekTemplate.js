@@ -156,7 +156,7 @@ const template = {
         }
     },
     postOtherUsersTemplateData: async (uid, template_id) => {
-        const fields1 = 'name, templateUsers_id, super_set_label, workout_workout_id, rest_time, workout_detail, is_custom'
+        const fields1 = 'userinfo_uid, name, templateUsers_id, super_set_label, workout_workout_id, rest_time, workout_detail, is_custom'
         const fields2 = 'name, userinfo_uid';
         const fields3 = 'workout_order, super_set_label, workout_workout_id, templateUsers_template_id, rest_time, is_kilogram, is_meter, workout_detail';
         const questions2 = '?, ?';
@@ -174,6 +174,8 @@ const template = {
 
         let template_detail;
         let templateUsers_template_id;
+
+        let other_uid;
 
         const restructure1 = async (result) => {
             let data = [];
@@ -193,6 +195,7 @@ const template = {
 
         const ts1 = async (connection) => {
             const result1 = await connection.query(query1);
+            other_uid = result1[0].userinfo_uid;
             const templateData = (await restructure1(result1))[0];
 
             const result2 = await connection.query(query2, [templateData.name, uid]);
@@ -208,9 +211,14 @@ const template = {
                     const values4 = [workout.workout_id, uid, await timeFunction.currentTime()];
                     const questions4 = '?, ?, ?'
                     const query4 = `INSERT IGNORE INTO ${table_customWorkout}(${fields4}) VALUES(${questions4})`;
-                    const query5 = `UPDATE ${table_customWorkout}
-                                    SET is_deleted = 0 WHERE workout_workout_id = ${workout.workout_id} AND userinfo_uid = '${uid}'`
+
+                    const query6 = `SELECT custom_image_url FROM ${table_customWorkout}
+                                    WHERE userinfo_uid = '${other_uid}' AND workout_workout_id = ${workout.workout_id}`
                     await connection.query(query4, values4);
+                    const result6 = await connection.query(query6);
+                    const query5 = `UPDATE ${table_customWorkout}
+                                    SET is_deleted = 0, custom_image_url = ${result6[0].custom_image_url}
+                                    WHERE workout_workout_id = ${workout.workout_id} AND userinfo_uid = '${uid}'`
                     await connection.query(query5);
                 }
             });

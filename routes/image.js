@@ -8,4 +8,8 @@ router.get('/upload/profile', AuthUser.checkToken, imageController.getPresignedU
 
 router.delete('/remove/profile', AuthUser.checkToken, imageController.deleteProfile);
 
+router.get('/upload/customworkout/:workout_id', AuthUser.checkToken, imageController.getPresignedUrlProfile);
+
+router.delete('/remove/customworkout/:workout_id', AuthUser.checkToken, imageController.getPresignedUrlProfile);
+
 module.exports = router;
