@@ -82,6 +82,23 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
     },
+    getSessionBatchProfile: async (req, res) => {
+        const uid = req.uid;
+        const last_session_id = req.params.last_session_id;
+        const langCode = req.lang_code;
+        let data;
+        if (last_session_id == "init") {
+            data = await Session.getFirstSessionBatchDataProfile(uid, langCode);
+        } else {
+            data = await Session.getNextSessionBatchDataProfile(uid, last_session_id, langCode);
+        }
+        // DB Error Handling
+        if (data == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
+        }
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
+    },
     getSessionBatchGlobal: async (req, res) => {
         const uid = req.uid;
         const last_session_id = req.params.last_session_id;

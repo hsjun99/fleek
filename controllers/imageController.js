@@ -27,5 +27,28 @@ module.exports = {
         const uid = req.uid;
         await Image.deleteProfileUrl(uid);
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS));
+    },
+    getPresignedUrlCustomWorkout: async (req, res) => {
+        const uid = req.uid;
+        const workout_id = req.params.workout_id;
+        const filename = `customworkout_${new Date().getTime()}.png`;
+        const params = {
+            Bucket: "fleek-prod-bucket",
+            Key: `customworkout/${workout_id}/origin/${filename}`,
+            Expires: 60 * 60 * 3,
+            ContentType: "application/octet-stream"
+        };
+
+        const signedUrlPut = await s3.getSignedUrlPromise("putObject", params);
+
+        await Image.updateCustomImageUrl(uid, workout_id, filename);
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS, signedUrlPut));
+    },
+    deleteCustomWorkout: async (req, res) => {
+        const uid = req.uid;
+        const workout_id = req.params.workout_id;
+        await Image.deleteCustomImageUrl(uid, workout_id);
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS));
     }
 }
