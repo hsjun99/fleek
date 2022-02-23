@@ -207,19 +207,25 @@ const template = {
             await asyncForEach(template_detail, async (workout) => {
                 await connection.query(query3, [cnt++, workout.super_set_label, workout.workout_id, templateUsers_template_id, workout.rest_time, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(workout.workout_detail)]);
                 if (workout.is_custom == 1) {
+
+                    // const query5 = `UPDATE ${table_customWorkout}
+                    //                 SET is_deleted = 0
+                    //                 WHERE workout_workout_id = ${workout.workout_id} AND userinfo_uid = '${uid}'`
+
+                    // await connection.query(query5);
+
+                    const fields6 = 'korean, english, category, muscle_p, muscle_s1, equipment, record_type, multiplier, video_url, video_url_substitute, is_custom, reference_num';
+                    const query6 = `INSERT INTO ${table_workout}(${fields6})
+                                    SELECT ${fields6} FROM ${table_workout}
+                                    WHERE workout_id = ${workout.workout_id}`
+                    const insertWorkoutId = (await connection.query(query6)).insertId;
+
+
                     const fields4 = 'workout_workout_id, userinfo_uid, created_at';
-                    const values4 = [workout.workout_id, uid, await timeFunction.currentTime()];
+                    const values4 = [insertWorkoutId, uid, await timeFunction.currentTime()];
                     const questions4 = '?, ?, ?'
                     const query4 = `INSERT IGNORE INTO ${table_customWorkout}(${fields4}) VALUES(${questions4})`;
-
-                    const query6 = `SELECT custom_image_url FROM ${table_customWorkout}
-                                    WHERE userinfo_uid = '${other_uid}' AND workout_workout_id = ${workout.workout_id}`
                     await connection.query(query4, values4);
-                    const result6 = await connection.query(query6);
-                    const query5 = `UPDATE ${table_customWorkout}
-                                    SET is_deleted = 0, custom_image_url = ${result6[0].custom_image_url}
-                                    WHERE workout_workout_id = ${workout.workout_id} AND userinfo_uid = '${uid}'`
-                    await connection.query(query5);
                 }
             });
         }

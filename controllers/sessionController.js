@@ -94,7 +94,7 @@ module.exports = {
 
         const { sex, weight, ageGroup, weightGroup } = await User.getProfile(uid);
 
-        const result = await Session.modifySessionData(uid, data.session_id, weight, data.session, data.start_time, data.total_time, device);
+        const result = await Session.modifySessionData(uid, data.session_id, data.name, weight, data.session, data.start_time, data.total_time, device);
         // DB Error Handling
         if (result != true) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));

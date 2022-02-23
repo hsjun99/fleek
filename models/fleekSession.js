@@ -262,7 +262,7 @@ const session = {
             throw err;
         }
     },
-    modifySessionData: async (uid, session_id, body_weight, data, start_time, total_time, device = null) => {
+    modifySessionData: async (uid, session_id, name, body_weight, data, start_time, total_time, device = null) => {
         const fields3 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, max_heart_rate, super_set_label, rest_time, set_type, rpe, workout_workout_id, session_session_id';
         const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at';
         const questions3 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
@@ -284,6 +284,7 @@ const session = {
         const ts2 = async (connection) => {
             // DELETE Initial Workout Ability
             await connection.query(query2);
+
         }
         const ts3 = async (connection) => {
             let session_total_volume = 0, session_total_sets = 0, session_total_reps = 0;
@@ -346,7 +347,7 @@ const session = {
 
             // UPDATE SESSION TABLE
             const query6 = `UPDATE ${table_session}
-                            SET session_total_volume = ${session_total_volume}, session_total_sets = ${session_total_sets}, session_total_reps = ${session_total_reps}, session_total_distance = ${session_total_distance}, session_total_duration = ${session_total_duration}, total_time = ${total_time}, start_time = "${start_time}"
+                            SET name = '${name}', session_total_volume = ${session_total_volume}, session_total_sets = ${session_total_sets}, session_total_reps = ${session_total_reps}, session_total_distance = ${session_total_distance}, session_total_duration = ${session_total_duration}, total_time = ${total_time}, start_time = "${start_time}"
                             WHERE ${table_session}.session_id = ${session_id}`;
             await connection.query(query6);
         }
