@@ -642,6 +642,22 @@ const fleekUser = {
             throw err;
         }
     },
+    deleteInstagramId: async (uid) => {
+        const query1 = `UPDATE ${table1}
+                        SET instagram_id = NULL
+                        WHERE uid="${uid}"`;
+        try {
+            await pool.queryParamMaster(query1);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('updateProfile ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("updateProfile ERROR: ", err);
+            throw err;
+        }
+    },
 }
 
 module.exports = fleekUser;

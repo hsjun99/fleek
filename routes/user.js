@@ -54,6 +54,8 @@ router.get('/userhistory', AuthUser.checkToken, userHistoryController.getUserHis
 
 router.put('/sns/instagram/:instagram_id', AuthUser.checkToken, userController.updateInstagramId);
 
+router.delete('/sns/instagram', AuthUser.checkToken, userController.deleteInstagramId);
+
 //router.post('/fcmtoken/:fcm_token', AuthUser.checkToken, userController.initializeFcmToken);
 
 

@@ -259,7 +259,7 @@ module.exports = {
     getOthersFleekData: async (req, res) => {
         //const uid = req.uid;
         const other_uid = req.params.other_uid;
-        const { sex, age, weight, achievement, profile_url } = await getUserInfo(other_uid);
+        const { sex, age, weight, achievement, profile_url, instagram_id } = await getUserInfo(other_uid);
         const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)])
         // const ageGroup = await ageGroupClassifier(age); // Conversion to group
         // const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
@@ -318,7 +318,7 @@ module.exports = {
             return data;
         }
 
-        let data = { uid: other_uid, profile_url: profile_url, achievement: achievement, template: null, calendar_data: null, extra_custom_workout_table: null };
+        let data = { uid: other_uid, profile_url: profile_url, instagram_id: instagram_id, achievement: achievement, template: null, calendar_data: null, extra_custom_workout_table: null };
         [data.template, data.calendar_data, data.extra_custom_workout_table] = await Promise.all([Template.getUserTemplate(other_uid), Workout.getUserHistoryDataAll(other_uid, sex, ageGroup, weightGroup), getOthersCustomWorkout()]);
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, data));
@@ -394,7 +394,19 @@ module.exports = {
         const uid = req.uid;
         const instagram_id = req.params.instagram_id;
 
-        const result = await UserWorkoutMemo.updateMemo(uid, userWorkoutMemo_id, content);
+        const result = await User.updateInstagramId(uid, instagram_id);
+
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
+    },
+    deleteInstagramId: async (req, res) => {
+        const uid = req.uid;
+
+        const result = await User.deleteInstagramId(uid);
 
         if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
