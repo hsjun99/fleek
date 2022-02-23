@@ -205,7 +205,7 @@ const template = {
         const ts2 = async (connection) => {
             let cnt = 1;
             await asyncForEach(template_detail, async (workout) => {
-                await connection.query(query3, [cnt++, workout.super_set_label, workout.workout_id, templateUsers_template_id, workout.rest_time, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(workout.workout_detail)]);
+                let insertWorkoutId = workout.workout_id;
                 if (workout.is_custom == 1) {
 
                     // const query5 = `UPDATE ${table_customWorkout}
@@ -218,7 +218,7 @@ const template = {
                     const query6 = `INSERT INTO ${table_workout}(${fields6})
                                     SELECT ${fields6} FROM ${table_workout}
                                     WHERE workout_id = ${workout.workout_id}`
-                    const insertWorkoutId = (await connection.query(query6)).insertId;
+                    insertWorkoutId = (await connection.query(query6)).insertId;
 
 
                     const fields4 = 'workout_workout_id, userinfo_uid, created_at';
@@ -227,6 +227,7 @@ const template = {
                     const query4 = `INSERT IGNORE INTO ${table_customWorkout}(${fields4}) VALUES(${questions4})`;
                     await connection.query(query4, values4);
                 }
+                await connection.query(query3, [cnt++, workout.super_set_label, insertWorkoutId, templateUsers_template_id, workout.rest_time, userSetting.is_kilogram, userSetting.is_meter, JSON.stringify(workout.workout_detail)]);
             });
         }
 
