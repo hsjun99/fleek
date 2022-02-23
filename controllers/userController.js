@@ -390,4 +390,17 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
     },
+    updateInstagramId: async (req, res) => {
+        const uid = req.uid;
+        const instagram_id = req.params.instagram_id;
+
+        const result = await UserWorkoutMemo.updateMemo(uid, userWorkoutMemo_id, content);
+
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_FOLLOWING_FAIL));
+        }
+
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_FOLLOWING_FAIL));
+    }
 }

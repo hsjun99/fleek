@@ -52,6 +52,8 @@ router.delete('/workoutmemo/:userWorkoutMemo_id', AuthUser.checkToken, userContr
 
 router.get('/userhistory', AuthUser.checkToken, userHistoryController.getUserHistoryData);
 
+router.put('/sns/instagram/:instagram_id', AuthUser.checkToken, userController.updateInstagramId);
+
 //router.post('/fcmtoken/:fcm_token', AuthUser.checkToken, userController.initializeFcmToken);
 
 
