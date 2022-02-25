@@ -55,7 +55,6 @@ module.exports = {
         // }
         // const {name, privacy_setting} = await User.getProfile(uid);
         // await Session.sessionFinish(uid, name, privacy_setting, followers_list, sessionIdx, template_name);
-
         if (req.headers.send_notification == "true") {
             const followers = await User.getFollowersWithoutPrivacySetting(uid);
             const followers_list = await Promise.all(followers.map(async follower => {

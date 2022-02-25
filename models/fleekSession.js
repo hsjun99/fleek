@@ -207,8 +207,6 @@ const session = {
         try {
             table_usersOnline.update({ [uid]: 0 });
             table_sessionLike.update({ [session_id]: { 0: { cnt: 0, users: ['null'] }, 1: { cnt: 0, users: ['null'] }, 2: { cnt: 0, users: ['null'] }, 3: { cnt: 0, users: ['null'] }, 4: { cnt: 0, users: ['null'] } } });
-
-
             // Send Message
             if (privacy_mode == 0) {
                 const message = await feedMessage.session_finish(uid, session_id, template_name);
@@ -218,39 +216,39 @@ const session = {
                 }));
             }
 
-            const uidListString = "('" + followers_list.join("\',\'") + "')";
-            const fields1 = 'uid, lang_code';
-            const query1 = `SELECT ${fields1} FROM ${table_userinfo}
-                            WHERE uid IN ${uidListString}`;
-            const result1 = await pool.queryParamSlave(query1);
+            // const uidListString = "('" + followers_list.join("\',\'") + "')";
+            // const fields1 = 'uid, lang_code';
+            // const query1 = `SELECT ${fields1} FROM ${table_userinfo}
+            //                 WHERE uid IN ${uidListString}`;
+            // const result1 = await pool.queryParamSlave(query1);
 
             // Send Push
-            if (privacy_mode == 0) {
-                await firebaseCM(result1, "sessionFinish", [name, template_name]);
-                // const followersString = "('" + followers_list.join("\',\'") + "')";
-                // const fields2 = 'token_value';
-                // const query2 = `SELECT ${fields2} FROM ${table_fcmToken}
-                //                 WHERE ${table_fcmToken}.userinfo_uid IN ${followersString}`;
-                // const result2 = await pool.queryParamSlave(query2);
-                // const token_list = await Promise.all(result2.map(async data => {
-                //     return data.token_value;
-                // }));
-                // const message_background = {
-                //     notification: {
-                //         title: '플릭(Fleek)',
-                //         body: `${name}님이 ${template_name} 운동을 완료했습니다!`
-                //     }
-                // }
-                // const message_foreground = {
-                //     data: {
-                //         title: '플릭(Fleek)',
-                //         body: `${name}님이 ${template_name} 운동을 완료했습니다!`
-                //     }
-                // }
-                // if (token_list.length != 0) {
-                //     await firebaseCM(token_list, message_background, message_foreground);
-                // }
-            }
+            // if (privacy_mode == 0) {
+            //     await firebaseCM(result1, "sessionFinish", [name, template_name]);
+            //     // const followersString = "('" + followers_list.join("\',\'") + "')";
+            //     // const fields2 = 'token_value';
+            //     // const query2 = `SELECT ${fields2} FROM ${table_fcmToken}
+            //     //                 WHERE ${table_fcmToken}.userinfo_uid IN ${followersString}`;
+            //     // const result2 = await pool.queryParamSlave(query2);
+            //     // const token_list = await Promise.all(result2.map(async data => {
+            //     //     return data.token_value;
+            //     // }));
+            //     // const message_background = {
+            //     //     notification: {
+            //     //         title: '플릭(Fleek)',
+            //     //         body: `${name}님이 ${template_name} 운동을 완료했습니다!`
+            //     //     }
+            //     // }
+            //     // const message_foreground = {
+            //     //     data: {
+            //     //         title: '플릭(Fleek)',
+            //     //         body: `${name}님이 ${template_name} 운동을 완료했습니다!`
+            //     //     }
+            //     // }
+            //     // if (token_list.length != 0) {
+            //     //     await firebaseCM(token_list, message_background, message_foreground);
+            //     // }
+            // }
 
             return true;
         } catch (err) {
