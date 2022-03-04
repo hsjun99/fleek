@@ -6,10 +6,10 @@ const resMessage = require("../modules/responseMessage");
 const authUser = {
     checkUid: async (req, res, next) => {
         req.uid = req.headers.uid;
-        if (req.headers.lang_code == null || req.headers.lang_code == undefined) {
+        if (req.headers.langcode == null || req.headers.langcode == undefined) {
             req.lang_code = 1; // Korean Default
         } else {
-            req.lang_code = req.headers.lang_code;
+            req.lang_code = req.headers.langcode;
         }
         next();
     }

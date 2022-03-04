@@ -12,7 +12,7 @@ const weightGroupClassifier = require('../modules/classifier/weightGroupClassifi
 module.exports = {
     getUserHistoryData: async (req, res) => {
         const uid = req.uid;
-        const mobileLastUpdateTime = req.headers.last_update_time;
+        // const mobileLastUpdateTime = req.headers.last_update_time;
 
         const profileResult = await User.getProfile(uid);
         const { sex, age, weight } = profileResult;
