@@ -108,7 +108,6 @@ module.exports = {
         await Session.postUserHistorySyncFirebase(uid, update_time);
     },
     deleteSession: async (req, res) => {
-        //  await new Promise(resolve => setTimeout(resolve, 20000));
         const uid = req.uid;
         const session_id = req.params.session_id;
 
@@ -125,5 +124,23 @@ module.exports = {
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_SESSION_SUCCESS, [{ session_id: Number(session_id) }], update_time));
 
         await Session.postUserHistorySyncFirebase(uid, update_time);
-    }
+    },
+    bookSession: async (req, res) => {
+        const uid = "kakao:1810981552";//req.uid;
+        const { template_id, set_time } = req.body;
+
+        await Session.deleteBookSession(uid);
+        await Session.postBookSession(uid, template_id, new Date());
+
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_SESSION_SUCCESS));
+    },
+    unbookSession: async (req, res) => {
+        const uid = "kakao:1810981552";//req.uid;
+
+        await Session.deleteBookSession(uid);
+
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_SESSION_SUCCESS));
+    },
 }

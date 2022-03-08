@@ -23,6 +23,7 @@
     "moment-duration-format": "^2.3.2",
     "morgan": "~1.9.1",
     "node-cache": "^5.1.2",
+    "onesignal-node": "^3.3.0",
     "ora": "^6.0.0",
     "promise-mysql": "^4.1.4",
     "request-ip": "^2.1.3"

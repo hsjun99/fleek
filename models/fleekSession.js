@@ -12,6 +12,8 @@ const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation'
 
 var moment = require("moment");
 
+const OneSignal = require('../modules/onesignal/notificationManager');
+
 
 const table_workout = 'workout';
 const table_workoutlog = 'workoutlog';
@@ -22,8 +24,9 @@ const table_userWorkoutHistory = 'userWorkoutHistory';
 const table_alphaProgramUsers = 'alphaProgramUsers';
 //const table_alphaProgram = 'alphaProgram';
 const table_userinfo = 'userinfo';
-const table_fcmToken = 'fcmToken';
-const table_equation = 'equation';
+// const table_fcmToken = 'fcmToken';
+// const table_equation = 'equation';
+const table_sessionBook = 'sessionBook';
 
 var admin = require('firebase-admin');
 
@@ -1077,6 +1080,47 @@ const session = {
                 return -1;
             }
             console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    postBookSession: async (uid, template_id, set_time) => {
+        const fields1 = 'userinfo_uid, templateUsers_templateUsers_id, onesignal_id, set_time';
+        const questions1 = '?, ?, ?, ?'
+        const query1 = `INSERT INTO ${table_sessionBook}(${fields1}) VALUES(${questions1})`;
+
+        let onesignal_id;
+
+        try {
+            onesignal_id = await OneSignal.registerNotification(uid, set_time);
+            await pool.queryParamArrMaster(query1, [uid, template_id, onesignal_id, set_time]);
+            return;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('postTemplateData ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("postTemplateData ERROR: ", err);
+            throw err;
+        }
+    },
+    deleteBookSession: async (uid) => {
+        const fields1 = 'onesignal_id';
+        const query1 = `SELECT ${fields1} FROM ${table_sessionBook} WHERE userinfo_uid = '${uid}'`;
+        const query2 = `DELETE FROM ${table_sessionBook} WHERE userinfo_uid = '${uid}'`;
+
+        try {
+            const result1 = await pool.queryParamMaster(query1);
+            await Promise.all(result1.map(async (rowdata) => {
+                await OneSignal.cancelNotification(rowdata.onesignal_id);
+            }))
+            await pool.queryParamMaster(query2);
+            return;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('postTemplateData ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("postTemplateData ERROR: ", err);
             throw err;
         }
     }

@@ -1,5 +1,5 @@
 //const poolPromise = require('../config/database');
-const {DB_master, DB_slave} = require('../config/database');
+const { DB_master, DB_slave } = require('../config/database');
 const poolPromise_master = DB_master();
 const poolPromise_slave = DB_slave();
 
@@ -9,7 +9,7 @@ const asyncForEach = require('./function/asyncForEach');
 
 module.exports = {
     queryParamMaster: async (query) => {
-        return new Promise ( async (resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             try {
                 const pool = await poolPromise_master;
                 const connection = await pool.getConnection();
@@ -27,7 +27,7 @@ module.exports = {
         });
     },
     queryParamSlave: async (query) => {
-        return new Promise ( async (resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             try {
                 const pool = await poolPromise_slave;
                 const connection = await pool.getConnection();

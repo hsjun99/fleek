@@ -14,4 +14,8 @@ router.post('/save/wear', AuthUserWear.checkUid, sessionController.saveSession);
 
 router.delete('/delete/:session_id', AuthUser.checkToken, sessionController.deleteSession);
 
+router.post('/book', AuthUser.checkToken, sessionController.bookSession);
+
+router.delete('/book', AuthUser.checkToken, sessionController.unbookSession);
+
 module.exports = router;
