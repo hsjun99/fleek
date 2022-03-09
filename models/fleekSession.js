@@ -7,7 +7,7 @@ const oneRmCalculator = require('../modules/algorithm/oneRmCalculator');
 const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
 const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');
 
-const getUserInfo = require('../modules/functionFleek/getUserInfo');
+const getUserInfo = require('../modules/functionFleek/getUserInfoTemp');
 const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation');
 
 var moment = require("moment");
@@ -773,7 +773,6 @@ const session = {
                 return data;
             }
             const data = await restructure();
-            console.log(new Date() - start)
             await Promise.all(data.map(async (session, session_index) => {
                 const { sex, ageGroup, weightGroup, achievement } = await getUserInfo(session.uid);
                 //console.log(achievement)

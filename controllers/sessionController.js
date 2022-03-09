@@ -130,8 +130,6 @@ module.exports = {
 
         const { template_id, set_time, is_alarm } = req.body;
 
-        console.log(req.body)
-
         await Session.deleteBookSession(uid);
         await Session.postBookSession(uid, template_id, set_time, is_alarm);
 
