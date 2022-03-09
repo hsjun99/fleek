@@ -26,6 +26,7 @@ module.exports = {
 
         const { name } = await User.getProfile(uid);
         await Session.sessionStart(uid, name, followers_list);
+        await Session.deleteBookSession(uid);
 
     },
     sessionStop: async (req, res) => {

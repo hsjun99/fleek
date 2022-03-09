@@ -26,6 +26,7 @@ const authUser = {
         } else {
             req.lang_code = req.headers.langcode;
         }
+
         next();
     }
 }

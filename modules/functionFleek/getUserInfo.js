@@ -2,6 +2,7 @@ const ageGroupClassifier = require('../classifier/ageGroupClassifier');
 const weightGroupClassifier = require('../classifier/weightGroupClassifier');
 
 let User = require("../../models/fleekUser");
+let Session = require("../../models/fleekSession");
 
 module.exports = async (uid) => {
     const profileResult = await User.getProfile(uid);
@@ -9,6 +10,8 @@ module.exports = async (uid) => {
     const ageGroup = await ageGroupClassifier(age); // Conversion to Age Group
     const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to Weight Group
     const achievement = await User.getAchievement(uid, sex, weight);
+    const session_book = await Session.getBookSession(uid);
+    console.log(uid)
     return {
         name: name,
         sex: sex,
@@ -24,6 +27,10 @@ module.exports = async (uid) => {
         body_info_history: profileResult.body_info_history,
         achievement: achievement,
         profile_url: profile_url,
-        instagram_id: instagram_id
+        instagram_id: instagram_id,
+        session_book: {
+            template_id: session_book != undefined ? session_book.templateUsers_templateUsers_id : null,
+            set_time: session_book != undefined ? session_book.set_time : null
+        }
     }
 }

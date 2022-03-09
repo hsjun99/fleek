@@ -774,7 +774,6 @@ const session = {
             }
             const data = await restructure();
             console.log(new Date() - start)
-
             await Promise.all(data.map(async (session, session_index) => {
                 const { sex, ageGroup, weightGroup, achievement } = await getUserInfo(session.uid);
                 //console.log(achievement)
@@ -1083,15 +1082,31 @@ const session = {
             throw err;
         }
     },
-    postBookSession: async (uid, template_id, set_time) => {
+    getBookSession: async (uid) => {
+        const fields1 = 'templateUsers_templateUsers_id, set_time';
+        const query1 = `SELECT ${fields1} FROM ${table_sessionBook} WHERE userinfo_uid = '${uid}'`;
+
+        try {
+            const result1 = await pool.queryParamSlave(query1);
+            return result1[0];
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('postTemplateData ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("postTemplateData ERROR: ", err);
+            throw err;
+        }
+    },
+    postBookSession: async (uid, template_id, set_time, is_alarm) => {
         const fields1 = 'userinfo_uid, templateUsers_templateUsers_id, onesignal_id, set_time';
         const questions1 = '?, ?, ?, ?'
         const query1 = `INSERT INTO ${table_sessionBook}(${fields1}) VALUES(${questions1})`;
 
-        let onesignal_id;
+        let onesignal_id = null;
 
         try {
-            onesignal_id = await OneSignal.registerNotification(uid, set_time);
+            if (is_alarm == "true") onesignal_id = await OneSignal.registerNotification(uid, set_time);
             await pool.queryParamArrMaster(query1, [uid, template_id, onesignal_id, set_time]);
             return;
         } catch (err) {
@@ -1111,8 +1126,11 @@ const session = {
         try {
             const result1 = await pool.queryParamMaster(query1);
             await Promise.all(result1.map(async (rowdata) => {
-                await OneSignal.cancelNotification(rowdata.onesignal_id);
-            }))
+                try {
+                    await OneSignal.cancelNotification(rowdata.onesignal_id);
+                } catch {
+                }
+            }));
             await pool.queryParamMaster(query2);
             return;
         } catch (err) {

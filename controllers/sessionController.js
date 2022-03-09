@@ -126,17 +126,20 @@ module.exports = {
         await Session.postUserHistorySyncFirebase(uid, update_time);
     },
     bookSession: async (req, res) => {
-        const uid = "kakao:1810981552";//req.uid;
-        const { template_id, set_time } = req.body;
+        const uid = req.uid;
+
+        const { template_id, set_time, is_alarm } = req.body;
+
+        console.log(req.body)
 
         await Session.deleteBookSession(uid);
-        await Session.postBookSession(uid, template_id, new Date());
+        await Session.postBookSession(uid, template_id, set_time, is_alarm);
 
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_SESSION_SUCCESS));
     },
     unbookSession: async (req, res) => {
-        const uid = "kakao:1810981552";//req.uid;
+        const uid = req.uid;
 
         await Session.deleteBookSession(uid);
 
