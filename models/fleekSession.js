@@ -7,7 +7,7 @@ const oneRmCalculator = require('../modules/algorithm/oneRmCalculator');
 const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
 const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');
 
-const getUserInfo = require('../modules/functionFleek/getUserInfoTemp');
+const getUserInfo = require('../modules/functionFleek/getUserInfo');
 const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation');
 
 var moment = require("moment");
