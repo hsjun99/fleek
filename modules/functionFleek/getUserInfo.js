@@ -2,7 +2,6 @@ const ageGroupClassifier = require('../classifier/ageGroupClassifier');
 const weightGroupClassifier = require('../classifier/weightGroupClassifier');
 
 let User = require("../../models/fleekUser");
-let Session = require("../../models/fleekSession");
 
 module.exports = async (uid) => {
     const profileResult = await User.getProfile(uid);

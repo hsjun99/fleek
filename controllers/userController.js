@@ -140,7 +140,6 @@ module.exports = {
             template_id: session_book != undefined ? session_book.templateUsers_templateUsers_id : null,
             set_time: session_book != undefined ? session_book.set_time : null
         }
-        console.log(profileData)
 
         // DB Error Handling
         if (profileData == -1) {
