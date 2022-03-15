@@ -30,14 +30,14 @@ module.exports = {
     signup: async (req, res) => {
         const uid = req.uid;
         const langCode = req.lang_code;
-        const { name, sex, age, height, weight, squat1RM, experience } = req.body;
+        const { name, sex, age, height, weight, squat1RM, experience, is_beta } = req.body;
         if (!String(name) || !String(sex) || !String(age) || !String(weight) || !String(height)) {
             return res.status(statusCode.BAD_REQUEST).send(util.fail(statusCode.BAD_REQUEST, resMessage.NULL_VALUE));
         }
         const now = moment();
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
 
-        const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, squat1RM, experience, langCode);
+        const acceptedUid = await User.postData(uid, name, sex, age, height, weight, created_at, squat1RM, experience, langCode, is_beta);
 
         const userInfo = await getUserInfo(uid);
         await asyncForEach((await initialUserRoutine.initRoutines(langCode, userInfo.sex, userInfo.ageGroup, userInfo.weightGroup, userInfo.percentage)), async (routine) => {

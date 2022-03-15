@@ -394,7 +394,7 @@ const template = {
         }
     },
     getUserTemplate: async (uid) => {
-        const fields = 'name, templateUsers_id, super_set_label, workout_workout_id, rest_time, lastdate, workout_detail';
+        const fields = 'name, templateUsers_id, template_type, super_set_label, workout_workout_id, rest_time, lastdate, workout_detail';
         const query = `SELECT ${fields} FROM ${table_templateUsers}
                         INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.userinfo_uid = '${uid}' AND ${table_templateUsers}.is_deleted != 1`;
         const durationToInt = async (set) => {
@@ -419,13 +419,13 @@ const template = {
                         }
                     }))
                     if (data.length == 0) {
-                        data.push({ name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, rest_time: rowdata.rest_time, workout_detail: workout_detail }] });
+                        data.push({ name: rowdata.name, template_type: rowdata.template_type, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, rest_time: rowdata.rest_time, workout_detail: workout_detail }] });
                     }
                     else if (data[data.length - 1].template_id == rowdata.templateUsers_id) {
                         data[data.length - 1].detail.push({ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, rest_time: rowdata.rest_time, workout_detail: workout_detail });
                     }
                     else {
-                        data.push({ name: rowdata.name, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, rest_time: rowdata.rest_time, workout_detail: workout_detail }] });
+                        data.push({ name: rowdata.name, template_type: rowdata.template_type, template_id: rowdata.templateUsers_id, last_date: rowdata.lastdate, detail: [{ workout_id: rowdata.workout_workout_id, super_set_label: rowdata.super_set_label, rest_time: rowdata.rest_time, workout_detail: workout_detail }] });
                     }
                 });
                 return data;

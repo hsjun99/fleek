@@ -5,7 +5,7 @@ let User = require("../../models/fleekUser");
 
 module.exports = async (uid) => {
     const profileResult = await User.getProfile(uid);
-    const { name, sex, age, height, weight, percentage, profile_url, instagram_id } = profileResult;
+    const { name, sex, age, height, weight, percentage, profile_url, instagram_id, is_beta } = profileResult;
     const ageGroup = await ageGroupClassifier(age); // Conversion to Age Group
     const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to Weight Group
     const achievement = await User.getAchievement(uid, sex, weight);
@@ -24,6 +24,7 @@ module.exports = async (uid) => {
         body_info_history: profileResult.body_info_history,
         achievement: achievement,
         profile_url: profile_url,
-        instagram_id: instagram_id
+        instagram_id: instagram_id,
+        is_beta: is_beta
     }
 }

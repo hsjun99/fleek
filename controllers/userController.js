@@ -9,6 +9,7 @@ let Dashboard = require("../models/fleekDashboard");
 let WorkoutAbility = require('../models/fleekWorkoutAbility');
 let UserWorkoutMemo = require('../models/fleekUserWorkoutMemo');
 let Session = require("../models/fleekSession");
+let PTRequest = require("../models/fleekPTRequest");
 
 const getUserInfo = require('../modules/functionFleek/getUserInfo');
 const getUserInfoWear = require('../modules/functionFleek/getUserInfoWear');
@@ -136,10 +137,15 @@ module.exports = {
         //const profileData = await User.getProfile(uid);
         let profileData = await getUserInfo(uid);
         const session_book = await Session.getBookSession(uid);
+        const pt_request = await PTRequest.getPersonalTrainingRequest(uid);
         profileData['session_book'] = {
             template_id: session_book != undefined ? session_book.templateUsers_templateUsers_id : null,
             set_time: session_book != undefined ? session_book.set_time : null
-        }
+        };
+        profileData['pt_request'] = {
+            request_id: pt_request != undefined ? pt_request.ptRequest_id : null,
+            request_status: pt_request != undefined ? pt_request.request_status : null
+        };
 
         // DB Error Handling
         if (profileData == -1) {

@@ -367,14 +367,14 @@ const session = {
             throw err;
         }
     },
-    postSessionData: async (uid, body_weight, data, created_at, start_time, session_name, template_id, total_time, alphaProgramUsers_id, alphaProgram_progress, device = null) => {
-        const fields1 = 'userinfo_uid, created_at, start_time, name, templateUsers_template_id, alphaProgramUsers_alphaProgramUsers_id, alphaProgramUsers_progress, total_time, device';
+    postSessionData: async (uid, body_weight, data, created_at, start_time, session_name, template_id, total_time, device = null, feedback_content = null, feedback_rating = null) => {
+        const fields1 = 'userinfo_uid, created_at, start_time, name, templateUsers_template_id, total_time, device, feedback_content, feedback_rating';
         const fields2 = 'reps, weight, duration, distance, iswarmup, workout_order, set_order, max_heart_rate, super_set_label, rest_time, set_type, rpe, workout_workout_id, session_session_id';
         const fields4 = 'max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at';
         const questions1 = '?, ?, ?, ?, ?, ?, ?, ?, ?';
         const questions2 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
         const questions4 = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
-        const values1 = [uid, created_at, start_time, session_name, template_id, alphaProgramUsers_id, alphaProgram_progress, total_time, device];
+        const values1 = [uid, created_at, start_time, session_name, template_id, total_time, device, feedback_content, feedback_rating];
         const query0 = `UPDATE ${table_userinfo}
                         SET last_session_finish = '${created_at}' WHERE uid = '${uid}'`;
         // Insert into Session Table
@@ -389,9 +389,7 @@ const session = {
                         WHERE ${table_templateUsers}.templateUsers_id = ${template_id}`;
         // Insert into WorkoutAbility Table
         const query4 = `INSERT INTO ${table_workoutAbility}(${fields4}) VALUES(${questions4})`;
-        // Update AlphaProgramUsers Table - progress
-        const query7 = `UPDATE ${table_alphaProgramUsers} SET progress=${alphaProgram_progress}+1
-                        WHERE ${table_alphaProgramUsers}.userinfo_uid = '${uid}' AND ${table_alphaProgramUsers}.alphaProgramUsers_id = ${alphaProgramUsers_id} AND ${table_alphaProgramUsers}.is_done = 0`;
+
         try {
             await pool.queryParamMaster(query0);
             const result1 = await pool.queryParamArrMaster(query1, values1);
@@ -441,16 +439,6 @@ const session = {
                             max_speed = Math.max(max_speed, sets.distance / (sets.duration / 60));
                         }
                     })
-                    /*
-                    // Update Memo
-                    const fields14 = 'content, created_at, userinfo_uid, workout_workout_id'
-                    const questions14 = '?, ?, ?, ?'
-                    const values14 = [workouts.memo, created_at, uid, workouts.workout_id];
-                    const query14 = `INSERT INTO ${table_userWorkoutMemo}(${fields14}) VALUES(${questions14})`;
-                    await pool.queryParamArrMaster(query14, values14)
-                    */
-
-
 
                     await pool.queryParamArrMaster(query4, [max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workouts.workout_id, uid, result1.insertId, created_at]);
                     // Update UserWorkoutHistory Table - finish_num
@@ -475,7 +463,6 @@ const session = {
             if (moment() >= moment(start_time)) {
                 await pool.queryParamMaster(query3);
             }
-            //await pool.queryParamMaster(query7);
 
             const fields6 = 'total_volume, total_sets, total_reps';
             // Update Session Table - total volume, sets, reps
@@ -483,39 +470,6 @@ const session = {
                             WHERE ${table_session}.session_id = ${result1.insertId}`;
             await pool.queryParamMaster(query6);
 
-            /*
-            const fields10 = 'workouts_index, total_days';
-            const query10 = `SELECT ${fields10} FROM ${table_alphaProgramUsers}
-                            INNER JOIN ${table_alphaProgram} ON ${table_alphaProgram}.alphaProgram_id = ${table_alphaProgramUsers}.alphaProgram_alphaProgram_id AND ${table_alphaProgramUsers}.alphaProgramUsers_id = ${alphaProgramUsers_id}`;
-            const result10 = await pool.queryParamSlave(query10);
-            if (alphaProgramUsers_id != null && alphaProgram_progress == 0) {
-                const workouts_index = JSON.parse(result10[0].workouts_index).workouts_index;
-                await Promise.all(one_rms_index.map(async (elem, index) => {
-                    if (workouts_index[index] != 0 && Math.round(elem) == 0) {
-                        let oneRmPastData = await WorkoutAbility.getWorkoutMaxOneRm(uid, workouts_index[index]);
-                        if (Math.round(oneRmPastData) == 0) {
-                            const {sex, age, weight, percentage} = await User.getProfile(uid);
-                            const ageGroup = await ageGroupClassifier(age);
-                            const weightGroup = await weightGroupClassifier(weight);
-                            const {inclination, intercept} = await WorkoutEquation.getEquation(workouts_index[index], sex, ageGroup, weightGroup);
-                            oneRmPastData = Math.exp((percentage-intercept)/inclination);
-                        }
-                        one_rms_index[index] = oneRmPastData.toFixed(2);
-                    }
-                }))
-                const one_rms_index_String = JSON.stringify({one_rms_index: one_rms_index});
-                // Update AlphaProgramUsers Table - one_rms_by_tier
-                const query8 = `UPDATE ${table_alphaProgramUsers} SET one_rms_index='${one_rms_index_String}'
-                                WHERE ${table_alphaProgramUsers}.userinfo_uid = '${uid}' AND ${table_alphaProgramUsers}.alphaProgramUsers_id = ${alphaProgramUsers_id} AND ${table_alphaProgramUsers}.is_done = 0`;
-                await pool.queryParamMaster(query8);
-            } else if (alphaProgramUsers_id != null && alphaProgram_progress > 0) {
-                if (result10[0].total_days == alphaProgram_progress) {
-                    const query8 = `UPDATE ${table_alphaProgramUsers} SET is_done = 1
-                                    WHERE ${table_alphaProgramUsers}.userinfo_uid = '${uid}' AND ${table_alphaProgramUsers}.alphaProgramUsers_id = ${alphaProgramUsers_id} AND ${table_alphaProgramUsers}.is_done = 0`;
-                    await pool.queryParamMaster(query8);
-                }
-            }
-            */
             return session_id;
         } catch (err) {
             if (err.errno == 1062) {
@@ -1099,7 +1053,7 @@ const session = {
     },
     postBookSession: async (uid, template_id, set_time, is_alarm) => {
         const fields1 = 'userinfo_uid, templateUsers_templateUsers_id, onesignal_id, set_time';
-        const questions1 = '?, ?, ?, ?'
+        const questions1 = '?, ?, ?, ?';
         const query1 = `INSERT INTO ${table_sessionBook}(${fields1}) VALUES(${questions1})`;
 
         let onesignal_id = null;

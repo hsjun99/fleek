@@ -22,7 +22,7 @@ module.exports = {
         const created_at = await now.format("YYYY-MM-DD HH:mm:ss");
 
         // Post Session
-        const sessionIdx = await Session.postSessionData(uid, weight, data.session, created_at, data.start_time, data.name, data.template_id, data.total_time, data.alphaProgramUsers_id, data.alphaProgram_progress, device);
+        const sessionIdx = await Session.postSessionData(uid, weight, data.session, created_at, data.start_time, data.name, data.template_id, data.total_time, device, data.feedback_content, data.feedback_rating);
         // DB Error Handling
         if (sessionIdx == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
@@ -43,48 +43,20 @@ module.exports = {
         await Session.postUserHistorySyncFirebase(uid, update_time);
         await Template.postTemplateSyncFirebase(uid, update_time);
 
-        // const followers = await User.getFollowersWithoutPrivacySetting(uid);
-        // const followers_list = await Promise.all(followers.map(async follower => {
-        //     return follower.uid;
-        // }));
-        // let template_name;
-        // if (data.template_id == null) {
-        //     template_name = '자유 운동';
-        // } else {
-        //     template_name = await Template.getUserTemplateName(data.template_id);
-        // }
-        // const {name, privacy_setting} = await User.getProfile(uid);
-        // await Session.sessionFinish(uid, name, privacy_setting, followers_list, sessionIdx, template_name);
         if (req.headers.sendnotification == "true") {
             const followers = await User.getFollowersWithoutPrivacySetting(uid);
             const followers_list = await Promise.all(followers.map(async follower => {
                 return follower.uid;
             }));
-            let template_name;
-            if (data.template_id == null) {
-                template_name = '자유 운동';
-            } else {
-                template_name = await Template.getUserTemplateName(data.template_id);
-            }
+            let template_name = data.name != null ? data.name : '자유 운동';
+            // if (data.template_id == null) {
+            //     template_name = '자유 운동';
+            // } else {
+            //     template_name = await Template.getUserTemplateName(data.template_id);
+            // }
             const { name, privacy_setting } = await User.getProfile(uid);
             await Session.sessionFinish(uid, name, privacy_setting, followers_list, sessionIdx, template_name);
         }
-        // else {
-        //     const sessionIdx = await Session.postSessionData(uid, weight, data.session, data.created_at, data.template_id, data.total_time, data.alphaProgramUsers_id, data.alphaProgram_progress);
-        //     // DB Error Handling
-        //     if (sessionIdx == -1) {
-        //         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
-        //     }
-        //     const sessionCalendarData = await Workout.getCalendarDataBySession(uid, sex, ageGroup, weightGroup, sessionIdx);
-
-        //     let update_time = Math.floor(Date.now() / 1000);
-        //     // Success
-        //     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, sessionCalendarData, update_time));
-
-        //     await Session.postUserHistorySyncFirebase(uid, update_time);
-
-
-        // }
     },
     modifySession: async (req, res) => {
         const uid = req.uid;

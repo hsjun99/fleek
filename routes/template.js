@@ -4,6 +4,7 @@ var router = express.Router();
 const AuthUser = require('../middlewares/authUser');
 const AuthUserWear = require('../middlewares/authUserWear');
 const templateController = require('../controllers/templateController');
+const ptRequestController = require('../controllers/ptRequestController');
 
 
 router.post('/user', AuthUser.checkToken, templateController.savetemplate);
@@ -23,5 +24,9 @@ router.put('/user/:template_id', AuthUser.checkToken, templateController.updateU
 router.put('/user/wear/:template_id', AuthUserWear.checkUid, templateController.updateUserTemplate);
 
 router.delete('/user/:template_id', AuthUser.checkToken, templateController.deleteUserTemplate);
+
+router.post('/ptrequest', AuthUser.checkToken, ptRequestController.postPTRequest);
+
+router.delete('/ptrequest/:request_id', AuthUser.checkToken, ptRequestController.cancelPTRequest);
 
 module.exports = router;

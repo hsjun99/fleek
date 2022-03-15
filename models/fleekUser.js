@@ -183,9 +183,9 @@ const fleekUser = {
             throw err;
         }
     },
-    postData: async (uid, name, sex, age, height, weight, created_at, squat1RM, experience, langCode) => {
-        const fields1 = 'uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at, lang_code';
-        const questions1 = `?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?`;
+    postData: async (uid, name, sex, age, height, weight, created_at, squat1RM, experience, langCode, is_beta = 0) => {
+        const fields1 = 'uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at, lang_code, is_beta';
+        const questions1 = `?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?`;
         const query1 = `INSERT INTO ${table1}(${fields1}) VALUES(${questions1})`;
         try {
             let percentage;
@@ -196,7 +196,7 @@ const fleekUser = {
             } else {
                 percentage = await experienceClassifier(experience);
             }
-            const values1 = [uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at, langCode];
+            const values1 = [uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at, langCode, is_beta];
             await pool.queryParamArrMaster(query1, values1);
             return uid;
         } catch (err) {
@@ -390,7 +390,7 @@ const fleekUser = {
         }
     },
     getProfile: async (uid) => {
-        const fields1 = 'sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, profile_url, instagram_id';
+        const fields1 = 'sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, profile_url, instagram_id, is_beta';
         const fields2 = 'userBodyInfoTracking_id, height, weight, skeletal_muscle_mass, body_fat_ratio, created_at';
         const query1 = `SELECT ${fields1} FROM ${table1}
                         WHERE ${table1}.uid="${uid}"`;
@@ -411,6 +411,7 @@ const fleekUser = {
             const privacy_setting = result[0].privacy_setting;
             const profile_url = result[0].profile_url;
             const instagram_id = result[0].instagram_id;
+            const is_beta = result[0].is_beta;
             if (!(body_info_history.length == 0)) {
                 height = (() => {
                     let index = body_info_history.length - 1;
@@ -443,7 +444,7 @@ const fleekUser = {
 
             }
 
-            return { sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, body_info_history, profile_url, instagram_id };
+            return { sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, body_info_history, profile_url, instagram_id, is_beta };
         } catch (err) {
             if (err.errno == 1062) {
                 console.log('getProfile ERROR: ', err.errno, err.code);
