@@ -537,8 +537,9 @@ module.exports = {
   },*/
   getWorkoutRankingInfo: async (req, res) => {
     const uid = req.uid;
+
     const workout_id = req.params.workout_id;
-    const { type, group, period } = req.query;
+    const { type, group, period, page } = req.query;
 
     let data;
 
@@ -546,29 +547,28 @@ module.exports = {
 
     switch (type) {
       case "onermmax":
-        data = await Promise.all([await Workout.getOneRmMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period), await Workout.getOneRmMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)]);
+        data = await Promise.all([await Workout.getOneRmMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page), await Workout.getOneRmMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)]);
         break;
       case "weightmax":
-        data = await Promise.all([await Workout.getWeightMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period), await Workout.getWeightMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
+        data = await Promise.all([await Workout.getWeightMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page), await Workout.getWeightMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
         break;
       case "volumemax":
-        data = await Promise.all([await Workout.getVolumeMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period), await Workout.getVolumeMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
+        data = await Promise.all([await Workout.getVolumeMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page), await Workout.getVolumeMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
         break;
       case "totalsets":
-        data = await Promise.all([await Workout.getTotalSetsMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period), await Workout.getTotalSetsMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
+        data = await Promise.all([await Workout.getTotalSetsMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page), await Workout.getTotalSetsMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
         break;
       case "totalvolume":
-        data = await Promise.all([await Workout.getTotalVolumeMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period), await Workout.getTotalVolumeMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
+        data = await Promise.all([await Workout.getTotalVolumeMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page), await Workout.getTotalVolumeMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
         break;
       case "totalreps":
-        data = await Promise.all([await Workout.getTotalRepsMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period), await Workout.getTotalRepsMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
+        data = await Promise.all([await Workout.getTotalRepsMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page), await Workout.getTotalRepsMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
         break;
       default:
         break;
     }
 
-
     // Success
-    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, { rank: data[1], rank_list: data[0] }));
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, { rank: data[1].rank, value: data[1].value, rank_list: data[0] }));
   }
 }

@@ -8,8 +8,14 @@ router.get('/upload/profile', AuthUser.checkToken, imageController.getPresignedU
 
 router.delete('/remove/profile', AuthUser.checkToken, imageController.deleteProfile);
 
-router.get('/upload/customworkout/:workout_id', AuthUser.checkToken, imageController.getPresignedUrlProfile);
+router.get('/presignedurl/feed', AuthUser.checkToken, imageController.getPresignedUrlFeed);
 
-router.delete('/remove/customworkout/:workout_id', AuthUser.checkToken, imageController.getPresignedUrlProfile);
+router.post('/upload/feed/:feed_url', AuthUser.checkToken, imageController.postFeedImage)
+
+router.delete('/remove/feed', AuthUser.checkToken, imageController.deleteFeed);
+
+// router.get('/upload/customworkout/:workout_id', AuthUser.checkToken, imageController.getPresignedUrlProfile);
+
+// router.delete('/remove/customworkout/:workout_id', AuthUser.checkToken, imageController.getPresignedUrlProfile);
 
 module.exports = router;
