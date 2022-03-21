@@ -17,10 +17,11 @@ const table_workoutYoutube = 'workoutYoutube';
 
 var admin = require('firebase-admin');
 
-const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation');
-const getUserRecentRecords = require('../modules/functionFleek/getUserRecentRecords');
+const weightGroupClassifier = require('../modules/classifier/weightGroupClassifier');
+const ageGroupClassifier = require('../modules/classifier/ageGroupClassifier');
 
 const CacheService = require('../modules/cache.service');
+const { NULL_VALUE } = require('../modules/responseMessage');
 const ttl = 60 * 60 * 1; // cache for 1 Hour
 const cache = new CacheService(ttl); // Create a new cache service instance
 
@@ -1000,6 +1001,539 @@ const workout = {
                 return -1;
             }
             console.log("getWorkoutById ERROR: ", err);
+            throw err;
+        }
+    },
+
+    getOneRmMaxListByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
+        const condition_group_body = `WHERE userinfo.uid
+                                        IN (SELECT uid FROM userinfo
+                                        WHERE sex = ${sex} AND
+                                        CASE WHEN sex=0
+                                                THEN (CASE WHEN ROUND(weight/5)*5<50 THEN 50 WHEN ROUND(weight/5)*5>140 THEN 140 ELSE ROUND(weight/5)*5 END)
+                                            ELSE
+                                                (CASE WHEN ROUND(weight/5)*5<40 THEN 40 WHEN ROUND(weight/5)*5>120 THEN 120 ELSE ROUND(weight/5)*5 END)
+                                        END = ${weightGroup})`;
+        const condition_group_follow = `WHERE ${table_userinfo}.uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}') OR userinfo.uid = '${uid}'`;
+
+        const condition_period_day = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)`;
+        const condition_period_week = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`;
+        const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
+
+        const query = `SELECT T.max_one_rm, T.name, T.uid, T.profile_url, CASE WHEN (@max_one_rm IS NULL OR @max_one_rm > T.max_one_rm) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_one_rm := T.max_one_rm
+                        FROM (SELECT MAX(sessionDetail.one_rm) max_one_rm, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url
+                        FROM (SELECT (100*weight)/(48.8 + (53.8*EXP(-0.075*reps))) one_rm, session_session_id FROM ${table_workoutlog}
+                        WHERE workout_workout_id = ${workout_id}) sessionDetail
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
+                        ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
+                        GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_one_rm := NULL) R
+                        ORDER BY T.max_one_rm DESC
+                        LIMIT 5`
+
+        try {
+            const data = await pool.queryParamSlave(query);
+            const final_data = data.map(rowdata => {
+                return {
+                    uid: rowdata.uid,
+                    name: rowdata.name,
+                    profile_url: rowdata.profile_url,
+                    value: rowdata.max_one_rm,
+                    rank: rowdata.rank
+                }
+            });
+
+            return final_data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    getWeightMaxListByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
+        const condition_group_body = `WHERE userinfo.uid
+                                        IN (SELECT uid FROM userinfo
+                                        WHERE sex = ${sex} AND
+                                        CASE WHEN sex=0
+                                                THEN (CASE WHEN ROUND(weight/5)*5<50 THEN 50 WHEN ROUND(weight/5)*5>140 THEN 140 ELSE ROUND(weight/5)*5 END)
+                                            ELSE
+                                                (CASE WHEN ROUND(weight/5)*5<40 THEN 40 WHEN ROUND(weight/5)*5>120 THEN 120 ELSE ROUND(weight/5)*5 END)
+                                        END = ${weightGroup})`;
+        const condition_group_follow = `WHERE ${table_userinfo}.uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}') OR userinfo.uid = '${uid}'`;
+
+        const condition_period_day = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)`;
+        const condition_period_week = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`;
+        const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
+
+        const query = `SELECT T.max_weight, T.name, T.uid, T.profile_url, CASE WHEN (@max_weight IS NULL OR @max_weight > T.max_weight) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_weight := T.max_weight
+                        FROM (SELECT MAX(sessionDetail.weight) max_weight, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url
+                        FROM (SELECT weight, session_session_id FROM ${table_workoutlog}
+                        WHERE workout_workout_id = ${workout_id}) sessionDetail
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
+                        ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
+                        GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_weight := NULL) R
+                        ORDER BY T.max_weight DESC
+                        LIMIT 5`;
+
+        try {
+            const data = await pool.queryParamSlave(query);
+            const final_data = data.map(rowdata => {
+                return {
+                    uid: rowdata.uid,
+                    name: rowdata.name,
+                    profile_url: rowdata.profile_url,
+                    value: rowdata.max_weight,
+                    rank: rowdata.rank
+                }
+            });
+
+            return final_data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    getVolumeMaxListByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
+        const condition_group_body = `WHERE userinfo.uid
+                                        IN (SELECT uid FROM userinfo
+                                        WHERE sex = ${sex} AND
+                                        CASE WHEN sex=0
+                                                THEN (CASE WHEN ROUND(weight/5)*5<50 THEN 50 WHEN ROUND(weight/5)*5>140 THEN 140 ELSE ROUND(weight/5)*5 END)
+                                            ELSE
+                                                (CASE WHEN ROUND(weight/5)*5<40 THEN 40 WHEN ROUND(weight/5)*5>120 THEN 120 ELSE ROUND(weight/5)*5 END)
+                                        END = ${weightGroup})`;
+        const condition_group_follow = `WHERE ${table_userinfo}.uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}') OR userinfo.uid = '${uid}'`;
+
+        const condition_period_day = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)`;
+        const condition_period_week = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`;
+        const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
+
+        const query = `SELECT T.max_volume, T.name, T.uid, T.profile_url, CASE WHEN (@max_volume IS NULL OR @max_volume > T.max_volume) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_volume := T.max_volume
+                        FROM (SELECT MAX(sessionDetail.volume) max_volume, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url
+                        FROM (SELECT (weight*reps) volume, session_session_id FROM ${table_workoutlog}
+                        WHERE workout_workout_id = ${workout_id}) sessionDetail
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
+                        ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
+                        GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_volume := NULL) R
+                        ORDER BY T.max_volume DESC
+                        LIMIT 5`;
+
+        try {
+            const data = await pool.queryParamSlave(query);
+            const final_data = data.map(rowdata => {
+                return {
+                    uid: rowdata.uid,
+                    name: rowdata.name,
+                    profile_url: rowdata.profile_url,
+                    value: rowdata.max_volume,
+                    rank: rowdata.rank
+                }
+            });
+
+            return final_data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    getTotalSetsMaxListByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
+        const condition_group_body = `WHERE userinfo.uid
+                                        IN (SELECT uid FROM userinfo
+                                        WHERE sex = ${sex} AND
+                                        CASE WHEN sex=0
+                                                THEN (CASE WHEN ROUND(weight/5)*5<50 THEN 50 WHEN ROUND(weight/5)*5>140 THEN 140 ELSE ROUND(weight/5)*5 END)
+                                            ELSE
+                                                (CASE WHEN ROUND(weight/5)*5<40 THEN 40 WHEN ROUND(weight/5)*5>120 THEN 120 ELSE ROUND(weight/5)*5 END)
+                                        END = ${weightGroup})`;
+        const condition_group_follow = `WHERE ${table_userinfo}.uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}') OR userinfo.uid = '${uid}'`;
+
+        const condition_period_day = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)`;
+        const condition_period_week = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`;
+        const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
+
+        const query = `SELECT T.max_total_sets, T.name, T.uid, T.profile_url, CASE WHEN (@max_total_sets IS NULL OR @max_total_sets > T.max_total_sets) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_total_sets := T.max_total_sets
+                        FROM (SELECT MAX(sessionDetail.total_sets) max_total_sets, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url
+                        FROM (SELECT COUNT(*) total_sets, session_session_id FROM ${table_workoutlog}
+                        WHERE workout_workout_id = ${workout_id}
+                        GROUP BY session_session_id) sessionDetail
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
+                        ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
+                        GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_total_sets := NULL) R
+                        ORDER BY T.max_total_sets DESC
+                        LIMIT 5`
+
+        try {
+            const data = await pool.queryParamSlave(query);
+            const final_data = data.map(rowdata => {
+                return {
+                    uid: rowdata.uid,
+                    name: rowdata.name,
+                    profile_url: rowdata.profile_url,
+                    value: rowdata.max_total_sets,
+                    rank: rowdata.rank
+                }
+            });
+
+            return final_data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    getTotalVolumeMaxListByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
+        const condition_group_body = `WHERE userinfo.uid
+                                        IN (SELECT uid FROM userinfo
+                                        WHERE sex = ${sex} AND
+                                        CASE WHEN sex=0
+                                                THEN (CASE WHEN ROUND(weight/5)*5<50 THEN 50 WHEN ROUND(weight/5)*5>140 THEN 140 ELSE ROUND(weight/5)*5 END)
+                                            ELSE
+                                                (CASE WHEN ROUND(weight/5)*5<40 THEN 40 WHEN ROUND(weight/5)*5>120 THEN 120 ELSE ROUND(weight/5)*5 END)
+                                        END = ${weightGroup})`;
+        const condition_group_follow = `WHERE ${table_userinfo}.uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}') OR userinfo.uid = '${uid}'`;
+
+        const condition_period_day = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)`;
+        const condition_period_week = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`;
+        const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
+
+        const query = `SELECT T.max_total_volume, T.name, T.uid, T.profile_url, CASE WHEN (@max_total_volume IS NULL OR @max_total_volume > T.max_total_volume) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_total_volume := T.max_total_volume
+                        FROM (SELECT MAX(sessionDetail.total_volume) max_total_volume, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url
+                        FROM (SELECT SUM(weight*reps) total_volume, session_session_id FROM ${table_workoutlog}
+                        WHERE workout_workout_id = ${workout_id}
+                        GROUP BY session_session_id) sessionDetail
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
+                        ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
+                        GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_total_volume := NULL) R
+                        ORDER BY T.max_total_volume DESC
+                        LIMIT 5`
+
+        try {
+            const data = await pool.queryParamSlave(query);
+            const final_data = data.map(rowdata => {
+                return {
+                    uid: rowdata.uid,
+                    name: rowdata.name,
+                    profile_url: rowdata.profile_url,
+                    value: rowdata.max_total_volume,
+                    rank: rowdata.rank
+                }
+            });
+
+            return final_data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    getTotalRepsMaxListByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
+        const condition_group_body = `WHERE userinfo.uid
+                                        IN (SELECT uid FROM userinfo
+                                        WHERE sex = 0 AND
+                                        CASE WHEN sex = ${sex}
+                                                THEN (CASE WHEN ROUND(weight/5)*5<50 THEN 50 WHEN ROUND(weight/5)*5>140 THEN 140 ELSE ROUND(weight/5)*5 END)
+                                            ELSE
+                                                (CASE WHEN ROUND(weight/5)*5<40 THEN 40 WHEN ROUND(weight/5)*5>120 THEN 120 ELSE ROUND(weight/5)*5 END)
+                                        END = ${weightGroup})`;
+        const condition_group_follow = `WHERE ${table_userinfo}.uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}') OR userinfo.uid = '${uid}'`;
+
+        const condition_period_day = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)`;
+        const condition_period_week = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`;
+        const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
+
+        const query = `SELECT T.max_total_reps, T.name, T.uid, T.profile_url, CASE WHEN (@max_total_reps IS NULL OR @max_total_reps > T.max_total_reps) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_total_reps := T.max_total_reps
+                        FROM (SELECT MAX(sessionDetail.total_reps) max_total_reps, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url
+                        FROM (SELECT SUM(reps) total_reps, session_session_id FROM ${table_workoutlog}
+                        WHERE workout_workout_id = ${workout_id}
+                        GROUP BY session_session_id) sessionDetail
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
+                        ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
+                        GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_total_reps := NULL) R
+                        ORDER BY T.max_total_reps DESC
+                        LIMIT 5`;
+
+        try {
+            const data = await pool.queryParamSlave(query);
+            const final_data = data.map(rowdata => {
+                return {
+                    uid: rowdata.uid,
+                    name: rowdata.name,
+                    profile_url: rowdata.profile_url,
+                    value: rowdata.max_total_reps,
+                    rank: rowdata.rank
+                }
+            });
+
+            return final_data;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+
+
+    getOneRmMaxRankByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
+        const condition_group_body = `WHERE userinfo.uid
+                                        IN (SELECT uid FROM userinfo
+                                        WHERE sex = ${sex} AND
+                                        CASE WHEN sex=0
+                                                THEN (CASE WHEN ROUND(weight/5)*5<50 THEN 50 WHEN ROUND(weight/5)*5>140 THEN 140 ELSE ROUND(weight/5)*5 END)
+                                            ELSE
+                                                (CASE WHEN ROUND(weight/5)*5<40 THEN 40 WHEN ROUND(weight/5)*5>120 THEN 120 ELSE ROUND(weight/5)*5 END)
+                                        END = ${weightGroup})`;
+        const condition_group_follow = `WHERE ${table_userinfo}.uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}') OR userinfo.uid = '${uid}'`;
+
+        const condition_period_day = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)`;
+        const condition_period_week = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`;
+        const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
+
+        const query = `SELECT rank 
+                        FROM (SELECT T.max_one_rm, T.name, T.uid, CASE WHEN (@max_one_rm IS NULL OR @max_one_rm > T.max_one_rm) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_one_rm := T.max_one_rm
+                        FROM (SELECT MAX(sessionDetail.one_rm) max_one_rm, ${table_userinfo}.name, ${table_userinfo}.uid
+                        FROM (SELECT (100*weight)/(48.8 + (53.8*EXP(-0.075*reps))) one_rm, session_session_id FROM ${table_workoutlog}
+                        WHERE workout_workout_id = ${workout_id}) sessionDetail
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
+                        ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
+                        GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_one_rm := NULL) R
+                        ORDER BY T.max_one_rm DESC) RANK
+                        WHERE RANK.uid = '${uid}'`
+
+        try {
+            const data = await pool.queryParamSlave(query);
+            return data.length != 0 ? data[0].rank : null;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    getWeightMaxRankByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
+        const condition_group_body = `WHERE userinfo.uid
+                                        IN (SELECT uid FROM userinfo
+                                        WHERE sex = ${sex} AND
+                                        CASE WHEN sex=0
+                                                THEN (CASE WHEN ROUND(weight/5)*5<50 THEN 50 WHEN ROUND(weight/5)*5>140 THEN 140 ELSE ROUND(weight/5)*5 END)
+                                            ELSE
+                                                (CASE WHEN ROUND(weight/5)*5<40 THEN 40 WHEN ROUND(weight/5)*5>120 THEN 120 ELSE ROUND(weight/5)*5 END)
+                                        END = ${weightGroup})`;
+        const condition_group_follow = `WHERE ${table_userinfo}.uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}') OR userinfo.uid = '${uid}'`;
+
+        const condition_period_day = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)`;
+        const condition_period_week = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`;
+        const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
+
+        const query = `SELECT rank 
+                        FROM (SELECT T.max_weight, T.name, T.uid, CASE WHEN (@max_weight IS NULL OR @max_weight > T.max_weight) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_weight := T.max_weight
+                        FROM (SELECT MAX(sessionDetail.weight) max_weight, ${table_userinfo}.name, ${table_userinfo}.uid
+                        FROM (SELECT weight, session_session_id FROM ${table_workoutlog}
+                        WHERE workout_workout_id = ${workout_id}) sessionDetail
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
+                        ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
+                        GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_weight := NULL) R
+                        ORDER BY T.max_weight DESC) RANK
+                        WHERE RANK.uid = '${uid}'`;
+
+        try {
+            const data = await pool.queryParamSlave(query);
+            return data.length != 0 ? data[0].rank : null;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+
+    getVolumeMaxRankByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
+        const condition_group_body = `WHERE userinfo.uid
+                                        IN (SELECT uid FROM userinfo
+                                        WHERE sex = ${sex} AND
+                                        CASE WHEN sex=0
+                                                THEN (CASE WHEN ROUND(weight/5)*5<50 THEN 50 WHEN ROUND(weight/5)*5>140 THEN 140 ELSE ROUND(weight/5)*5 END)
+                                            ELSE
+                                                (CASE WHEN ROUND(weight/5)*5<40 THEN 40 WHEN ROUND(weight/5)*5>120 THEN 120 ELSE ROUND(weight/5)*5 END)
+                                        END = ${weightGroup})`;
+        const condition_group_follow = `WHERE ${table_userinfo}.uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}') OR userinfo.uid = '${uid}'`;
+
+        const condition_period_day = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)`;
+        const condition_period_week = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`;
+        const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
+
+        const query = `SELECT rank 
+                        FROM (SELECT T.max_volume, T.name, T.uid, CASE WHEN (@max_volume IS NULL OR @max_volume > T.max_volume) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_volume := T.max_volume
+                        FROM (SELECT MAX(sessionDetail.volume) max_volume, ${table_userinfo}.name, ${table_userinfo}.uid
+                        FROM (SELECT (weight*reps) volume, session_session_id FROM ${table_workoutlog}
+                        WHERE workout_workout_id = ${workout_id}) sessionDetail
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
+                        ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
+                        GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_volume := NULL) R
+                        ORDER BY T.max_volume DESC) RANK
+                        WHERE RANK.uid = '${uid}'`;
+
+        try {
+            const data = await pool.queryParamSlave(query);
+            return data.length != 0 ? data[0].rank : null;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+
+    getTotalSetsMaxRankByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
+        const condition_group_body = `WHERE userinfo.uid
+                                        IN (SELECT uid FROM userinfo
+                                        WHERE sex = ${sex} AND
+                                        CASE WHEN sex=0
+                                                THEN (CASE WHEN ROUND(weight/5)*5<50 THEN 50 WHEN ROUND(weight/5)*5>140 THEN 140 ELSE ROUND(weight/5)*5 END)
+                                            ELSE
+                                                (CASE WHEN ROUND(weight/5)*5<40 THEN 40 WHEN ROUND(weight/5)*5>120 THEN 120 ELSE ROUND(weight/5)*5 END)
+                                        END = ${weightGroup})`;
+        const condition_group_follow = `WHERE ${table_userinfo}.uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}') OR userinfo.uid = '${uid}'`;
+
+        const condition_period_day = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)`;
+        const condition_period_week = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`;
+        const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
+
+        const query = `SELECT rank 
+                        FROM (SELECT T.max_total_sets, T.name, T.uid, CASE WHEN (@max_total_sets IS NULL OR @max_total_sets > T.max_total_sets) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_total_sets := T.max_total_sets
+                        FROM (SELECT MAX(sessionDetail.total_sets) max_total_sets, ${table_userinfo}.name, ${table_userinfo}.uid
+                        FROM (SELECT COUNT(*) total_sets, session_session_id FROM ${table_workoutlog}
+                        WHERE workout_workout_id = ${workout_id}
+                        GROUP BY session_session_id) sessionDetail
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
+                        ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
+                        GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_total_sets := NULL) R
+                        ORDER BY T.max_total_sets DESC) RANK
+                        WHERE RANK.uid = '${uid}'`
+
+        try {
+            const data = await pool.queryParamSlave(query);
+            return data.length != 0 ? data[0].rank : null;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    getTotalVolumeMaxRankByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
+        const condition_group_body = `WHERE userinfo.uid
+                                        IN (SELECT uid FROM userinfo
+                                        WHERE sex = ${sex} AND
+                                        CASE WHEN sex=0
+                                                THEN (CASE WHEN ROUND(weight/5)*5<50 THEN 50 WHEN ROUND(weight/5)*5>140 THEN 140 ELSE ROUND(weight/5)*5 END)
+                                            ELSE
+                                                (CASE WHEN ROUND(weight/5)*5<40 THEN 40 WHEN ROUND(weight/5)*5>120 THEN 120 ELSE ROUND(weight/5)*5 END)
+                                        END = ${weightGroup})`;
+        const condition_group_follow = `WHERE ${table_userinfo}.uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}') OR userinfo.uid = '${uid}'`;
+
+        const condition_period_day = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)`;
+        const condition_period_week = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`;
+        const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
+
+        const query = `SELECT rank 
+                        FROM (SELECT T.max_total_volume, T.name, T.uid, CASE WHEN (@max_total_volume IS NULL OR @max_total_volume > T.max_total_volume) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_total_volume := T.max_total_volume
+                        FROM (SELECT MAX(sessionDetail.total_volume) max_total_volume, ${table_userinfo}.name, ${table_userinfo}.uid
+                        FROM (SELECT SUM(weight*reps) total_volume, session_session_id FROM ${table_workoutlog}
+                        WHERE workout_workout_id = ${workout_id}
+                        GROUP BY session_session_id) sessionDetail
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
+                        ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
+                        GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_total_volume := NULL) R
+                        ORDER BY T.max_total_volume DESC) RANK
+                        WHERE RANK.uid = '${uid}'`
+
+        try {
+            const data = await pool.queryParamSlave(query);
+            return data.length != 0 ? data[0].rank : null;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+    getTotalRepsMaxRankByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
+        const condition_group_body = `WHERE userinfo.uid
+                                        IN (SELECT uid FROM userinfo
+                                        WHERE sex = 0 AND
+                                        CASE WHEN sex = ${sex}
+                                                THEN (CASE WHEN ROUND(weight/5)*5<50 THEN 50 WHEN ROUND(weight/5)*5>140 THEN 140 ELSE ROUND(weight/5)*5 END)
+                                            ELSE
+                                                (CASE WHEN ROUND(weight/5)*5<40 THEN 40 WHEN ROUND(weight/5)*5>120 THEN 120 ELSE ROUND(weight/5)*5 END)
+                                        END = ${weightGroup})`;
+        const condition_group_follow = `WHERE ${table_userinfo}.uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}') OR userinfo.uid = '${uid}'`;
+
+        const condition_period_day = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)`;
+        const condition_period_week = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 WEEK)`;
+        const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
+
+        const query = `SELECT rank 
+                        FROM (SELECT T.max_total_reps, T.name, T.uid, CASE WHEN (@max_total_reps IS NULL OR @max_total_reps > T.max_total_reps) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_total_reps := T.max_total_reps
+                        FROM (SELECT MAX(sessionDetail.total_reps) max_total_reps, ${table_userinfo}.name, ${table_userinfo}.uid
+                        FROM (SELECT SUM(reps) total_reps, session_session_id FROM ${table_workoutlog}
+                        WHERE workout_workout_id = ${workout_id}
+                        GROUP BY session_session_id) sessionDetail
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
+                        ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
+                        GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_total_reps := NULL) R
+                        ORDER BY T.max_total_reps DESC) RANK
+                        WHERE RANK.uid = '${uid}'`;
+
+        try {
+            const data = await pool.queryParamSlave(query);
+            return data.length != 0 ? data[0].rank : null;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('getWorkoutRecordById ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("getWorkoutRecordById ERROR: ", err);
             throw err;
         }
     },

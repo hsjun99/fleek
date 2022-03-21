@@ -20,8 +20,6 @@ const roundNumber = require('../modules/function/roundNumber');
 
 const jsonFormatter = require('../modules/function/jsonFormatter');
 
-
-const getWorkoutInfo = require('../modules/functionFleek/getWorkoutInfo');
 const getUserInfo = require('../modules/functionFleek/getUserInfo');
 const getRpeByRepsWeight = require('../modules/functionFleek/getRpeByRepsWeight');
 
@@ -505,7 +503,7 @@ module.exports = {
 
     // Success
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, data));
-  }
+  },
   /*
   getEach: async (req, res) => {
       const id = req.params.id;
@@ -537,4 +535,40 @@ module.exports = {
       //console.log(data);
       res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, {basic_info: {workout_id: Number(id), english: data.english, korean: data.korean, category: data.category, muscle_primary: data.muscle_p, muscle_secondary: [data.muscle_s1, data.muscle_s2, data.muscle_s3, data.muscle_s4, data.muscle_s5, data.muscle_s6], equipment: data.equipment, record_type: data.record_type}, equation: {inclination: data.inclination, intercept: data.intercept}, recent_records: recentRecords, plan: plan, detail_plan: detail_plan}));
   },*/
+  getWorkoutRankingInfo: async (req, res) => {
+    const uid = 'S27Sma9UBkSTgN6mSXXhPm31CG52';
+    const workout_id = req.params.workout_id;
+    const { type, group, period } = req.query;
+
+    let data;
+
+    const { sex, ageGroup, weightGroup } = await getUserInfo(uid);
+
+    switch (type) {
+      case "onermmax":
+        data = await Promise.all([await Workout.getOneRmMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period), await Workout.getOneRmMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)]);
+        break;
+      case "weightmax":
+        data = await Promise.all([await Workout.getWeightMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period), await Workout.getWeightMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
+        break;
+      case "volumemax":
+        data = await Promise.all([await Workout.getVolumeMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period), await Workout.getVolumeMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
+        break;
+      case "totalsets":
+        data = await Promise.all([await Workout.getTotalSetsMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period), await Workout.getTotalSetsMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
+        break;
+      case "totalvolume":
+        data = await Promise.all([await Workout.getTotalVolumeMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period), await Workout.getTotalVolumeMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
+        break;
+      case "totalreps":
+        data = await Promise.all([await Workout.getTotalRepsMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period), await Workout.getTotalRepsMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)])
+        break;
+      default:
+        break;
+    }
+
+
+    // Success
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, { rank: data[1], rank_list: data[0] }));
+  }
 }

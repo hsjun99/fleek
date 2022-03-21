@@ -36,4 +36,6 @@ router.delete('/customworkout/:workout_id', AuthUser.checkToken, workoutsControl
 
 //router.get('/table/:other_uid', AuthUser.checkToken, workoutsController.getOthersWorkoutData);
 
+router.get('/rankinginfo/:workout_id', AuthUser.checkToken, workoutsController.getWorkoutRankingInfo);
+
 module.exports = router;

@@ -1,6 +1,6 @@
 const roundNumber = require('../function/roundNumber');
 
-module.exports = async (weight, sex) => {
+module.exports = (weight, sex) => {
     let weightGroup = roundNumber.roundToNearest5(weight);
     if (sex == 1) {
         if (weightGroup < 40) weightGroup = 40;
