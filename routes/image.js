@@ -8,11 +8,13 @@ router.get('/upload/profile', AuthUser.checkToken, imageController.getPresignedU
 
 router.delete('/remove/profile', AuthUser.checkToken, imageController.deleteProfile);
 
-router.get('/presignedurl/feed', AuthUser.checkToken, imageController.getPresignedUrlFeed);
+router.post('/upload/feed', AuthUser.checkToken, imageController.getPresignedUrlFeed);
 
-router.post('/upload/feed/:feed_url', AuthUser.checkToken, imageController.postFeedImage)
+router.delete('/feed/:feed_id', AuthUser.checkToken, imageController.deleteFeedImage);
 
-router.delete('/remove/feed', AuthUser.checkToken, imageController.deleteFeed);
+router.put('/feed/:feed_id', AuthUser.checkToken, imageController.updateFeedImageDetail);
+
+router.get('/feed/:type', AuthUser.checkToken, imageController.getFeedImages);
 
 // router.get('/upload/customworkout/:workout_id', AuthUser.checkToken, imageController.getPresignedUrlProfile);
 
