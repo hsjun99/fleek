@@ -179,101 +179,101 @@ module.exports = {
                     }
                 ]
             },
-            {
-                "name": (await globalization.translation(langCode)).init_routine_beg_3,
-                "detail": [
-                    {
-                        "workout_id": 73,
-                        "super_set_label": 5,
-                        "rest_time": 20,
-                        "is_kilogram": 1,
-                        "is_meter": 1,
-                        "workout_detail": Array(3).fill({
-                            "reps": 10,
-                            "weight": 0,
-                            "duration": 0,
-                            "distance": 0,
-                            "set_type": 0,
-                            "rpe": null
-                        })
-                    },
-                    {
-                        "workout_id": 122,
-                        "super_set_label": 5,
-                        "rest_time": 20,
-                        "is_kilogram": 1,
-                        "is_meter": 1,
-                        "workout_detail": Array(3).fill({
-                            "reps": 0,
-                            "weight": 0,
-                            "duration": 60,
-                            "distance": 0,
-                            "set_type": 0,
-                            "rpe": null
-                        })
-                    },
-                    {
-                        "workout_id": 162,
-                        "super_set_label": 0,
-                        "rest_time": 20,
-                        "is_kilogram": 1,
-                        "is_meter": 1,
-                        "workout_detail": Array(3).fill({
-                            "reps": 10,
-                            "weight": 0,
-                            "duration": 0,
-                            "distance": 0,
-                            "set_type": 0,
-                            "rpe": null
-                        })
-                    },
-                    {
-                        "workout_id": 142,
-                        "super_set_label": 0,
-                        "rest_time": 20,
-                        "is_kilogram": 1,
-                        "is_meter": 1,
-                        "workout_detail": Array(3).fill({
-                            "reps": 10,
-                            "weight": 0,
-                            "duration": 0,
-                            "distance": 0,
-                            "set_type": 0,
-                            "rpe": null
-                        })
-                    },
-                    {
-                        "workout_id": 121,
-                        "super_set_label": 6,
-                        "rest_time": 20,
-                        "is_kilogram": 1,
-                        "is_meter": 1,
-                        "workout_detail": Array(3).fill({
-                            "reps": 10,
-                            "weight": 0,
-                            "duration": 0,
-                            "distance": 0,
-                            "set_type": 0,
-                            "rpe": null
-                        })
-                    },
-                    {
-                        "workout_id": 208,
-                        "super_set_label": 0,
-                        "rest_time": 20,
-                        "is_kilogram": 1,
-                        "is_meter": 1,
-                        "workout_detail": Array(3).fill({
-                            "reps": 10,
-                            "weight": 0,
-                            "duration": 0,
-                            "distance": 0,
-                            "set_type": 0,
-                            "rpe": null
-                        })
-                    }
-                ]
-            },
+            // {
+            //     "name": (await globalization.translation(langCode)).init_routine_beg_3,
+            //     "detail": [
+            //         {
+            //             "workout_id": 73,
+            //             "super_set_label": 5,
+            //             "rest_time": 20,
+            //             "is_kilogram": 1,
+            //             "is_meter": 1,
+            //             "workout_detail": Array(3).fill({
+            //                 "reps": 10,
+            //                 "weight": 0,
+            //                 "duration": 0,
+            //                 "distance": 0,
+            //                 "set_type": 0,
+            //                 "rpe": null
+            //             })
+            //         },
+            //         {
+            //             "workout_id": 122,
+            //             "super_set_label": 5,
+            //             "rest_time": 20,
+            //             "is_kilogram": 1,
+            //             "is_meter": 1,
+            //             "workout_detail": Array(3).fill({
+            //                 "reps": 0,
+            //                 "weight": 0,
+            //                 "duration": 60,
+            //                 "distance": 0,
+            //                 "set_type": 0,
+            //                 "rpe": null
+            //             })
+            //         },
+            //         {
+            //             "workout_id": 162,
+            //             "super_set_label": 0,
+            //             "rest_time": 20,
+            //             "is_kilogram": 1,
+            //             "is_meter": 1,
+            //             "workout_detail": Array(3).fill({
+            //                 "reps": 10,
+            //                 "weight": 0,
+            //                 "duration": 0,
+            //                 "distance": 0,
+            //                 "set_type": 0,
+            //                 "rpe": null
+            //             })
+            //         },
+            //         {
+            //             "workout_id": 142,
+            //             "super_set_label": 0,
+            //             "rest_time": 20,
+            //             "is_kilogram": 1,
+            //             "is_meter": 1,
+            //             "workout_detail": Array(3).fill({
+            //                 "reps": 10,
+            //                 "weight": 0,
+            //                 "duration": 0,
+            //                 "distance": 0,
+            //                 "set_type": 0,
+            //                 "rpe": null
+            //             })
+            //         },
+            //         {
+            //             "workout_id": 121,
+            //             "super_set_label": 6,
+            //             "rest_time": 20,
+            //             "is_kilogram": 1,
+            //             "is_meter": 1,
+            //             "workout_detail": Array(3).fill({
+            //                 "reps": 10,
+            //                 "weight": 0,
+            //                 "duration": 0,
+            //                 "distance": 0,
+            //                 "set_type": 0,
+            //                 "rpe": null
+            //             })
+            //         },
+            //         {
+            //             "workout_id": 208,
+            //             "super_set_label": 0,
+            //             "rest_time": 20,
+            //             "is_kilogram": 1,
+            //             "is_meter": 1,
+            //             "workout_detail": Array(3).fill({
+            //                 "reps": 10,
+            //                 "weight": 0,
+            //                 "duration": 0,
+            //                 "distance": 0,
+            //                 "set_type": 0,
+            //                 "rpe": null
+            //             })
+            //         }
+            //     ]
+            // },
             {
                 "name": (await globalization.translation(langCode)).init_routine_beg_4,
                 "detail": [

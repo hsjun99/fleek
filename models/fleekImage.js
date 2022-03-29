@@ -62,7 +62,7 @@ const fleekImage = {
     deleteFeedImage: async (uid, feedImage_id) => {
         const query = `UPDATE ${table_feedImage}
                         SET is_deleted = 1
-                        WHERE feedImage_id = ${feedImage_id} AND uid = '${uid}'`;
+                        WHERE feedImage_id = ${feedImage_id} AND userinfo_uid = '${uid}'`;
         try {
             await pool.queryParamMaster(query);
             return true;
@@ -77,15 +77,16 @@ const fleekImage = {
     },
     getMyFeedImages: async (uid, last_id) => {
         const pagination_condition = `AND feedImage_id < ${last_id}`;
-        const field = `feedImage_id, feed_url, content, privacy_setting, created_at`;
+        const field = `feedImage_id, userinfo_uid AS uid, name, profile_url, feed_url, content, ${table_feedImage}.privacy_setting, ${table_feedImage}.created_at`;
         const query = `SELECT ${field} FROM ${table_feedImage}
+                        INNER JOIN ${table_userinfo} ON userinfo_uid = uid
                         WHERE userinfo_uid = '${uid}'
-                        AND is_deleted = 0
+                        AND ${table_feedImage}.is_deleted = 0
                         ${last_id == 'init' ? '' : pagination_condition}
                         ORDER BY feedImage_id DESC
                         LIMIT 24`;
         try {
-            const data = await pool.queryParamSlave(query);
+            const data = await pool.queryParamMaster(query);
             return data;
         } catch (err) {
             if (err.errno == 1062) {
@@ -98,12 +99,13 @@ const fleekImage = {
     },
     getOthersFeedImages: async (uid, other_uid, last_id) => {
         const pagination_condition = `AND feedImage_id < ${last_id}`;
-        const field = `feedImage_id, feed_url, content, privacy_setting, created_at`;
+        const field = `feedImage_id, userinfo_uid AS uid, name, profile_url, feed_url, content, ${table_feedImage}.created_at`;
         const query = `SELECT ${field} FROM ${table_feedImage}
+                        INNER JOIN ${table_userinfo} ON userinfo_uid = uid
                         WHERE userinfo_uid = '${other_uid}'
-                            AND is_deleted = 0
-                            AND DATE_SUB(NOW(), INTERVAL 50 SECOND) > created_at
-                            AND (privacy_setting = 0 OR (privacy_setting = 2 AND '${other_uid}' IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}')))
+                            AND ${table_feedImage}.is_deleted = 0
+                            AND DATE_SUB(DATE_SUB(NOW(), INTERVAL 9 HOUR), INTERVAL 15 SECOND) > ${table_feedImage}.created_at
+                            AND (${table_feedImage}.privacy_setting = 0 OR (${table_feedImage}.privacy_setting = 2 AND '${other_uid}' IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}')))
                             ${last_id == 'init' ? '' : pagination_condition}
                         ORDER BY feedImage_id DESC
                         LIMIT 24`;
@@ -121,11 +123,12 @@ const fleekImage = {
     },
     getAllFeedImages: async (uid, last_id) => {
         const pagination_condition = `AND feedImage_id < ${last_id}`;
-        const field = `feedImage_id, userinfo_uid AS uid, feed_url, content, privacy_setting, created_at`;
+        const field = `feedImage_id, userinfo_uid AS uid, name, profile_url, feed_url, content, ${table_feedImage}.created_at`;
         const query = `SELECT ${field} FROM ${table_feedImage}
-                        WHERE is_deleted = 0
-                            AND DATE_SUB(NOW(), INTERVAL 50 SECOND) > created_at
-                            AND (privacy_setting = 0 OR (privacy_setting = 2 AND userinfo_uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}')))
+                        INNER JOIN ${table_userinfo} ON userinfo_uid = uid
+                        WHERE ${table_feedImage}.is_deleted = 0
+                            AND DATE_SUB(DATE_SUB(NOW(), INTERVAL 9 HOUR), INTERVAL 15 SECOND) > ${table_feedImage}.created_at
+                            AND (${table_feedImage}.privacy_setting = 0 OR (${table_feedImage}.privacy_setting = 2 AND userinfo_uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}')))
                             ${last_id == 'init' ? '' : pagination_condition}
                         ORDER BY feedImage_id DESC
                         LIMIT 24`;

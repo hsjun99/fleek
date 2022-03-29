@@ -12,7 +12,7 @@ const table8 = 'fcmToken';
 
 var admin = require('firebase-admin');
 
-const firebaseCM = require('../modules/firebase/firebaseCloudMessaging');
+// const firebaseCM = require('../modules/firebase/firebaseCloudMessaging');
 
 const getWorkoutEquation = require('../modules/functionFleek/getWorkoutEquation');
 
@@ -27,7 +27,7 @@ const timeFunction = require('../modules/function/timeFunction');
 const { Unregister } = require("../modules/auth/firebaseAuth");
 
 const feedMessage = require('../modules/feedMessage');
-const { LexRuntime } = require('aws-sdk');
+// const { LexRuntime } = require('aws-sdk');
 
 const fleekUser = {
     unregister: async (uid) => {
@@ -557,14 +557,21 @@ const fleekUser = {
         }
     },
     updateBodyInfo: async (uid, height, weight, skeletal_muscle_mass, body_fat_ratio) => {
-        const fields2 = 'height, weight, skeletal_muscle_mass, body_fat_ratio, userinfo_uid, created_at';
-        const questions2 = `?, ?, ?, ?, ?, ?`;
-        const values2 = [height, weight, skeletal_muscle_mass, body_fat_ratio, uid, await timeFunction.currentTime()];
+        // const fields2 = 'height, weight, skeletal_muscle_mass, body_fat_ratio, userinfo_uid, created_at';
+        // const questions2 = `?, ?, ?, ?, ?, ?`;
+        // const values2 = [height, weight, skeletal_muscle_mass, body_fat_ratio, uid, await timeFunction.currentTime()];
         const query1 = `UPDATE ${table1} SET height="${height}", weight="${weight}", skeletal_muscle_mass = ${skeletal_muscle_mass}, body_fat_ratio = ${body_fat_ratio} WHERE uid="${uid}"`;
-        const query2 = `INSERT INTO ${table6}(${fields2}) VALUES(${questions2})`;
+        // const query2 = `INSERT INTO ${table6}(${fields2}) VALUES(${questions2})`;
         try {
             await pool.queryParamMaster(query1);
-            await pool.queryParamArrMaster(query2, values2);
+            // await pool.queryParamArrMaster(query2, values2);
+            await admin.database().ref('usersBodyInfo').child(uid).push().set({
+                height: height,
+                weight: weight,
+                skeletal_muscle_mass: skeletal_muscle_mass,
+                body_fat_ratio: body_fat_ratio,
+                created_at: await timeFunction.currentTime()
+            });
             return true;
         } catch (err) {
             if (err.errno == 1062) {
