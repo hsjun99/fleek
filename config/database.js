@@ -28,7 +28,7 @@ const DB_slave = async () => {
     return new Promise(async (resolve, reject) => {
         await ssmPromise.then(configAWS => {
             const configDB = {
-                host: process.env.REGION == 'TOKYO' ? configAWS.host_slave : configAWS.host_slave_US,
+                host: configAWS.host_slave,// process.env.REGION == 'TOKYO' ? configAWS.host_slave : configAWS.host_slave_US,
                 port: configAWS.port_slave,
                 user: configAWS.user_slave,
                 password: configAWS.password_slave,
