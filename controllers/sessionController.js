@@ -83,8 +83,13 @@ module.exports = {
         const uid = req.uid;
         const session_id = req.params.session_id;
 
-        // Delete Session
-        const result = await Session.deleteSession(uid, session_id);
+        let result;
+
+        if (session_id == "all") {
+            result = await Session.deleteAllSession(uid);
+        } else {
+            result = await Session.deleteSession(uid, session_id);
+        }
         // DB Error Handling
         if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.DELETE_SESSION_FAIL));

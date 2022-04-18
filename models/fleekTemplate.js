@@ -16,7 +16,7 @@ const getUserNextWorkoutPlanHierarchy = require('../modules/functionFleek/getUse
 const getUserSetting = require('../modules/functionFleek/getUserSetting');
 
 var admin = require('firebase-admin');
-const feedMessage = require('../modules/feedMessage');
+// const feedMessage = require('../modules/feedMessage');
 const aboutLanguage = require('../modules/function/aboutLanguage');
 
 const template = {
@@ -141,7 +141,7 @@ const template = {
             const imported_uid = result[0].userinfo_uid;
             let template_name = result[0].name;
             // Send Message
-            const message = await feedMessage.template_import(uid, template_id, template_name);
+            // const message = await feedMessage.template_import(uid, template_id, template_name);
             await table_usersFeed.child(imported_uid).update({ new_message: 1 });
             await table_usersFeed.child(imported_uid).push().set(message);
 

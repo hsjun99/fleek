@@ -32,7 +32,7 @@ var admin = require('firebase-admin');
 
 const firebaseCM = require('../modules/firebase/firebaseCloudMessaging');
 
-const feedMessage = require('../modules/feedMessage');
+// const feedMessage = require('../modules/feedMessage');
 
 const session = {
     sessionLike: async (uid, session_id, emoji_type, name, privacy_mode, template_name) => {
@@ -80,7 +80,7 @@ const session = {
 
             // Send Message
             if (privacy_mode == 0 && uid != liked_uid) {
-                const message = await feedMessage.session_like(uid, session_id, template_name);
+                // const message = await feedMessage.session_like(uid, session_id, template_name);
                 await table_usersFeed.child(liked_uid).update({ new_message: 1 });
                 await table_usersFeed.child(liked_uid).push().set(message);
             }
@@ -136,7 +136,7 @@ const session = {
             const privacy_mode = result1[0].privacy_setting;
             // Send Message
             if (privacy_mode == 0) {
-                const message = await feedMessage.session_start(uid);
+                // const message = await feedMessage.session_start(uid);
                 await Promise.all(followers_list.map(async (follow_uid) => {
                     await table_usersFeed.child(follow_uid).update({ new_message: 1 });
                     await table_usersFeed.child(follow_uid).push().set(message);
@@ -212,7 +212,7 @@ const session = {
             table_sessionLike.update({ [session_id]: { 0: { cnt: 0, users: ['null'] }, 1: { cnt: 0, users: ['null'] }, 2: { cnt: 0, users: ['null'] }, 3: { cnt: 0, users: ['null'] }, 4: { cnt: 0, users: ['null'] } } });
             // Send Message
             if (privacy_mode == 0) {
-                const message = await feedMessage.session_finish(uid, session_id, template_name);
+                // const message = await feedMessage.session_finish(uid, session_id, template_name);
                 await Promise.all(followers_list.map(async (follow_uid) => {
                     await table_usersFeed.child(follow_uid).update({ new_message: 1 });
                     await table_usersFeed.child(follow_uid).push().set(message);
@@ -520,7 +520,21 @@ const session = {
             throw err;
         }
     },
-
+    deleteAllSession: async (uid) => {
+        const query = `UPDATE ${table_session} SET is_deleted = 1
+                        WHERE ${table_session}.userinfo_uid = "${uid}"`;
+        try {
+            await pool.queryParamMaster(query);
+            return true;
+        } catch (err) {
+            if (err.errno == 1062) {
+                console.log('deleteSession ERROR: ', err.errno, err.code);
+                return -1;
+            }
+            console.log("deleteSession ERROR: ", err);
+            throw err;
+        }
+    },
     postUserHistorySyncFirebase: async (uid, update_time) => {
         const table_syncTable = await admin.database().ref('syncTable');
         try {

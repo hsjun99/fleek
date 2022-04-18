@@ -535,6 +535,17 @@ module.exports = {
       //console.log(data);
       res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUT_SUCCESS, {basic_info: {workout_id: Number(id), english: data.english, korean: data.korean, category: data.category, muscle_primary: data.muscle_p, muscle_secondary: [data.muscle_s1, data.muscle_s2, data.muscle_s3, data.muscle_s4, data.muscle_s5, data.muscle_s6], equipment: data.equipment, record_type: data.record_type}, equation: {inclination: data.inclination, intercept: data.intercept}, recent_records: recentRecords, plan: plan, detail_plan: detail_plan}));
   },*/
+  postFraudRankingReport: async (req, res) => {
+    const session_id = req.params.session_id;
+    const result = await Workout.postFraudRankingReport(session_id);
+
+    if (result == -1) {
+      return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUT_FAIL));
+    }
+
+    // Success
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS));
+  },
   getWorkoutRankingInfo: async (req, res) => {
     const uid = req.uid;
 

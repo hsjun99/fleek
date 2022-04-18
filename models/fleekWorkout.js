@@ -27,6 +27,7 @@ const cache = new CacheService(ttl); // Create a new cache service instance
 
 const weight_limit = 600;
 const reps_limit = 500;
+const fraud_report_limit = 10;
 
 const workout = {
     getWorkoutYoutubeVideoTotal: async (langCode) => {
@@ -1024,11 +1025,11 @@ const workout = {
         const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
 
         const query = `SELECT *
-                        FROM (SELECT T.max_one_rm, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@max_one_rm IS NULL OR @max_one_rm > T.max_one_rm) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_one_rm := T.max_one_rm
-                        FROM (SELECT MAX(sessionDetail.one_rm) max_one_rm, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
+                        FROM (SELECT T.session_session_id AS session_id, T.max_one_rm, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@max_one_rm IS NULL OR @max_one_rm > T.max_one_rm) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_one_rm := T.max_one_rm
+                        FROM (SELECT session_session_id, MAX(sessionDetail.one_rm) max_one_rm, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
                         FROM (SELECT (100*weight)/(48.8 + (53.8*EXP(-0.075*reps))) one_rm, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
                         ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_one_rm := NULL) R
@@ -1074,11 +1075,11 @@ const workout = {
         const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
 
         const query = `SELECT *
-                        FROM (SELECT T.max_weight, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@max_weight IS NULL OR @max_weight > T.max_weight) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_weight := T.max_weight
-                        FROM (SELECT MAX(sessionDetail.weight) max_weight, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
+                        FROM (SELECT T.session_session_id AS session_id, T.max_weight, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@max_weight IS NULL OR @max_weight > T.max_weight) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_weight := T.max_weight
+                        FROM (SELECT session_session_id, MAX(sessionDetail.weight) max_weight, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
                         FROM (SELECT weight, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
                         ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_weight := NULL) R
@@ -1124,11 +1125,11 @@ const workout = {
         const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
 
         const query = `SELECT *
-                        FROM (SELECT T.max_volume, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@max_volume IS NULL OR @max_volume > T.max_volume) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_volume := T.max_volume
-                        FROM (SELECT MAX(sessionDetail.volume) max_volume, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
+                        FROM (SELECT T.session_session_id AS session_id, T.max_volume, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@max_volume IS NULL OR @max_volume > T.max_volume) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_volume := T.max_volume
+                        FROM (SELECT session_session_id, MAX(sessionDetail.volume) max_volume, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
                         FROM (SELECT (weight*reps) volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
                         ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_volume := NULL) R
@@ -1174,12 +1175,12 @@ const workout = {
         const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
 
         const query = `SELECT *
-                        FROM (SELECT T.sum_total_sets, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@sum_total_sets IS NULL OR @sum_total_sets > T.sum_total_sets) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @sum_total_sets := T.sum_total_sets
-                        FROM (SELECT SUM(sessionDetail.total_sets) sum_total_sets, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
+                        FROM (SELECT T.session_session_id AS session_id, T.sum_total_sets, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@sum_total_sets IS NULL OR @sum_total_sets > T.sum_total_sets) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @sum_total_sets := T.sum_total_sets
+                        FROM (SELECT session_session_id, SUM(sessionDetail.total_sets) sum_total_sets, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
                         FROM (SELECT COUNT(*) total_sets, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
                         ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @sum_total_sets := NULL) R
@@ -1225,12 +1226,12 @@ const workout = {
         const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
 
         const query = `SELECT *
-                        FROM (SELECT T.sum_total_volume, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@sum_total_volume IS NULL OR @sum_total_volume > T.sum_total_volume) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @sum_total_volume := T.sum_total_volume
-                        FROM (SELECT SUM(sessionDetail.total_volume) sum_total_volume, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
+                        FROM (SELECT T.session_session_id AS session_id, T.sum_total_volume, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@sum_total_volume IS NULL OR @sum_total_volume > T.sum_total_volume) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @sum_total_volume := T.sum_total_volume
+                        FROM (SELECT session_session_id, SUM(sessionDetail.total_volume) sum_total_volume, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
                         FROM (SELECT SUM(weight*reps) total_volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
                         ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @sum_total_volume := NULL) R
@@ -1276,12 +1277,12 @@ const workout = {
         const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
 
         const query = `SELECT *
-                        FROM (SELECT T.sum_total_reps, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@sum_total_reps IS NULL OR @sum_total_reps > T.sum_total_reps) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @sum_total_reps := T.sum_total_reps
-                        FROM (SELECT SUM(sessionDetail.total_reps) sum_total_reps, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
+                        FROM (SELECT T.session_session_id AS session_id, T.sum_total_reps, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@sum_total_reps IS NULL OR @sum_total_reps > T.sum_total_reps) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @sum_total_reps := T.sum_total_reps
+                        FROM (SELECT session_session_id, SUM(sessionDetail.total_reps) sum_total_reps, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
                         FROM (SELECT SUM(reps) total_reps, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
                         ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @sum_total_reps := NULL) R
@@ -1333,7 +1334,7 @@ const workout = {
                         FROM (SELECT MAX(sessionDetail.one_rm) max_one_rm, ${table_userinfo}.name, ${table_userinfo}.uid
                         FROM (SELECT (100*weight)/(48.8 + (53.8*EXP(-0.075*reps))) one_rm, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
                         ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_one_rm := NULL) R
@@ -1372,7 +1373,7 @@ const workout = {
                         FROM (SELECT MAX(sessionDetail.weight) max_weight, ${table_userinfo}.name, ${table_userinfo}.uid
                         FROM (SELECT weight, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
                         ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_weight := NULL) R
@@ -1412,7 +1413,7 @@ const workout = {
                         FROM (SELECT MAX(sessionDetail.volume) max_volume, ${table_userinfo}.name, ${table_userinfo}.uid
                         FROM (SELECT (weight*reps) volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
                         ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_volume := NULL) R
@@ -1453,7 +1454,7 @@ const workout = {
                         FROM (SELECT COUNT(*) total_sets, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
                         ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @sum_total_sets := NULL) R
@@ -1493,7 +1494,7 @@ const workout = {
                         FROM (SELECT SUM(weight*reps) total_volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
                         ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @sum_total_volume := NULL) R
@@ -1533,7 +1534,7 @@ const workout = {
                         FROM (SELECT SUM(reps) total_reps, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${period_condition == 'all' ? '' : (period_condition == 'month' ? condition_period_month : (period_condition == 'week' ? condition_period_week : condition_period_day))}
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
                         ${group_condition == 'all' ? '' : group_condition == 'body' ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @sum_total_reps := NULL) R
@@ -1549,6 +1550,22 @@ const workout = {
                 return -1;
             }
             console.log("getWorkoutRecordById ERROR: ", err);
+            throw err;
+        }
+    },
+
+
+    postFraudRankingReport: async (session_id) => {
+        const query = `UPDATE ${table_session} SET fraud_report_cnt = fraud_report_cnt + 1 WHERE session_id = ${session_id}`;
+        try {
+            await pool.queryParamMaster(query);
+            return true;
+        } catch (error) {
+            if (err.errno == 1062) {
+                console.log('updateUserWorkoutHistoryFinish Error : ', err.errno, err.code);
+                return -1;
+            }
+            console.log('updateUserWorkoutHistoryFinish Error : ', err);
             throw err;
         }
     },

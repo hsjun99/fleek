@@ -26,7 +26,7 @@ const timeFunction = require('../modules/function/timeFunction');
 
 const { Unregister } = require("../modules/auth/firebaseAuth");
 
-const feedMessage = require('../modules/feedMessage');
+// const feedMessage = require('../modules/feedMessage');
 // const { LexRuntime } = require('aws-sdk');
 
 const fleekUser = {
@@ -243,53 +243,67 @@ const fleekUser = {
             throw err;
         }
     },
-    addFollowFirebase: async (uid, follow_uid, name, privacy_mode) => {
-        const table_usersFeed = await admin.database().ref('usersFeed');
+    // addFollowFirebase: async (uid, follow_uid, name, privacy_mode) => {
+    //     const table_usersFeed = await admin.database().ref('usersFeed');
+    //     try {
+    //         // Send Message
+    //         if (privacy_mode == 0) {
+    //             // const message = await feedMessage.followed(uid);
+    //             // await table_usersFeed.child(follow_uid).update({ new_message: 1 });
+    //             // await table_usersFeed.child(follow_uid).push().set(message);
+    //         }
+
+    //         // const fields1 = 'uid, lang_code'
+    //         // const query1 = `SELECT ${fields1} FROM ${table_userinfo} 
+    //         //                 WHERE userinfo_uid = ${follow_uid}`;
+    //         // const result1 = await pool.queryParamSlave(query1);
+
+    //         if (privacy_mode == 0) {
+    //             // await firebaseCM(result1, "userFollow", [name]);
+    //             // const fields2 = 'token_value';
+    //             // const query2 = `SELECT ${fields2} FROM ${table8}
+    //             //                 WHERE ${table8}.userinfo_uid = '${follow_uid}'`;
+    //             // const result2 = await pool.queryParamSlave(query2);
+    //             // const token_list = await Promise.all(result2.map(async data => {
+    //             //     return data.token_value;
+    //             // }));
+    //             // const message_background = {
+    //             //     notification: {
+    //             //         title: '플릭(Fleek)',
+    //             //         body: `${name}님이 팔로우하였습니다! 확인해보세요!!`
+    //             //     }
+    //             // }
+    //             // const message_foreground = {
+    //             //     data: {
+    //             //         title: '플릭(Fleek)',
+    //             //         body: `${name}님이 팔로우하였습니다! 확인해보세요!!`
+    //             //     }
+    //             // }
+    //             // if (token_list.length != 0) {
+    //             //     await firebaseCM(token_list, message_background, message_foreground);
+    //             // }
+    //         }
+    //         return true;
+    //     } catch (err) {
+    //         if (err.errno == 1062) {
+    //             console.log('deleteSession ERROR: ', err.errno, err.code);
+    //             return -1;
+    //         }
+    //         console.log("deleteSession ERROR: ", err);
+    //         throw err;
+    //     }
+    // },
+    deleteMyFollower: async (uid, remove_uid) => {
+        const query = `DELETE FROM ${table3} WHERE userinfo_uid = '${remove_uid}' AND follow_uid = '${uid}'`;
         try {
-            // Send Message
-            if (privacy_mode == 0) {
-                const message = await feedMessage.followed(uid);
-                await table_usersFeed.child(follow_uid).update({ new_message: 1 });
-                await table_usersFeed.child(follow_uid).push().set(message);
-            }
-
-            // const fields1 = 'uid, lang_code'
-            // const query1 = `SELECT ${fields1} FROM ${table_userinfo} 
-            //                 WHERE userinfo_uid = ${follow_uid}`;
-            // const result1 = await pool.queryParamSlave(query1);
-
-            if (privacy_mode == 0) {
-                // await firebaseCM(result1, "userFollow", [name]);
-                // const fields2 = 'token_value';
-                // const query2 = `SELECT ${fields2} FROM ${table8}
-                //                 WHERE ${table8}.userinfo_uid = '${follow_uid}'`;
-                // const result2 = await pool.queryParamSlave(query2);
-                // const token_list = await Promise.all(result2.map(async data => {
-                //     return data.token_value;
-                // }));
-                // const message_background = {
-                //     notification: {
-                //         title: '플릭(Fleek)',
-                //         body: `${name}님이 팔로우하였습니다! 확인해보세요!!`
-                //     }
-                // }
-                // const message_foreground = {
-                //     data: {
-                //         title: '플릭(Fleek)',
-                //         body: `${name}님이 팔로우하였습니다! 확인해보세요!!`
-                //     }
-                // }
-                // if (token_list.length != 0) {
-                //     await firebaseCM(token_list, message_background, message_foreground);
-                // }
-            }
-            return true;
+            const result = await pool.queryParamMaster(query);
+            return result[0];
         } catch (err) {
             if (err.errno == 1062) {
-                console.log('deleteSession ERROR: ', err.errno, err.code);
+                console.log('addFollow ERROR : ', err.errno, err.code);
                 return -1;
             }
-            console.log("deleteSession ERROR: ", err);
+            console.log('addFollow ERROR : ', err);
             throw err;
         }
     },

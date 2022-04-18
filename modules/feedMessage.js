@@ -61,48 +61,48 @@
 
 */
 
-const timeFunction = require('./function/timeFunction');
+// const timeFunction = require('./function/timeFunction');
 
-module.exports = {
-    session_like: async(uid, session_id, template_name) => {
-        return {
-            type: "U_1",
-            uid: uid,
-            session_id: session_id,
-            template_name: template_name,
-            created_at: await timeFunction.currentTime()
-        }
-    },
-    followed: async(uid) => {
-        return {
-            type: "U_2",
-            uid: uid,
-            created_at: await timeFunction.currentTime()
-        }
-    },
-    session_start: async(uid) => {
-        return {
-            type: "U_3",
-            uid: uid,
-            created_at: await timeFunction.currentTime()
-        }
-    },
-    session_finish: async(uid, session_id, template_name) => {
-        return {
-            type: "U_4",
-            uid: uid,
-            session_id: session_id,
-            template_name: template_name,
-            created_at: await timeFunction.currentTime()
-        }
-    },
-    template_import: async(uid, template_id, template_name) => {
-        return {
-            type: "U_5",
-            uid: uid,
-            template_id: template_id,
-            template_name: template_name,
-            created_at: await timeFunction.currentTime()
-        }
-    }
-}
+// module.exports = {
+//     session_like: async(uid, session_id, template_name) => {
+//         return {
+//             type: "U_1",
+//             uid: uid,
+//             session_id: session_id,
+//             template_name: template_name,
+//             created_at: await timeFunction.currentTime()
+//         }
+//     },
+//     followed: async(uid) => {
+//         return {
+//             type: "U_2",
+//             uid: uid,
+//             created_at: await timeFunction.currentTime()
+//         }
+//     },
+//     session_start: async(uid) => {
+//         return {
+//             type: "U_3",
+//             uid: uid,
+//             created_at: await timeFunction.currentTime()
+//         }
+//     },
+//     session_finish: async(uid, session_id, template_name) => {
+//         return {
+//             type: "U_4",
+//             uid: uid,
+//             session_id: session_id,
+//             template_name: template_name,
+//             created_at: await timeFunction.currentTime()
+//         }
+//     },
+//     template_import: async(uid, template_id, template_name) => {
+//         return {
+//             type: "U_5",
+//             uid: uid,
+//             template_id: template_id,
+//             template_name: template_name,
+//             created_at: await timeFunction.currentTime()
+//         }
+//     }
+// }

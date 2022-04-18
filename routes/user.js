@@ -22,6 +22,8 @@ router.post('/follow/:follow_uid', AuthUser.checkToken, userController.follow);
 
 router.delete('/unfollow/:unfollow_uid', AuthUser.checkToken, userController.unfollow);
 
+router.delete('/follower/:remove_uid', AuthUser.checkToken, userController.deleteFollower);
+
 router.put('/name/:new_name', AuthUser.checkToken, userController.updateName);
 
 router.put('/height&weight/:height/:weight', AuthUser.checkToken, userController.updateHeightWeight);
