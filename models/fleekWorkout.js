@@ -251,8 +251,8 @@ const workout = {
         }
     },
     getWorkoutTablePure: async (uid) => {
-        const fields1 = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num`;
-        const fields2 = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, ${table_customWorkout}.is_deleted`;
+        const fields1 = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, is_pro`;
+        const fields2 = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, is_pro, ${table_customWorkout}.is_deleted`;
         const query1 = `SELECT ${fields1} FROM ${table_workout}
                         WHERE ${table_workout}.workout_id != 135
                                 AND is_custom = 0`;
