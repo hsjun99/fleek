@@ -76,4 +76,10 @@ router.get(
   workoutsController.getWorkoutRankingInfo
 );
 
+router.get(
+  "/memo/all",
+  AuthUser.checkToken,
+  workoutsController.getAllWorkoutMemo
+);
+
 module.exports = router;

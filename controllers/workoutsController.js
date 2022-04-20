@@ -854,4 +854,29 @@ module.exports = {
       })
     );
   },
+  getAllWorkoutMemo: async (req, res) => {
+    const uid = req.uid;
+
+    const data = await Workout.getAllWorkoutMemo(uid);
+
+    //DB Error Handling
+    if (data == -1) {
+      return res
+        .status(statusCode.DB_ERROR)
+        .send(
+          util.fail(statusCode.DB_ERROR, resMessage.READ_WORKOUTALGORITHM_FAIL)
+        );
+    }
+
+    // Success
+    res
+      .status(statusCode.OK)
+      .send(
+        util.success(
+          statusCode.OK,
+          resMessage.READ_WORKOUTALGORITHM_SUCCESS,
+          data
+        )
+      );
+  },
 };

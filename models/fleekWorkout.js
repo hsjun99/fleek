@@ -14,6 +14,7 @@ const table_customWorkout = "customWorkout";
 const table_templateUsers = "templateUsers";
 const table_templateUsersDetails = "templateUsersDetails";
 const table_workoutYoutube = "workoutYoutube";
+const table_userWorkoutMemo = "userWorkoutMemo";
 
 var admin = require("firebase-admin");
 
@@ -2686,7 +2687,6 @@ const workout = {
       throw err;
     }
   },
-
   postFraudRankingReport: async (session_id) => {
     const query = `UPDATE ${table_session} SET fraud_report_cnt = fraud_report_cnt + 1 WHERE session_id = ${session_id}`;
     try {
@@ -2702,6 +2702,47 @@ const workout = {
         return -1;
       }
       console.log("updateUserWorkoutHistoryFinish Error : ", err);
+      throw err;
+    }
+  },
+  getAllWorkoutMemo: async (uid) => {
+    const query = `SELECT * FROM ${table_userWorkoutMemo}
+                    WHERE userinfo_uid = "${uid}"
+                    ORDER BY workout_workout_id, created_at`;
+    try {
+      const result = await pool.queryParamSlave(query);
+      let data = [];
+      await asyncForEach(result, async (rowdata) => {
+        if (data.length == 0) {
+          data.push({
+            workout_id: rowdata.workout_workout_id,
+            memo_detail: [
+              { content: rowdata.content, created_at: rowdata.created_at },
+            ],
+          });
+        } else if (
+          data[data.length - 1].workout_id == rowdata.workout_workout_id
+        ) {
+          data[data.length - 1].memo_detail.push({
+            content: rowdata.content,
+            created_at: rowdata.created_at,
+          });
+        } else {
+          data.push({
+            workout_id: rowdata.workout_workout_id,
+            memo_detail: [
+              { content: rowdata.content, created_at: rowdata.created_at },
+            ],
+          });
+        }
+      });
+      return data;
+    } catch (error) {
+      if (err.errno == 1062) {
+        console.log("checkWorkout Error : ", err.errno, err.code);
+        return -1;
+      }
+      console.log("checkWorkout Error : ", err);
       throw err;
     }
   },
