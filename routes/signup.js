@@ -1,17 +1,17 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
 
-const AuthUser = require('../middlewares/authUser');
-const signupController = require('../controllers/signupController');
+const AuthUser = require("../middlewares/authUser");
+const signupController = require("../controllers/signupController");
 
-router.post('/checkuser', AuthUser.checkToken, signupController.checkuser);
+router.post("/checkuser", AuthUser.checkToken, signupController.checkuser);
 // SignUp
-router.post('/', AuthUser.checkToken, signupController.signup);
+router.post("/", AuthUser.checkToken, signupController.signup);
 // Redundancy Check
-router.get('/checkunique/:name', signupController.checkunique);
+router.get("/checkunique/:name", signupController.checkunique);
 // Kakao
-router.get('/callbacks/kakao/sign_in', signupController.kakaosignin);
+router.get("/callbacks/kakao/sign_in", signupController.kakaosignin);
 
-router.post('/callbacks/kakao/token', signupController.kakaotoken);
+router.post("/callbacks/kakao/token", signupController.kakaotoken);
 
 module.exports = router;

@@ -80,13 +80,23 @@ module.exports = {
         // Success
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.FOLLOW_SUCCESS, { code: code_follow.success }));
 
-        const { name, privacy_setting } = await User.getProfile(uid);
-        await User.addFollowFirebase(uid, follow_uid, name, privacy_setting);
+        // const { name, privacy_setting } = await User.getProfile(uid);
+        // await User.addFollowFirebase(uid, follow_uid, name, privacy_setting);
     },
     unfollow: async (req, res) => {
         const uid = req.uid;
         const unfollow_uid = req.params.unfollow_uid;
         const result = await User.deleteFollow(uid, unfollow_uid);
+        if (result == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.FOLLOW_FAIL));
+        }
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.FOLLOW_SUCCESS));
+    },
+    deleteFollower: async (req, res) => {
+        const uid = req.uid;
+        const remove_uid = req.params.remove_uid;
+        const result = await User.deleteMyFollower(uid, remove_uid);
         if (result == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.FOLLOW_FAIL));
         }
