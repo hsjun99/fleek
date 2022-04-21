@@ -1873,7 +1873,7 @@ const workout = {
                         FROM (SELECT session_session_id, MAX(sessionDetail.one_rm) max_one_rm, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
                         FROM (SELECT (100*weight)/(48.8 + (53.8*EXP(-0.075*reps))) one_rm, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -1946,7 +1946,7 @@ const workout = {
                         FROM (SELECT session_session_id, MAX(sessionDetail.weight) max_weight, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
                         FROM (SELECT weight, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2019,7 +2019,7 @@ const workout = {
                         FROM (SELECT session_session_id, MAX(sessionDetail.volume) max_volume, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
                         FROM (SELECT (weight*reps) volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2093,7 +2093,7 @@ const workout = {
                         FROM (SELECT COUNT(*) total_sets, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2167,7 +2167,7 @@ const workout = {
                         FROM (SELECT SUM(weight*reps) total_volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2241,7 +2241,7 @@ const workout = {
                         FROM (SELECT SUM(reps) total_reps, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2314,7 +2314,7 @@ const workout = {
                         FROM (SELECT MAX(sessionDetail.one_rm) max_one_rm, ${table_userinfo}.name, ${table_userinfo}.uid
                         FROM (SELECT (100*weight)/(48.8 + (53.8*EXP(-0.075*reps))) one_rm, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2380,7 +2380,7 @@ const workout = {
                         FROM (SELECT MAX(sessionDetail.weight) max_weight, ${table_userinfo}.name, ${table_userinfo}.uid
                         FROM (SELECT weight, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2447,7 +2447,7 @@ const workout = {
                         FROM (SELECT MAX(sessionDetail.volume) max_volume, ${table_userinfo}.name, ${table_userinfo}.uid
                         FROM (SELECT (weight*reps) volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2515,7 +2515,7 @@ const workout = {
                         FROM (SELECT COUNT(*) total_sets, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2582,7 +2582,7 @@ const workout = {
                         FROM (SELECT SUM(weight*reps) total_volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2649,7 +2649,7 @@ const workout = {
                         FROM (SELECT SUM(reps) total_reps, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
