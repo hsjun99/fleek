@@ -8,7 +8,6 @@ dotenv.config();
 const DB_master = async () => {
   return new Promise(async (resolve, reject) => {
     await ssmPromise.then((configAWS) => {
-      console.log(process.env.REGION);
       const configDB = {
         host: configAWS.host_master,
         port: configAWS.port_master,
