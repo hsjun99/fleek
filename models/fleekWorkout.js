@@ -18,17 +18,15 @@ const table_userWorkoutMemo = "userWorkoutMemo";
 
 var admin = require("firebase-admin");
 
-const weightGroupClassifier = require("../modules/classifier/weightGroupClassifier");
-const ageGroupClassifier = require("../modules/classifier/ageGroupClassifier");
-
 const CacheService = require("../modules/cache.service");
-const { NULL_VALUE } = require("../modules/responseMessage");
 const ttl = 60 * 60 * 1; // cache for 1 Hour
 const cache = new CacheService(ttl); // Create a new cache service instance
 
+const ttlRanking = 60 * 60 * 1; // cache for 1 Hour
+const cacheRanking = new CacheService(ttlRanking); // Create a new cache service instance
+
 const weight_limit = 600;
 const reps_limit = 500;
-const fraud_report_limit = 10;
 
 const workout = {
   getWorkoutYoutubeVideoTotal: async (langCode) => {
@@ -1873,7 +1871,7 @@ const workout = {
                         FROM (SELECT session_session_id, MAX(sessionDetail.one_rm) max_one_rm, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
                         FROM (SELECT (100*weight)/(48.8 + (53.8*EXP(-0.075*reps))) one_rm, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -1895,7 +1893,11 @@ const workout = {
                         LIMIT 15 OFFSET ${(page - 1) * 15}`;
 
     try {
-      const data = await pool.queryParamSlave(query);
+      const key = `onermmax_${workout_id}_${group_condition}_${period_condition}_${page}`;
+      const data = await cacheRanking.get(key, async () => {
+        console.log("No Cache");
+        return await pool.queryParamSlave(query);
+      });
       const final_data = data.map((rowdata) => {
         return {
           uid: rowdata.uid,
@@ -1946,7 +1948,7 @@ const workout = {
                         FROM (SELECT session_session_id, MAX(sessionDetail.weight) max_weight, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
                         FROM (SELECT weight, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -1968,7 +1970,11 @@ const workout = {
                         LIMIT 15 OFFSET ${(page - 1) * 15}`;
 
     try {
-      const data = await pool.queryParamSlave(query);
+      const key = `weightmax_${workout_id}_${group_condition}_${period_condition}_${page}`;
+      const data = await cacheRanking.get(key, async () => {
+        console.log("No Cache");
+        return await pool.queryParamSlave(query);
+      });
       const final_data = data.map((rowdata) => {
         return {
           uid: rowdata.uid,
@@ -2019,7 +2025,7 @@ const workout = {
                         FROM (SELECT session_session_id, MAX(sessionDetail.volume) max_volume, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
                         FROM (SELECT (weight*reps) volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2041,7 +2047,11 @@ const workout = {
                         LIMIT 15 OFFSET ${(page - 1) * 15}`;
 
     try {
-      const data = await pool.queryParamSlave(query);
+      const key = `volumemax_${workout_id}_${group_condition}_${period_condition}_${page}`;
+      const data = await cacheRanking.get(key, async () => {
+        console.log("No Cache");
+        return await pool.queryParamSlave(query);
+      });
       const final_data = data.map((rowdata) => {
         return {
           uid: rowdata.uid,
@@ -2093,7 +2103,7 @@ const workout = {
                         FROM (SELECT COUNT(*) total_sets, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2115,7 +2125,11 @@ const workout = {
                         LIMIT 15 OFFSET ${(page - 1) * 15}`;
 
     try {
-      const data = await pool.queryParamSlave(query);
+      const key = `totalsetsmax_${workout_id}_${group_condition}_${period_condition}_${page}`;
+      const data = await cacheRanking.get(key, async () => {
+        console.log("No Cache");
+        return await pool.queryParamSlave(query);
+      });
       const final_data = data.map((rowdata) => {
         return {
           uid: rowdata.uid,
@@ -2167,7 +2181,7 @@ const workout = {
                         FROM (SELECT SUM(weight*reps) total_volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2189,7 +2203,11 @@ const workout = {
                         LIMIT 15 OFFSET ${(page - 1) * 15}`;
 
     try {
-      const data = await pool.queryParamSlave(query);
+      const key = `totalvolumemax_${workout_id}_${group_condition}_${period_condition}_${page}`;
+      const data = await cacheRanking.get(key, async () => {
+        console.log("No Cache");
+        return await pool.queryParamSlave(query);
+      });
       const final_data = data.map((rowdata) => {
         return {
           uid: rowdata.uid,
@@ -2241,7 +2259,7 @@ const workout = {
                         FROM (SELECT SUM(reps) total_reps, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2263,7 +2281,11 @@ const workout = {
                         LIMIT 15 OFFSET ${(page - 1) * 15}`;
 
     try {
-      const data = await pool.queryParamSlave(query);
+      const key = `totalrepsmax_${workout_id}_${group_condition}_${period_condition}_${page}`;
+      const data = await cacheRanking.get(key, async () => {
+        console.log("No Cache");
+        return await pool.queryParamSlave(query);
+      });
       const final_data = data.map((rowdata) => {
         return {
           uid: rowdata.uid,
@@ -2314,7 +2336,7 @@ const workout = {
                         FROM (SELECT MAX(sessionDetail.one_rm) max_one_rm, ${table_userinfo}.name, ${table_userinfo}.uid
                         FROM (SELECT (100*weight)/(48.8 + (53.8*EXP(-0.075*reps))) one_rm, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2336,7 +2358,11 @@ const workout = {
                         WHERE RANK.uid = '${uid}'`;
 
     try {
-      const data = await pool.queryParamSlave(query);
+      const key = `onermmaxrank_${workout_id}_${group_condition}_${period_condition}`;
+      const data = await cacheRanking.get(key, async () => {
+        console.log("No Cache");
+        return await pool.queryParamSlave(query);
+      });
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),
@@ -2380,7 +2406,7 @@ const workout = {
                         FROM (SELECT MAX(sessionDetail.weight) max_weight, ${table_userinfo}.name, ${table_userinfo}.uid
                         FROM (SELECT weight, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2402,7 +2428,11 @@ const workout = {
                         WHERE RANK.uid = '${uid}'`;
 
     try {
-      const data = await pool.queryParamSlave(query);
+      const key = `weightmaxrank_${workout_id}_${group_condition}_${period_condition}`;
+      const data = await cacheRanking.get(key, async () => {
+        console.log("No Cache");
+        return await pool.queryParamSlave(query);
+      });
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),
@@ -2447,7 +2477,7 @@ const workout = {
                         FROM (SELECT MAX(sessionDetail.volume) max_volume, ${table_userinfo}.name, ${table_userinfo}.uid
                         FROM (SELECT (weight*reps) volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2469,7 +2499,11 @@ const workout = {
                         WHERE RANK.uid = '${uid}'`;
 
     try {
-      const data = await pool.queryParamSlave(query);
+      const key = `volumemaxrank_${workout_id}_${group_condition}_${period_condition}`;
+      const data = await cacheRanking.get(key, async () => {
+        console.log("No Cache");
+        return await pool.queryParamSlave(query);
+      });
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),
@@ -2515,7 +2549,7 @@ const workout = {
                         FROM (SELECT COUNT(*) total_sets, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2537,7 +2571,11 @@ const workout = {
                         WHERE RANK.uid = '${uid}'`;
 
     try {
-      const data = await pool.queryParamSlave(query);
+      const key = `totalsetsmaxrank_${workout_id}_${group_condition}_${period_condition}`;
+      const data = await cacheRanking.get(key, async () => {
+        console.log("No Cache");
+        return await pool.queryParamSlave(query);
+      });
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),
@@ -2582,7 +2620,7 @@ const workout = {
                         FROM (SELECT SUM(weight*reps) total_volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2604,7 +2642,11 @@ const workout = {
                         WHERE RANK.uid = '${uid}'`;
 
     try {
-      const data = await pool.queryParamSlave(query);
+      const key = `totalvolumemaxrank_${workout_id}_${group_condition}_${period_condition}`;
+      const data = await cacheRanking.get(key, async () => {
+        console.log("No Cache");
+        return await pool.queryParamSlave(query);
+      });
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),
@@ -2649,7 +2691,7 @@ const workout = {
                         FROM (SELECT SUM(reps) total_reps, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
-                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.fraud_report_cnt < ${fraud_report_limit} ${
+                        INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
       period_condition == "all"
         ? ""
         : period_condition == "month"
@@ -2671,7 +2713,11 @@ const workout = {
                         WHERE RANK.uid = '${uid}'`;
 
     try {
-      const data = await pool.queryParamSlave(query);
+      const key = `totalrepsmaxrank_${workout_id}_${group_condition}_${period_condition}`;
+      const data = await cacheRanking.get(key, async () => {
+        console.log("No Cache");
+        return await pool.queryParamSlave(query);
+      });
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),

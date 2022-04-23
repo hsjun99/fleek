@@ -301,7 +301,6 @@ module.exports = {
         return info;
       })
     );
-    data[0].is_pro = 1;
     let update_time = Math.floor(Date.now() / 1000);
     // console.log(JSON.stringify(data_slice));
     res
