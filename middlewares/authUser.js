@@ -29,7 +29,6 @@ const authUser = {
     } else {
       req.lang_code = req.headers.langcode;
     }
-    req.uid = "83so4tITfWZJwQy8u1IC96poZB12";
     next();
   },
 };
