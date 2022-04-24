@@ -2,7 +2,6 @@
 const mysql = require("promise-mysql");
 const ssmPromise = require("../modules/auth/awsparamStore.js");
 const dotenv = require("dotenv");
-
 dotenv.config();
 
 const DB_master = async () => {
