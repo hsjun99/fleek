@@ -617,14 +617,22 @@ const fleekUser = {
     skeletal_muscle_mass,
     body_fat_ratio
   ) => {
-    // const fields2 = 'height, weight, skeletal_muscle_mass, body_fat_ratio, userinfo_uid, created_at';
-    // const questions2 = `?, ?, ?, ?, ?, ?`;
-    // const values2 = [height, weight, skeletal_muscle_mass, body_fat_ratio, uid, await timeFunction.currentTime()];
+    const fields2 =
+      "height, weight, skeletal_muscle_mass, body_fat_ratio, userinfo_uid, created_at";
+    const questions2 = `?, ?, ?, ?, ?, ?`;
+    const values2 = [
+      height,
+      weight,
+      skeletal_muscle_mass,
+      body_fat_ratio,
+      uid,
+      await timeFunction.currentTime(),
+    ];
     const query1 = `UPDATE ${table1} SET height="${height}", weight="${weight}", skeletal_muscle_mass = ${skeletal_muscle_mass}, body_fat_ratio = ${body_fat_ratio} WHERE uid="${uid}"`;
-    // const query2 = `INSERT INTO ${table6}(${fields2}) VALUES(${questions2})`;
+    const query2 = `INSERT INTO ${table6}(${fields2}) VALUES(${questions2})`;
     try {
       await pool.queryParamMaster(query1);
-      // await pool.queryParamArrMaster(query2, values2);
+      await pool.queryParamArrMaster(query2, values2);
       await admin
         .database()
         .ref("usersBodyInfo")
