@@ -1850,7 +1850,8 @@ const workout = {
     weightGroup,
     group_condition,
     period_condition,
-    page
+    page,
+    lang_code
   ) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
@@ -1867,8 +1868,8 @@ const workout = {
     const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
 
     const query = `SELECT *
-                        FROM (SELECT T.session_session_id AS session_id, T.max_one_rm, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@max_one_rm IS NULL OR @max_one_rm > T.max_one_rm) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_one_rm := T.max_one_rm
-                        FROM (SELECT session_session_id, MAX(sessionDetail.one_rm) max_one_rm, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
+                        FROM (SELECT T.session_session_id AS session_id, T.max_one_rm, IF(T.privacy_setting=1, IF(${lang_code}=1, "비공개 유저", "Private User"), T.name) AS name, T.uid, IF(T.privacy_setting=1, NULL, T.profile_url) AS profile_url, IF(T.privacy_setting=1, NULL, T.instagram_id) AS instagram_id, CASE WHEN (@max_one_rm IS NULL OR @max_one_rm > T.max_one_rm) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_one_rm := T.max_one_rm
+                        FROM (SELECT session_session_id, MAX(sessionDetail.one_rm) max_one_rm, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id, ${table_userinfo}.privacy_setting
                         FROM (SELECT (100*weight)/(48.8 + (53.8*EXP(-0.075*reps))) one_rm, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
                         INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
@@ -1927,7 +1928,8 @@ const workout = {
     weightGroup,
     group_condition,
     period_condition,
-    page
+    page,
+    lang_code
   ) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
@@ -1944,8 +1946,8 @@ const workout = {
     const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
 
     const query = `SELECT *
-                        FROM (SELECT T.session_session_id AS session_id, T.max_weight, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@max_weight IS NULL OR @max_weight > T.max_weight) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_weight := T.max_weight
-                        FROM (SELECT session_session_id, MAX(sessionDetail.weight) max_weight, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
+                        FROM (SELECT T.session_session_id AS session_id, T.max_weight, IF(T.privacy_setting=1, IF(${lang_code}=1, "비공개 유저", "Private User"), T.name) AS name, T.uid, IF(T.privacy_setting=1, NULL, T.profile_url) AS profile_url, IF(T.privacy_setting=1, NULL, T.instagram_id) AS instagram_id, CASE WHEN (@max_weight IS NULL OR @max_weight > T.max_weight) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_weight := T.max_weight
+                        FROM (SELECT session_session_id, MAX(sessionDetail.weight) max_weight, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id, ${table_userinfo}.privacy_setting
                         FROM (SELECT weight, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
                         INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
@@ -2004,7 +2006,8 @@ const workout = {
     weightGroup,
     group_condition,
     period_condition,
-    page
+    page,
+    lang_code
   ) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
@@ -2021,8 +2024,8 @@ const workout = {
     const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
 
     const query = `SELECT *
-                        FROM (SELECT T.session_session_id AS session_id, T.max_volume, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@max_volume IS NULL OR @max_volume > T.max_volume) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_volume := T.max_volume
-                        FROM (SELECT session_session_id, MAX(sessionDetail.volume) max_volume, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
+                        FROM (SELECT T.session_session_id AS session_id, T.max_volume, IF(T.privacy_setting=1, IF(${lang_code}=1, "비공개 유저", "Private User"), T.name) AS name, T.uid, IF(T.privacy_setting=1, NULL, T.profile_url) AS profile_url, IF(T.privacy_setting=1, NULL, T.instagram_id) AS instagram_id, CASE WHEN (@max_volume IS NULL OR @max_volume > T.max_volume) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @max_volume := T.max_volume
+                        FROM (SELECT session_session_id, MAX(sessionDetail.volume) max_volume, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id, ${table_userinfo}.privacy_setting
                         FROM (SELECT (weight*reps) volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}) sessionDetail
                         INNER JOIN ${table_session} ON sessionDetail.session_session_id = ${table_session}.session_id AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0 ${
@@ -2081,7 +2084,8 @@ const workout = {
     weightGroup,
     group_condition,
     period_condition,
-    page
+    page,
+    lang_code
   ) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
@@ -2098,8 +2102,8 @@ const workout = {
     const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
 
     const query = `SELECT *
-                        FROM (SELECT T.session_session_id AS session_id, T.sum_total_sets, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@sum_total_sets IS NULL OR @sum_total_sets > T.sum_total_sets) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @sum_total_sets := T.sum_total_sets
-                        FROM (SELECT session_session_id, SUM(sessionDetail.total_sets) sum_total_sets, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
+                        FROM (SELECT T.session_session_id AS session_id, T.sum_total_sets, IF(T.privacy_setting=1, IF(${lang_code}=1, "비공개 유저", "Private User"), T.name) AS name, T.uid, IF(T.privacy_setting=1, NULL, T.profile_url) AS profile_url, IF(T.privacy_setting=1, NULL, T.instagram_id) AS instagram_id, CASE WHEN (@sum_total_sets IS NULL OR @sum_total_sets > T.sum_total_sets) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @sum_total_sets := T.sum_total_sets
+                        FROM (SELECT session_session_id, SUM(sessionDetail.total_sets) sum_total_sets, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id, ${table_userinfo}.privacy_setting
                         FROM (SELECT COUNT(*) total_sets, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id}
                         GROUP BY session_session_id) sessionDetail
@@ -2159,7 +2163,8 @@ const workout = {
     weightGroup,
     group_condition,
     period_condition,
-    page
+    page,
+    lang_code
   ) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
@@ -2176,8 +2181,8 @@ const workout = {
     const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
 
     const query = `SELECT *
-                        FROM (SELECT T.session_session_id AS session_id, T.sum_total_volume, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@sum_total_volume IS NULL OR @sum_total_volume > T.sum_total_volume) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @sum_total_volume := T.sum_total_volume
-                        FROM (SELECT session_session_id, SUM(sessionDetail.total_volume) sum_total_volume, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
+                        FROM (SELECT T.session_session_id AS session_id, T.sum_total_volume, IF(T.privacy_setting=1, IF(${lang_code}=1, "비공개 유저", "Private User"), T.name) AS name, T.uid, IF(T.privacy_setting=1, NULL, T.profile_url) AS profile_url, IF(T.privacy_setting=1, NULL, T.instagram_id) AS instagram_id, CASE WHEN (@sum_total_volume IS NULL OR @sum_total_volume > T.sum_total_volume) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @sum_total_volume := T.sum_total_volume
+                        FROM (SELECT session_session_id, SUM(sessionDetail.total_volume) sum_total_volume, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id, ${table_userinfo}.privacy_setting
                         FROM (SELECT SUM(weight*reps) total_volume, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}
                         GROUP BY session_session_id) sessionDetail
@@ -2237,7 +2242,8 @@ const workout = {
     weightGroup,
     group_condition,
     period_condition,
-    page
+    page,
+    lang_code
   ) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
@@ -2254,8 +2260,8 @@ const workout = {
     const condition_period_month = `AND ${table_session}.created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)`;
 
     const query = `SELECT *
-                        FROM (SELECT T.session_session_id AS session_id, T.sum_total_reps, T.name, T.uid, T.profile_url, T.instagram_id, CASE WHEN (@sum_total_reps IS NULL OR @sum_total_reps > T.sum_total_reps) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @sum_total_reps := T.sum_total_reps
-                        FROM (SELECT session_session_id, SUM(sessionDetail.total_reps) sum_total_reps, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id
+                        FROM (SELECT T.session_session_id AS session_id, T.sum_total_reps, IF(T.privacy_setting=1, IF(${lang_code}=1, "비공개 유저", "Private User"), T.name) AS name, T.uid, IF(T.privacy_setting=1, NULL, T.profile_url) AS profile_url, IF(T.privacy_setting=1, NULL, T.instagram_id) AS instagram_id, CASE WHEN (@sum_total_reps IS NULL OR @sum_total_reps > T.sum_total_reps) THEN @curRank := @curRank + 1 ELSE @curRank := @curRank END AS rank, @sum_total_reps := T.sum_total_reps
+                        FROM (SELECT session_session_id, SUM(sessionDetail.total_reps) sum_total_reps, ${table_userinfo}.name, ${table_userinfo}.uid, ${table_userinfo}.profile_url, ${table_userinfo}.instagram_id, ${table_userinfo}.privacy_setting
                         FROM (SELECT SUM(reps) total_reps, session_session_id FROM ${table_workoutlog}
                         WHERE workout_workout_id = ${workout_id} AND weight < ${weight_limit} AND reps < ${reps_limit}
                         GROUP BY session_session_id) sessionDetail
