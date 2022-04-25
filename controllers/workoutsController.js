@@ -693,6 +693,7 @@ module.exports = {
   },
   getWorkoutRankingInfo: async (req, res) => {
     const uid = req.uid;
+    const lang_code = req.lang_code;
 
     const workout_id = req.params.workout_id;
     const { type, group, period, page } = req.query;
@@ -712,7 +713,8 @@ module.exports = {
             weightGroup,
             group,
             period,
-            page
+            page,
+            lang_code
           ),
           await Workout.getOneRmMaxRankByWorkoutId(
             workout_id,
@@ -735,7 +737,8 @@ module.exports = {
             weightGroup,
             group,
             period,
-            page
+            page,
+            lang_code
           ),
           await Workout.getWeightMaxRankByWorkoutId(
             workout_id,
@@ -758,7 +761,8 @@ module.exports = {
             weightGroup,
             group,
             period,
-            page
+            page,
+            lang_code
           ),
           await Workout.getVolumeMaxRankByWorkoutId(
             workout_id,
@@ -781,7 +785,8 @@ module.exports = {
             weightGroup,
             group,
             period,
-            page
+            page,
+            lang_code
           ),
           await Workout.getTotalSetsMaxRankByWorkoutId(
             workout_id,
@@ -804,7 +809,8 @@ module.exports = {
             weightGroup,
             group,
             period,
-            page
+            page,
+            lang_code
           ),
           await Workout.getTotalVolumeMaxRankByWorkoutId(
             workout_id,
@@ -827,7 +833,8 @@ module.exports = {
             weightGroup,
             group,
             period,
-            page
+            page,
+            lang_code
           ),
           await Workout.getTotalRepsMaxRankByWorkoutId(
             workout_id,

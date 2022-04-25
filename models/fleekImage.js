@@ -115,7 +115,7 @@ const fleekImage = {
                         ORDER BY feedImage_id DESC
                         LIMIT 24`;
     try {
-      const data = await pool.queryParamSlave(query);
+      const data = await pool.queryParamMaster(query);
       return data;
     } catch (err) {
       if (err.errno == 1062) {
@@ -133,12 +133,13 @@ const fleekImage = {
                         INNER JOIN ${table_userinfo} ON userinfo_uid = uid
                         WHERE ${table_feedImage}.is_deleted = 0
                             AND DATE_SUB(DATE_SUB(NOW(), INTERVAL 9 HOUR), INTERVAL 15 SECOND) > ${table_feedImage}.created_at
+                            AND ${table_userinfo}.privacy_setting = 0
                             AND (${table_feedImage}.privacy_setting = 0 OR (${table_feedImage}.privacy_setting = 2 AND userinfo_uid IN (SELECT follow_uid FROM ${table_follows} WHERE userinfo_uid = '${uid}')))
                             ${last_id == "init" ? "" : pagination_condition}
                         ORDER BY feedImage_id DESC
                         LIMIT 24`;
     try {
-      const data = await pool.queryParamSlave(query);
+      const data = await pool.queryParamMaster(query);
       return data;
     } catch (err) {
       if (err.errno == 1062) {

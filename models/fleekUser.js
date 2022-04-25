@@ -413,21 +413,41 @@ const fleekUser = {
       const instagram_id = result[0].instagram_id;
       const is_beta = result[0].is_beta;
       const created_at = result[0].created_at;
+      // if (
+      //   (
+      //     await admin.database().ref("usersBodyInfo").child(uid).once("value")
+      //   ).val() == null
+      // ) {
+      //   height = result[0].height;
+      //   weight = result[0].weight;
+      // } else {
+      //   console.log(
+      //     (
+      //       await admin
+      //         .database()
+      //         .ref("usersBodyInfo")
+      //         .child(uid)
+      //         .orderByChild("created_at")
+      //         .limitToLast(1)
+      //         .once("value")
+      //     ).val()
+      //   );
+      // }
       if (!(body_info_history.length == 0)) {
-        height = (() => {
-          let index = body_info_history.length - 1;
-          while (body_info_history[index].height == null && index > 0) {
-            index -= 1;
-          }
-          return body_info_history[index].height;
-        })();
-        weight = (() => {
-          let index = body_info_history.length - 1;
-          while (body_info_history[index].weight == null && index > 0) {
-            index -= 1;
-          }
-          return body_info_history[index].weight;
-        })();
+        // height = (() => {
+        //   let index = body_info_history.length - 1;
+        //   while (body_info_history[index].height == null && index > 0) {
+        //     index -= 1;
+        //   }
+        //   return body_info_history[index].height;
+        // })();
+        // weight = (() => {
+        //   let index = body_info_history.length - 1;
+        //   while (body_info_history[index].weight == null && index > 0) {
+        //     index -= 1;
+        //   }
+        //   return body_info_history[index].weight;
+        // })();
         skeletal_muscle_mass = (() => {
           let index = body_info_history.length - 1;
           while (
