@@ -1,7 +1,7 @@
 const ageGroupClassifier = require("../classifier/ageGroupClassifier");
 const weightGroupClassifier = require("../classifier/weightGroupClassifier");
-const dotenv = require("dotenv");
-dotenv.config();
+// const dotenv = require("dotenv");
+// dotenv.config();
 
 let User = require("../../models/fleekUser");
 
@@ -39,9 +39,5 @@ module.exports = async (uid) => {
     profile_url: profile_url,
     instagram_id: instagram_id,
     is_beta: is_beta,
-    is_discount:
-      new Date(created_at) < new Date(process.env.EARLYBIRDDISCOUNTDATE)
-        ? 1
-        : 0,
   };
 };

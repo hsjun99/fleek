@@ -140,7 +140,7 @@ const fleekUser = {
   },
   checkUser: async (uid) => {
     const field = "uid";
-    const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.uid="${uid}" AND ${table1}.is_deleted != 1`;
+    const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.uid="${uid}" AND ${table1}.is_deleted = 0`;
     try {
       const result = await pool.queryParamSlave(query);
       if (result.length == 0) return false;
