@@ -11,9 +11,7 @@ const authUser = {
       }
       //Invalid idToken
       if (!(await Auth(idToken))) {
-        res
-          .status(statusCode.UNAUTHORIZED)
-          .send(util.fail(statusCode.UNAUTHORIZED, resMessage.INVALID_TOKEN));
+        res.status(statusCode.UNAUTHORIZED).send(util.fail(statusCode.UNAUTHORIZED, resMessage.INVALID_TOKEN));
         return;
       }
       const uid = await getUid(idToken);
@@ -30,7 +28,7 @@ const authUser = {
       req.lang_code = req.headers.langcode;
     }
     next();
-  },
+  }
 };
 
 module.exports = authUser;

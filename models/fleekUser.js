@@ -30,7 +30,7 @@ const { Unregister } = require("../modules/auth/firebaseAuth");
 // const { LexRuntime } = require('aws-sdk');
 
 const fleekUser = {
-  unregister: async (uid) => {
+  unregister: async uid => {
     const query = `UPDATE ${table1} SET is_deleted = 1
                         WHERE uid="${uid}"`;
     try {
@@ -111,7 +111,7 @@ const fleekUser = {
       throw err;
     }
   },
-  getAllUser: async (uid) => {
+  getAllUser: async uid => {
     /*
         const field = `uid, name, MAX(${table7}.created_at) AS last_date`;
         // Privacy Setting: 전체공개(0), 나만보기(1)
@@ -138,7 +138,7 @@ const fleekUser = {
       throw err;
     }
   },
-  checkUser: async (uid) => {
+  checkUser: async uid => {
     const field = "uid";
     const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.uid="${uid}" AND ${table1}.is_deleted = 0`;
     try {
@@ -154,7 +154,7 @@ const fleekUser = {
       throw err;
     }
   },
-  getSetting: async (uid) => {
+  getSetting: async uid => {
     const fields1 = "is_kilogram, is_meter";
     const query1 = `SELECT ${fields1} FROM ${table1} WHERE ${table1}.uid="${uid}"`;
     try {
@@ -183,21 +183,8 @@ const fleekUser = {
       throw err;
     }
   },
-  postData: async (
-    uid,
-    name,
-    sex,
-    age,
-    height,
-    weight,
-    created_at,
-    squat1RM,
-    experience,
-    langCode,
-    is_beta = 0
-  ) => {
-    const fields1 =
-      "uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at, lang_code, is_beta";
+  postData: async (uid, name, sex, age, height, weight, created_at, squat1RM, experience, langCode, is_beta = 0) => {
+    const fields1 = "uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at, lang_code, is_beta";
     const questions1 = `?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?`;
     const query1 = `INSERT INTO ${table1}(${fields1}) VALUES(${questions1})`;
     try {
@@ -214,20 +201,7 @@ const fleekUser = {
       } else {
         percentage = await experienceClassifier(experience);
       }
-      const values1 = [
-        uid,
-        name,
-        sex,
-        age,
-        height,
-        weight,
-        squat1RM,
-        experience,
-        percentage,
-        created_at,
-        langCode,
-        is_beta,
-      ];
+      const values1 = [uid, name, sex, age, height, weight, squat1RM, experience, percentage, created_at, langCode, is_beta];
       await pool.queryParamArrMaster(query1, values1);
       return uid;
     } catch (err) {
@@ -239,7 +213,7 @@ const fleekUser = {
       throw err;
     }
   },
-  nameToUid: async (name) => {
+  nameToUid: async name => {
     const field = "uid";
     const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.name="${name}"`;
     try {
@@ -317,7 +291,7 @@ const fleekUser = {
       throw err;
     }
   },
-  getFollowings: async (uid) => {
+  getFollowings: async uid => {
     const fields = "uid, name";
     const query = `SELECT ${fields} FROM ${table3}
                         INNER JOIN ${table1} ON ${table3}.follow_uid = ${table1}.uid AND ${table3}.userinfo_uid='${uid}' AND ${table1}.privacy_setting != 1
@@ -334,7 +308,7 @@ const fleekUser = {
       throw err;
     }
   },
-  getFollowers: async (uid) => {
+  getFollowers: async uid => {
     const fields = "uid, name";
     const query = `SELECT ${fields} FROM ${table3}
                         INNER JOIN ${table1} ON ${table3}.userinfo_uid = ${table1}.uid AND ${table3}.follow_uid = '${uid}' AND ${table1}.privacy_setting != 1
@@ -351,7 +325,7 @@ const fleekUser = {
       throw err;
     }
   },
-  getFollowersWithoutPrivacySetting: async (uid) => {
+  getFollowersWithoutPrivacySetting: async uid => {
     const fields = "uid, name";
     const query = `SELECT ${fields} FROM ${table3}
                         INNER JOIN ${table1} ON ${table3}.userinfo_uid = ${table1}.uid AND ${table3}.follow_uid = '${uid}'
@@ -368,7 +342,7 @@ const fleekUser = {
       throw err;
     }
   },
-  checkName: async (name) => {
+  checkName: async name => {
     const field = "name";
     const query = `SELECT ${field} FROM ${table1} WHERE ${table1}.name="${name}" AND ${table1}.is_deleted != 1`;
     try {
@@ -384,11 +358,10 @@ const fleekUser = {
       throw err;
     }
   },
-  getProfile: async (uid) => {
+  getProfile: async uid => {
     const fields1 =
       "sex, age, height, weight, skeletal_muscle_mass, body_fat_ratio, percentage, name, privacy_setting, profile_url, instagram_id, is_beta, created_at";
-    const fields2 =
-      "userBodyInfoTracking_id, height, weight, skeletal_muscle_mass, body_fat_ratio, created_at";
+    const fields2 = "userBodyInfoTracking_id, height, weight, skeletal_muscle_mass, body_fat_ratio, created_at";
     const query1 = `SELECT ${fields1} FROM ${table1}
                         WHERE ${table1}.uid="${uid}"`;
     const query2 = `SELECT ${fields2} FROM ${table6}
@@ -396,10 +369,7 @@ const fleekUser = {
                         ORDER BY created_at ASC`;
 
     try {
-      const [result, body_info_history] = await Promise.all([
-        await pool.queryParamMaster(query1),
-        await pool.queryParamMaster(query2),
-      ]);
+      const [result, body_info_history] = await Promise.all([await pool.queryParamMaster(query1), await pool.queryParamMaster(query2)]);
       const sex = result[0].sex;
       const age = result[0].age;
       let height = result[0].height;
@@ -450,10 +420,7 @@ const fleekUser = {
         // })();
         skeletal_muscle_mass = (() => {
           let index = body_info_history.length - 1;
-          while (
-            body_info_history[index].skeletal_muscle_mass == null &&
-            index > 0
-          ) {
+          while (body_info_history[index].skeletal_muscle_mass == null && index > 0) {
             index -= 1;
           }
           return body_info_history[index].skeletal_muscle_mass;
@@ -481,7 +448,7 @@ const fleekUser = {
         profile_url,
         instagram_id,
         is_beta,
-        created_at,
+        created_at
       };
     } catch (err) {
       if (err.errno == 1062) {
@@ -505,16 +472,10 @@ const fleekUser = {
         squat_list = [],
         deadlift_list = [];
       await Promise.all(
-        result1.map(async (rowdata) => {
-          if (
-            rowdata.workout_workout_id == 29 ||
-            rowdata.workout_workout_id == 30
-          ) {
+        result1.map(async rowdata => {
+          if (rowdata.workout_workout_id == 29 || rowdata.workout_workout_id == 30) {
             benchpress_list.push(rowdata);
-          } else if (
-            rowdata.workout_workout_id == 200 ||
-            rowdata.workout_workout_id == 3101
-          ) {
+          } else if (rowdata.workout_workout_id == 200 || rowdata.workout_workout_id == 3101) {
             squat_list.push(rowdata);
           } else {
             deadlift_list.push(rowdata);
@@ -522,35 +483,16 @@ const fleekUser = {
         })
       );
       let wilks_score = null;
-      if (
-        !(
-          benchpress_list.length == 0 ||
-          squat_list.length == 0 ||
-          deadlift_list.length == 0
-        )
-      ) {
-        const [benchpress_one_rm, squat_one_rm, deadlift_one_rm] =
-          await Promise.all([
-            (
-              await benchpress_list.reduce(async (prev, current) =>
-                prev.max_one_rm > current.max_one_rm ? prev : current
-              )
-            ).max_one_rm,
-            squat_list[0].max_one_rm,
-            (
-              await deadlift_list.reduce(async (prev, current) =>
-                prev.max_one_rm > current.max_one_rm ? prev : current
-              )
-            ).max_one_rm,
-          ]);
-        wilks_score = await wilksScoreCalculator(
-          benchpress_one_rm + squat_one_rm + deadlift_one_rm,
-          sex,
-          weight
-        );
+      if (!(benchpress_list.length == 0 || squat_list.length == 0 || deadlift_list.length == 0)) {
+        const [benchpress_one_rm, squat_one_rm, deadlift_one_rm] = await Promise.all([
+          (await benchpress_list.reduce(async (prev, current) => (prev.max_one_rm > current.max_one_rm ? prev : current))).max_one_rm,
+          squat_list[0].max_one_rm,
+          (await deadlift_list.reduce(async (prev, current) => (prev.max_one_rm > current.max_one_rm ? prev : current))).max_one_rm
+        ]);
+        wilks_score = await wilksScoreCalculator(benchpress_one_rm + squat_one_rm + deadlift_one_rm, sex, weight);
       }
       return {
-        wilks_score: wilks_score,
+        wilks_score: wilks_score
       };
     } catch (err) {
       if (err.errno == 1062) {
@@ -589,15 +531,10 @@ const fleekUser = {
       throw err;
     }
   },
-  updateHeightWeight: async (uid, height, weight) => {
-    const fields2 = "height, weight, userinfo_uid, created_at";
-    const questions2 = `?, ?, ?, ?`;
-    const values2 = [height, weight, uid, await timeFunction.currentTime()];
-    const query1 = `UPDATE ${table1} SET height="${height}", weight="${weight}" WHERE uid="${uid}"`;
-    const query2 = `INSERT INTO ${table6}(${fields2}) VALUES(${questions2})`;
+  updateWeight: async (uid, weight) => {
+    const query1 = `UPDATE ${table1} SET weight="${weight}" WHERE uid="${uid}"`;
     try {
       await pool.queryParamMaster(query1);
-      await pool.queryParamArrMaster(query2, values2);
       return true;
     } catch (err) {
       if (err.errno == 1062) {
@@ -608,14 +545,7 @@ const fleekUser = {
       throw err;
     }
   },
-  updateBodyInfoRecord: async (
-    uid,
-    userBodyInfoTracking_id,
-    height,
-    weight,
-    skeletal_muscle_mass,
-    body_fat_ratio
-  ) => {
+  updateBodyInfoRecord: async (uid, userBodyInfoTracking_id, height, weight, skeletal_muscle_mass, body_fat_ratio) => {
     const query = `UPDATE ${table6} SET height = ${height}, weight = ${weight}, skeletal_muscle_mass = ${skeletal_muscle_mass}, body_fat_ratio = ${body_fat_ratio}
                         WHERE userinfo_uid="${uid}" AND userBodyInfoTracking_id = ${userBodyInfoTracking_id}`;
     try {
@@ -630,24 +560,10 @@ const fleekUser = {
       throw err;
     }
   },
-  updateBodyInfo: async (
-    uid,
-    height,
-    weight,
-    skeletal_muscle_mass,
-    body_fat_ratio
-  ) => {
-    const fields2 =
-      "height, weight, skeletal_muscle_mass, body_fat_ratio, userinfo_uid, created_at";
+  updateBodyInfo: async (uid, height, weight, skeletal_muscle_mass, body_fat_ratio) => {
+    const fields2 = "height, weight, skeletal_muscle_mass, body_fat_ratio, userinfo_uid, created_at";
     const questions2 = `?, ?, ?, ?, ?, ?`;
-    const values2 = [
-      height,
-      weight,
-      skeletal_muscle_mass,
-      body_fat_ratio,
-      uid,
-      await timeFunction.currentTime(),
-    ];
+    const values2 = [height, weight, skeletal_muscle_mass, body_fat_ratio, uid, await timeFunction.currentTime()];
     const query1 = `UPDATE ${table1} SET height="${height}", weight="${weight}", skeletal_muscle_mass = ${skeletal_muscle_mass}, body_fat_ratio = ${body_fat_ratio} WHERE uid="${uid}"`;
     const query2 = `INSERT INTO ${table6}(${fields2}) VALUES(${questions2})`;
     try {
@@ -663,7 +579,7 @@ const fleekUser = {
           weight: weight,
           skeletal_muscle_mass: skeletal_muscle_mass,
           body_fat_ratio: body_fat_ratio,
-          created_at: await timeFunction.currentTime(),
+          created_at: await timeFunction.currentTime()
         });
       return true;
     } catch (err) {
@@ -742,7 +658,7 @@ const fleekUser = {
       throw err;
     }
   },
-  deleteInstagramId: async (uid) => {
+  deleteInstagramId: async uid => {
     const query1 = `UPDATE ${table1}
                         SET instagram_id = NULL
                         WHERE uid="${uid}"`;
@@ -757,7 +673,7 @@ const fleekUser = {
       console.log("updateProfile ERROR: ", err);
       throw err;
     }
-  },
+  }
 };
 
 module.exports = fleekUser;
