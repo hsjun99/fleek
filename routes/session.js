@@ -11,14 +11,12 @@ router.put("/modify", AuthUser.checkToken, sessionController.modifySession);
 
 router.post("/save/wear", AuthUserWear.checkUid, sessionController.saveSession);
 
-router.delete(
-  "/delete/:session_id",
-  AuthUser.checkToken,
-  sessionController.deleteSession
-);
+router.delete("/delete/:session_id", AuthUser.checkToken, sessionController.deleteSession);
 
 router.post("/book", AuthUser.checkToken, sessionController.bookSession);
 
 router.delete("/book", AuthUser.checkToken, sessionController.unbookSession);
+
+router.post("/transfer/:session_id", AuthUser.checkToken, sessionController.transferSession);
 
 module.exports = router;
