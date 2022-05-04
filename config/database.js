@@ -7,7 +7,7 @@ dotenv.config();
 
 const DB_master = async () => {
   return new Promise(async (resolve, reject) => {
-    await ssmPromise.then((configAWS) => {
+    await ssmPromise.then(configAWS => {
       const configDB = {
         host: configAWS.host_master,
         port: configAWS.port_master,
@@ -15,7 +15,7 @@ const DB_master = async () => {
         password: configAWS.password_master,
         database: configAWS.database_master,
         connectionLimit: 2,
-        charset: "utf8mb4",
+        charset: "utf8mb4"
       };
       resolve(mysql.createPool(configDB));
     });
@@ -24,14 +24,14 @@ const DB_master = async () => {
 
 const DB_slave = async () => {
   return new Promise(async (resolve, reject) => {
-    await ssmPromise.then((configAWS) => {
+    await ssmPromise.then(configAWS => {
       const configDB = {
         host: configAWS.host_slave, // process.env.REGION == 'TOKYO' ? configAWS.host_slave : configAWS.host_slave_US,
         port: configAWS.port_slave,
         user: configAWS.user_slave,
         password: configAWS.password_slave,
         connectionLimit: 2,
-        database: configAWS.database_slave,
+        database: configAWS.database_slave
       };
       resolve(mysql.createPool(configDB));
     });

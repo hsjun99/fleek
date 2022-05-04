@@ -299,6 +299,9 @@ module.exports = {
     const other_uid = req.params.other_uid;
     const { sex, age, weight, achievement, profile_url, instagram_id } = await getUserInfo(other_uid);
     const [ageGroup, weightGroup] = await Promise.all([await ageGroupClassifier(age), await weightGroupClassifier(weight, sex)]);
+    if (await User.checkPrivacy(other_uid) == 1) {
+      return res.status(statusCode.FORBIDDEN).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERSRECORDS_FAIL));
+    }
     // const ageGroup = await ageGroupClassifier(age); // Conversion to group
     // const weightGroup = await weightGroupClassifier(weight, sex); // Conversion to group
     // const [workout_record_result, workout_ability_result] = await Promise.all([await Workout.getWorkoutRecordTotal(other_uid), await WorkoutAbility.getAllWorkoutAbilityHistoryTotal(other_uid)]);
