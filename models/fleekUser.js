@@ -673,7 +673,23 @@ const fleekUser = {
       console.log("updateProfile ERROR: ", err);
       throw err;
     }
-  }
+  },
+  checkPrivacy: async (uid) => {
+    const fields = "privacy_setting";
+    const query = `SELECT ${fields} FROM ${table1} 
+                    WHERE uid = '${uid}'`;
+    try {
+      const result = await pool.queryParamSlave(query);
+      return result[0].privacy_setting
+    } catch (err) {
+      if (err.errno == 1062) {
+        console.log("getWorkoutMaxOneRm ERROR: ", err.errno, err.code);
+        return -1;
+      }
+      console.log("getWorkoutMaxOneRm ERROR: ", err);
+      throw err;
+    }
+  },
 };
 
 module.exports = fleekUser;

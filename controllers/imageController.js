@@ -14,29 +14,19 @@ module.exports = {
       Bucket: "fleek-prod-bucket",
       Key: `profile/${uid}/origin/${filename}`,
       Expires: 60 * 60 * 3,
-      ContentType: "application/octet-stream",
+      ContentType: "application/octet-stream"
     };
 
     const signedUrlPut = await s3.getSignedUrlPromise("putObject", params);
 
     await Image.updateProfileUrl(uid, filename);
     // Success
-    res
-      .status(statusCode.OK)
-      .send(
-        util.success(
-          statusCode.OK,
-          resMessage.READ_DASHBOARD_SUCCESS,
-          signedUrlPut
-        )
-      );
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS, signedUrlPut));
   },
   deleteProfile: async (req, res) => {
     const uid = req.uid;
     await Image.deleteProfileUrl(uid);
-    res
-      .status(statusCode.OK)
-      .send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS));
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS));
   },
   getPresignedUrlFeed: async (req, res) => {
     const uid = req.uid;
@@ -47,22 +37,14 @@ module.exports = {
       Bucket: "fleek-prod-bucket",
       Key: `feed/origin/${uid}/${filename}`,
       Expires: 60 * 60 * 3,
-      ContentType: "application/octet-stream",
+      ContentType: "application/octet-stream"
     };
 
     const signedUrlPut = await s3.getSignedUrlPromise("putObject", params);
     await Image.postFeedImage(uid, filename, content, privacy_setting);
 
     // Success
-    res
-      .status(statusCode.OK)
-      .send(
-        util.success(
-          statusCode.OK,
-          resMessage.READ_DASHBOARD_SUCCESS,
-          signedUrlPut
-        )
-      );
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS, signedUrlPut));
   },
   deleteFeedImage: async (req, res) => {
     const uid = req.uid;
@@ -70,9 +52,7 @@ module.exports = {
 
     await Image.deleteFeedImage(uid, feedImage_id);
 
-    res
-      .status(statusCode.OK)
-      .send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS));
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS));
   },
   getFeedImages: async (req, res) => {
     const uid = req.uid;
@@ -92,26 +72,15 @@ module.exports = {
         data = await Image.getOthersFeedImages(uid, type, last_id);
         break;
     }
-    res
-      .status(statusCode.OK)
-      .send(
-        util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS, data)
-      );
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS, data));
   },
   updateFeedImageDetail: async (req, res) => {
     const uid = req.uid;
     const feedImage_id = req.params.feed_id;
     const { content, privacy_setting } = req.body;
 
-    await Image.updateFeedImageDetail(
-      uid,
-      feedImage_id,
-      content,
-      privacy_setting
-    );
+    await Image.updateFeedImageDetail(uid, feedImage_id, content, privacy_setting);
 
-    res
-      .status(statusCode.OK)
-      .send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS));
-  },
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS));
+  }
 };

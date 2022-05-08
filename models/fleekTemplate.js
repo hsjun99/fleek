@@ -171,8 +171,8 @@ const template = {
       let template_name = result[0].name;
       // Send Message
       // const message = await feedMessage.template_import(uid, template_id, template_name);
-      await table_usersFeed.child(imported_uid).update({ new_message: 1 });
-      await table_usersFeed.child(imported_uid).push().set(message);
+      // await table_usersFeed.child(imported_uid).update({ new_message: 1 });
+      // await table_usersFeed.child(imported_uid).push().set(message);
 
       return true;
     } catch (err) {

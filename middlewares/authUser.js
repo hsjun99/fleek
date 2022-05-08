@@ -8,6 +8,8 @@ const authUser = {
     var idToken = req.headers.authorization;
     if (req.headers.authorization) {
       if (!idToken) {
+        res.status(statusCode.UNAUTHORIZED).send(util.fail(statusCode.UNAUTHORIZED, resMessage.INVALID_TOKEN));
+        return;
       }
       //Invalid idToken
       if (!(await Auth(idToken))) {

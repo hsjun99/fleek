@@ -29,7 +29,7 @@ const weight_limit = 600;
 const reps_limit = 500;
 
 const workout = {
-  getWorkoutYoutubeVideoTotal: async (langCode) => {
+  getWorkoutYoutubeVideoTotal: async langCode => {
     const fields = "workout_workout_id, video_id, video_title, channel_name";
     const query = `SELECT ${fields} FROM ${table_workoutYoutube}
                         WHERE lang_code = ${langCode}
@@ -37,20 +37,20 @@ const workout = {
     try {
       const result = await pool.queryParamSlave(query);
       let temp = {};
-      await asyncForEach(result, async (rowdata) => {
+      await asyncForEach(result, async rowdata => {
         if (temp[rowdata.workout_workout_id] == undefined) {
           temp[rowdata.workout_workout_id] = [
             {
               video_id: rowdata.video_id,
               video_title: rowdata.video_title,
-              channel_name: rowdata.channel_name,
-            },
+              channel_name: rowdata.channel_name
+            }
           ];
         } else {
           temp[rowdata.workout_workout_id].push({
             video_id: rowdata.video_id,
             video_title: rowdata.video_title,
-            channel_name: rowdata.channel_name,
+            channel_name: rowdata.channel_name
           });
         }
       });
@@ -64,7 +64,7 @@ const workout = {
       throw err;
     }
   },
-  getWorkoutYoutubeVideo: async (workout_id) => {
+  getWorkoutYoutubeVideo: async workout_id => {
     const fields = "video_id, video_title, channel_name";
     const query = `SELECT ${fields} FROM ${table_workoutYoutube}
                         WHERE ${table_workoutYoutube}.workout_workout_id = ${workout_id}`;
@@ -124,18 +124,18 @@ const workout = {
       video_url,
       video_url_substitute,
       1,
-      reference_num,
+      reference_num
     ];
     const query1 = `INSERT INTO ${table_workout}(${fields1}) VALUES(${questions1})`;
 
     let transactionArr = new Array();
     let workout_id;
 
-    const ts1 = async (connection) => {
+    const ts1 = async connection => {
       const result1 = await connection.query(query1, values1);
       workout_id = result1.insertId;
     };
-    const ts2 = async (connection) => {
+    const ts2 = async connection => {
       const values2 = [workout_id, uid, await timeFunction.currentTime()];
       const query2 = `INSERT INTO ${table_customWorkout}(${fields2}) VALUES(${questions2})`;
       await connection.query(query2, values2);
@@ -191,14 +191,14 @@ const workout = {
 
     // Transactions
     let transactionArr = new Array();
-    const ts1 = async (connection) => {
+    const ts1 = async connection => {
       await connection.query(query1);
     };
-    const ts2 = async (connection) => {
+    const ts2 = async connection => {
       await Promise.all(
-        template_data.map(async (template) => {
+        template_data.map(async template => {
           let detail_final = await Promise.all(
-            template.detail.map(async (detail) => {
+            template.detail.map(async detail => {
               if (detail.workout_id == workout_id) {
                 return null;
               } else {
@@ -206,11 +206,10 @@ const workout = {
               }
             })
           );
-          detail_final = detail_final.filter((item) => item); // remove null
+          detail_final = detail_final.filter(item => item); // remove null
 
           // Update Template Detail
-          const fields3 =
-            "workout_order, workout_workout_id, rest_time, templateUsers_template_id, workout_detail";
+          const fields3 = "workout_order, workout_workout_id, rest_time, templateUsers_template_id, workout_detail";
           const question3 = "?, ?, ?, ?, ?";
 
           const query2 = `DELETE T_details
@@ -222,13 +221,13 @@ const workout = {
                                 WHERE ${table_templateUsers}.templateUsers_id = '${template.template_id}' AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
           await connection.query(query2);
           let cnt = 1;
-          await asyncForEach(detail_final, async (workout) => {
+          await asyncForEach(detail_final, async workout => {
             await connection.query(query3, [
               cnt++,
               workout.workout_id,
               workout.rest_time,
               Number(template.template_id),
-              JSON.stringify(workout.workout_detail),
+              JSON.stringify(workout.workout_detail)
             ]);
           });
           if (detail_final.length == 0) {
@@ -273,7 +272,7 @@ const workout = {
       throw err;
     }
   },
-  getWorkoutInfo: async (workout_id) => {
+  getWorkoutInfo: async workout_id => {
     const query = `SELECT * FROM ${table_workout}
                         WHERE ${table_workout}.workout_id = ${workout_id}`;
 
@@ -291,7 +290,7 @@ const workout = {
           data[0].muscle_s3,
           data[0].muscle_s4,
           data[0].muscle_s5,
-          data[0].muscle_s6,
+          data[0].muscle_s6
         ],
         equipment: data[0].equipment,
         record_type: data[0].record_type,
@@ -302,7 +301,7 @@ const workout = {
         popularity: data[0].popularity,
         video_url: data[0].video_url,
         video_url_substitute: data[0].video_url_substitute,
-        reference_num: data[0].reference_num,
+        reference_num: data[0].reference_num
       };
     } catch (err) {
       if (err.errno == 1062) {
@@ -313,7 +312,7 @@ const workout = {
       throw err;
     }
   },
-  getWorkoutTablePure: async (uid) => {
+  getWorkoutTablePure: async uid => {
     const fields1 = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, is_pro`;
     const fields2 = `workout_id, english, korean, category, muscle_p, muscle_s1, muscle_s2, muscle_s3, muscle_s4, muscle_s5, muscle_s6, equipment, record_type, multiplier, min_step, tier, is_custom, video_url, video_url_substitute, reference_num, is_pro, ${table_customWorkout}.is_deleted`;
     const query1 = `SELECT ${fields1} FROM ${table_workout}
@@ -329,7 +328,7 @@ const workout = {
           const data = await pool.queryParamSlave(query1);
           return data;
         }),
-        await pool.queryParamSlave(query2),
+        await pool.queryParamSlave(query2)
       ]);
       const data = data_original.concat(data_custom);
       return data;
@@ -367,13 +366,7 @@ const workout = {
       throw err;
     }
   },
-  getCalendarDataBySession: async (
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    session_id
-  ) => {
+  getCalendarDataBySession: async (uid, sex, ageGroup, weightGroup, session_id) => {
     const fields = `${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time, inclination, intercept`;
     const query = `SELECT ${fields} FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.session_id = ${session_id}
@@ -383,23 +376,13 @@ const workout = {
                         ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
 
     try {
-      let result = JSON.parse(
-        JSON.stringify(await pool.queryParamMaster(query))
-      );
+      let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
       const restructure = async () => {
         let data = [];
-        await asyncForEach(result, async (rowdata) => {
+        await asyncForEach(result, async rowdata => {
           let percentage = null;
-          if (
-            rowdata.inclination != null &&
-            rowdata.intercept != null &&
-            rowdata.max_one_rm != 0 &&
-            rowdata.max_one_rm != null
-          ) {
-            percentage = Math.round(
-              rowdata.inclination * Math.log(rowdata.max_one_rm) +
-                rowdata.intercept
-            );
+          if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
+            percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
           }
           if (data.length == 0) {
             data.push({
@@ -417,8 +400,8 @@ const workout = {
                         reps: rowdata.reps,
                         weight: rowdata.weight,
                         duration: rowdata.duration,
-                        distance: rowdata.distance,
-                      },
+                        distance: rowdata.distance
+                      }
                     ],
                     workout_ability: {
                       max_one_rm: rowdata.max_one_rm,
@@ -426,25 +409,20 @@ const workout = {
                       max_volume: rowdata.max_volume,
                       total_reps: rowdata.total_reps,
                       max_weight: rowdata.max_weight,
-                      percentage: percentage,
-                    },
-                  },
-                ],
-              },
+                      percentage: percentage
+                    }
+                  }
+                ]
+              }
             });
-          } else if (
-            data[data.length - 1].session_id == rowdata.session_session_id
-          ) {
+          } else if (data[data.length - 1].session_id == rowdata.session_session_id) {
             const L = data[data.length - 1].session_detail.content.length;
-            if (
-              data[data.length - 1].session_detail.content[L - 1].workout_id ==
-              rowdata.workout_workout_id
-            ) {
+            if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
               data[data.length - 1].session_detail.content[L - 1].sets.push({
                 reps: rowdata.reps,
                 weight: rowdata.weight,
                 duration: rowdata.duration,
-                distance: rowdata.distance,
+                distance: rowdata.distance
               });
             } else {
               data[data.length - 1].session_detail.content.push({
@@ -454,8 +432,8 @@ const workout = {
                     reps: rowdata.reps,
                     weight: rowdata.weight,
                     duration: rowdata.duration,
-                    distance: rowdata.distance,
-                  },
+                    distance: rowdata.distance
+                  }
                 ],
                 workout_ability: {
                   max_one_rm: rowdata.max_one_rm,
@@ -463,8 +441,8 @@ const workout = {
                   max_volume: rowdata.max_volume,
                   total_reps: rowdata.total_reps,
                   max_weight: rowdata.max_weight,
-                  percentage: percentage,
-                },
+                  percentage: percentage
+                }
               });
             }
           } else {
@@ -483,8 +461,8 @@ const workout = {
                         reps: rowdata.reps,
                         weight: rowdata.weight,
                         duration: rowdata.duration,
-                        distance: rowdata.distance,
-                      },
+                        distance: rowdata.distance
+                      }
                     ],
                     workout_ability: {
                       max_one_rm: rowdata.max_one_rm,
@@ -492,11 +470,11 @@ const workout = {
                       max_volume: rowdata.max_volume,
                       total_reps: rowdata.total_reps,
                       max_weight: rowdata.max_weight,
-                      percentage: percentage,
-                    },
-                  },
-                ],
-              },
+                      percentage: percentage
+                    }
+                  }
+                ]
+              }
             });
           }
         });
@@ -529,23 +507,13 @@ const workout = {
     //                 LEFT JOIN ${table_equation} ON ${table_equation}.workout_workout_id = ${table_workoutlog}.workout_workout_id AND (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}")
     //                 ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
     try {
-      let result = JSON.parse(
-        JSON.stringify(await pool.queryParamMaster(query))
-      );
+      let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
       const restructure = async () => {
         let data = [];
-        await asyncForEach(result, async (rowdata) => {
+        await asyncForEach(result, async rowdata => {
           let percentage = null;
-          if (
-            rowdata.inclination != null &&
-            rowdata.intercept != null &&
-            rowdata.max_one_rm != 0 &&
-            rowdata.max_one_rm != null
-          ) {
-            percentage = Math.round(
-              rowdata.inclination * Math.log(rowdata.max_one_rm) +
-                rowdata.intercept
-            );
+          if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
+            percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
           }
           if (data.length == 0) {
             data.push({
@@ -563,8 +531,8 @@ const workout = {
                         reps: rowdata.reps,
                         weight: rowdata.weight,
                         duration: rowdata.duration,
-                        distance: rowdata.distance,
-                      },
+                        distance: rowdata.distance
+                      }
                     ],
                     workout_ability: {
                       max_one_rm: rowdata.max_one_rm,
@@ -572,25 +540,20 @@ const workout = {
                       max_volume: rowdata.max_volume,
                       total_reps: rowdata.total_reps,
                       max_weight: rowdata.max_weight,
-                      percentage: percentage,
-                    },
-                  },
-                ],
-              },
+                      percentage: percentage
+                    }
+                  }
+                ]
+              }
             });
-          } else if (
-            data[data.length - 1].session_id == rowdata.session_session_id
-          ) {
+          } else if (data[data.length - 1].session_id == rowdata.session_session_id) {
             const L = data[data.length - 1].session_detail.content.length;
-            if (
-              data[data.length - 1].session_detail.content[L - 1].workout_id ==
-              rowdata.workout_workout_id
-            ) {
+            if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
               data[data.length - 1].session_detail.content[L - 1].sets.push({
                 reps: rowdata.reps,
                 weight: rowdata.weight,
                 duration: rowdata.duration,
-                distance: rowdata.distance,
+                distance: rowdata.distance
               });
             } else {
               data[data.length - 1].session_detail.content.push({
@@ -600,8 +563,8 @@ const workout = {
                     reps: rowdata.reps,
                     weight: rowdata.weight,
                     duration: rowdata.duration,
-                    distance: rowdata.distance,
-                  },
+                    distance: rowdata.distance
+                  }
                 ],
                 workout_ability: {
                   max_one_rm: rowdata.max_one_rm,
@@ -609,8 +572,8 @@ const workout = {
                   max_volume: rowdata.max_volume,
                   total_reps: rowdata.total_reps,
                   max_weight: rowdata.max_weight,
-                  percentage: percentage,
-                },
+                  percentage: percentage
+                }
               });
             }
           } else {
@@ -629,8 +592,8 @@ const workout = {
                         reps: rowdata.reps,
                         weight: rowdata.weight,
                         duration: rowdata.duration,
-                        distance: rowdata.distance,
-                      },
+                        distance: rowdata.distance
+                      }
                     ],
                     workout_ability: {
                       max_one_rm: rowdata.max_one_rm,
@@ -638,11 +601,11 @@ const workout = {
                       max_volume: rowdata.max_volume,
                       total_reps: rowdata.total_reps,
                       max_weight: rowdata.max_weight,
-                      percentage: percentage,
-                    },
-                  },
-                ],
-              },
+                      percentage: percentage
+                    }
+                  }
+                ]
+              }
             });
           }
         });
@@ -659,13 +622,7 @@ const workout = {
       throw err;
     }
   },
-  getUserHistoryDataBySession: async (
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    session_id
-  ) => {
+  getUserHistoryDataBySession: async (uid, sex, ageGroup, weightGroup, session_id) => {
     const fields = `${table_session}.name AS session_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.rpe, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.super_set_label, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name AS template_name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.start_time, ${table_session}.total_time, inclination, intercept`;
     const query = `SELECT ${fields} FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.session_id = ${session_id}
@@ -675,33 +632,20 @@ const workout = {
                         ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
 
     try {
-      let result = JSON.parse(
-        JSON.stringify(await pool.queryParamMaster(query))
-      );
+      let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
       const restructure = async () => {
         let data = [];
-        await asyncForEach(result, async (rowdata) => {
+        await asyncForEach(result, async rowdata => {
           // rowdata.max_heart_rate = 50;
           let percentage = null;
-          if (
-            rowdata.inclination != null &&
-            rowdata.intercept != null &&
-            rowdata.max_one_rm != 0 &&
-            rowdata.max_one_rm != null
-          ) {
-            percentage = Math.round(
-              rowdata.inclination * Math.log(rowdata.max_one_rm) +
-                rowdata.intercept
-            );
+          if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
+            percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
           }
           if (data.length == 0) {
             data.push({
               session_id: rowdata.session_session_id,
               template_id: rowdata.templateUsers_id,
-              template_name:
-                rowdata.session_name != null
-                  ? rowdata.session_name
-                  : rowdata.template_name,
+              template_name: rowdata.session_name != null ? rowdata.session_name : rowdata.template_name,
               session_detail: {
                 created_at: rowdata.created_at,
                 start_time: rowdata.start_time,
@@ -717,8 +661,8 @@ const workout = {
                         weight: rowdata.weight,
                         duration: rowdata.duration,
                         distance: rowdata.distance,
-                        rpe: rowdata.rpe,
-                      },
+                        rpe: rowdata.rpe
+                      }
                     ],
                     workout_ability: {
                       max_one_rm: rowdata.max_one_rm,
@@ -726,26 +670,21 @@ const workout = {
                       max_volume: rowdata.max_volume,
                       total_reps: rowdata.total_reps,
                       max_weight: rowdata.max_weight,
-                      percentage: percentage,
-                    },
-                  },
-                ],
-              },
+                      percentage: percentage
+                    }
+                  }
+                ]
+              }
             });
-          } else if (
-            data[data.length - 1].session_id == rowdata.session_session_id
-          ) {
+          } else if (data[data.length - 1].session_id == rowdata.session_session_id) {
             const L = data[data.length - 1].session_detail.content.length;
-            if (
-              data[data.length - 1].session_detail.content[L - 1].workout_id ==
-              rowdata.workout_workout_id
-            ) {
+            if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
               data[data.length - 1].session_detail.content[L - 1].sets.push({
                 reps: rowdata.reps,
                 weight: rowdata.weight,
                 duration: rowdata.duration,
                 distance: rowdata.distance,
-                rpe: rowdata.rpe,
+                rpe: rowdata.rpe
               });
             } else {
               data[data.length - 1].session_detail.content.push({
@@ -758,8 +697,8 @@ const workout = {
                     weight: rowdata.weight,
                     duration: rowdata.duration,
                     distance: rowdata.distance,
-                    rpe: rowdata.rpe,
-                  },
+                    rpe: rowdata.rpe
+                  }
                 ],
                 workout_ability: {
                   max_one_rm: rowdata.max_one_rm,
@@ -767,18 +706,15 @@ const workout = {
                   max_volume: rowdata.max_volume,
                   total_reps: rowdata.total_reps,
                   max_weight: rowdata.max_weight,
-                  percentage: percentage,
-                },
+                  percentage: percentage
+                }
               });
             }
           } else {
             data.push({
               session_id: rowdata.session_session_id,
               template_id: rowdata.templateUsers_id,
-              template_name:
-                rowdata.session_name != null
-                  ? rowdata.session_name
-                  : rowdata.template_name,
+              template_name: rowdata.session_name != null ? rowdata.session_name : rowdata.template_name,
               session_detail: {
                 created_at: rowdata.created_at,
                 start_time: rowdata.start_time,
@@ -794,8 +730,8 @@ const workout = {
                         weight: rowdata.weight,
                         duration: rowdata.duration,
                         distance: rowdata.distance,
-                        rpe: rowdata.rpe,
-                      },
+                        rpe: rowdata.rpe
+                      }
                     ],
                     workout_ability: {
                       max_one_rm: rowdata.max_one_rm,
@@ -803,11 +739,11 @@ const workout = {
                       max_volume: rowdata.max_volume,
                       total_reps: rowdata.total_reps,
                       max_weight: rowdata.max_weight,
-                      percentage: percentage,
-                    },
-                  },
-                ],
-              },
+                      percentage: percentage
+                    }
+                  }
+                ]
+              }
             });
           }
         });
@@ -824,13 +760,7 @@ const workout = {
       throw err;
     }
   },
-  getUserHistoryDataBySessionWear: async (
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    session_id
-  ) => {
+  getUserHistoryDataBySessionWear: async (uid, sex, ageGroup, weightGroup, session_id) => {
     const fields = `${table_session}.name AS session_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.super_set_label, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name AS template_name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.start_time, ${table_session}.total_time, inclination, intercept`;
     const query = `SELECT ${fields} FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.session_id = ${session_id}
@@ -840,33 +770,20 @@ const workout = {
                         ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
 
     try {
-      let result = JSON.parse(
-        JSON.stringify(await pool.queryParamMaster(query))
-      );
+      let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
       const restructure = async () => {
         let data = [];
-        await asyncForEach(result, async (rowdata) => {
+        await asyncForEach(result, async rowdata => {
           // rowdata.max_heart_rate = 50;
           let percentage = null;
-          if (
-            rowdata.inclination != null &&
-            rowdata.intercept != null &&
-            rowdata.max_one_rm != 0 &&
-            rowdata.max_one_rm != null
-          ) {
-            percentage = Math.round(
-              rowdata.inclination * Math.log(rowdata.max_one_rm) +
-                rowdata.intercept
-            );
+          if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
+            percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
           }
           if (data.length == 0) {
             data.push({
               session_id: rowdata.session_session_id,
               template_id: rowdata.templateUsers_id,
-              template_name:
-                rowdata.session_name != null
-                  ? rowdata.session_name
-                  : rowdata.template_name,
+              template_name: rowdata.session_name != null ? rowdata.session_name : rowdata.template_name,
               session_detail: {
                 created_at: rowdata.created_at,
                 start_time: rowdata.start_time,
@@ -881,8 +798,8 @@ const workout = {
                         reps: rowdata.reps,
                         weight: rowdata.weight,
                         duration: rowdata.duration,
-                        distance: rowdata.distance,
-                      },
+                        distance: rowdata.distance
+                      }
                     ],
                     workout_ability: {
                       max_one_rm: rowdata.max_one_rm,
@@ -890,25 +807,20 @@ const workout = {
                       max_volume: rowdata.max_volume,
                       total_reps: rowdata.total_reps,
                       max_weight: rowdata.max_weight,
-                      percentage: percentage,
-                    },
-                  },
-                ],
-              },
+                      percentage: percentage
+                    }
+                  }
+                ]
+              }
             });
-          } else if (
-            data[data.length - 1].session_id == rowdata.session_session_id
-          ) {
+          } else if (data[data.length - 1].session_id == rowdata.session_session_id) {
             const L = data[data.length - 1].session_detail.content.length;
-            if (
-              data[data.length - 1].session_detail.content[L - 1].workout_id ==
-              rowdata.workout_workout_id
-            ) {
+            if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
               data[data.length - 1].session_detail.content[L - 1].sets.push({
                 reps: rowdata.reps,
                 weight: rowdata.weight,
                 duration: rowdata.duration,
-                distance: rowdata.distance,
+                distance: rowdata.distance
               });
             } else {
               data[data.length - 1].session_detail.content.push({
@@ -920,8 +832,8 @@ const workout = {
                     reps: rowdata.reps,
                     weight: rowdata.weight,
                     duration: rowdata.duration,
-                    distance: rowdata.distance,
-                  },
+                    distance: rowdata.distance
+                  }
                 ],
                 workout_ability: {
                   max_one_rm: rowdata.max_one_rm,
@@ -929,18 +841,15 @@ const workout = {
                   max_volume: rowdata.max_volume,
                   total_reps: rowdata.total_reps,
                   max_weight: rowdata.max_weight,
-                  percentage: percentage,
-                },
+                  percentage: percentage
+                }
               });
             }
           } else {
             data.push({
               session_id: rowdata.session_session_id,
               template_id: rowdata.templateUsers_id,
-              template_name:
-                rowdata.session_name != null
-                  ? rowdata.session_name
-                  : rowdata.template_name,
+              template_name: rowdata.session_name != null ? rowdata.session_name : rowdata.template_name,
               session_detail: {
                 created_at: rowdata.created_at,
                 start_time: rowdata.start_time,
@@ -955,8 +864,8 @@ const workout = {
                         reps: rowdata.reps,
                         weight: rowdata.weight,
                         duration: rowdata.duration,
-                        distance: rowdata.distance,
-                      },
+                        distance: rowdata.distance
+                      }
                     ],
                     workout_ability: {
                       max_one_rm: rowdata.max_one_rm,
@@ -964,11 +873,11 @@ const workout = {
                       max_volume: rowdata.max_volume,
                       total_reps: rowdata.total_reps,
                       max_weight: rowdata.max_weight,
-                      percentage: percentage,
-                    },
-                  },
-                ],
-              },
+                      percentage: percentage
+                    }
+                  }
+                ]
+              }
             });
           }
         });
@@ -994,12 +903,10 @@ const workout = {
                         ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
 
     try {
-      let result = JSON.parse(
-        JSON.stringify(await pool.queryParamSlave(query))
-      );
+      let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
       const restructure = async () => {
         let data = [];
-        await asyncForEach(result, async (rowdata) => {
+        await asyncForEach(result, async rowdata => {
           // rowdata.max_heart_rate = 50;
           // let percentage=null;
           // if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
@@ -1009,10 +916,7 @@ const workout = {
             data.push({
               session_id: rowdata.session_session_id,
               template_id: rowdata.templateUsers_id,
-              template_name:
-                rowdata.session_name != null
-                  ? rowdata.session_name
-                  : rowdata.template_name,
+              template_name: rowdata.session_name != null ? rowdata.session_name : rowdata.template_name,
               device: rowdata.device,
               session_detail: {
                 start_time: rowdata.start_time,
@@ -1028,26 +932,21 @@ const workout = {
                         reps: rowdata.reps,
                         weight: rowdata.weight,
                         duration: rowdata.duration,
-                        distance: rowdata.distance,
-                      },
-                    ],
-                  },
-                ],
-              },
+                        distance: rowdata.distance
+                      }
+                    ]
+                  }
+                ]
+              }
             });
-          } else if (
-            data[data.length - 1].session_id == rowdata.session_session_id
-          ) {
+          } else if (data[data.length - 1].session_id == rowdata.session_session_id) {
             const L = data[data.length - 1].session_detail.content.length;
-            if (
-              data[data.length - 1].session_detail.content[L - 1].workout_id ==
-              rowdata.workout_workout_id
-            ) {
+            if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
               data[data.length - 1].session_detail.content[L - 1].sets.push({
                 reps: rowdata.reps,
                 weight: rowdata.weight,
                 duration: rowdata.duration,
-                distance: rowdata.distance,
+                distance: rowdata.distance
               });
             } else {
               data[data.length - 1].session_detail.content.push({
@@ -1059,19 +958,16 @@ const workout = {
                     reps: rowdata.reps,
                     weight: rowdata.weight,
                     duration: rowdata.duration,
-                    distance: rowdata.distance,
-                  },
-                ],
+                    distance: rowdata.distance
+                  }
+                ]
               });
             }
           } else {
             data.push({
               session_id: rowdata.session_session_id,
               template_id: rowdata.templateUsers_id,
-              template_name:
-                rowdata.session_name != null
-                  ? rowdata.session_name
-                  : rowdata.template_name,
+              template_name: rowdata.session_name != null ? rowdata.session_name : rowdata.template_name,
               device: rowdata.device,
               session_detail: {
                 start_time: rowdata.start_time,
@@ -1087,12 +983,12 @@ const workout = {
                         reps: rowdata.reps,
                         weight: rowdata.weight,
                         duration: rowdata.duration,
-                        distance: rowdata.distance,
-                      },
-                    ],
-                  },
-                ],
-              },
+                        distance: rowdata.distance
+                      }
+                    ]
+                  }
+                ]
+              }
             });
           }
         });
@@ -1109,13 +1005,7 @@ const workout = {
       throw err;
     }
   },
-  getUserHistoryDataPartial: async (
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    mobileLastUpdateTime
-  ) => {
+  getUserHistoryDataPartial: async (uid, sex, ageGroup, weightGroup, mobileLastUpdateTime) => {
     const fields = `${table_session}.device, ${table_session}.is_deleted, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id,  ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time, inclination, intercept`;
     const query = `SELECT ${fields} FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.last_update IS NOT NULL AND ${table_session}.last_update > ${mobileLastUpdateTime}
@@ -1125,23 +1015,13 @@ const workout = {
                         ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
 
     try {
-      let result = JSON.parse(
-        JSON.stringify(await pool.queryParamMaster(query))
-      );
+      let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
       const restructure = async () => {
         let data = [];
-        await asyncForEach(result, async (rowdata) => {
+        await asyncForEach(result, async rowdata => {
           let percentage = null;
-          if (
-            rowdata.inclination != null &&
-            rowdata.intercept != null &&
-            rowdata.max_one_rm != 0 &&
-            rowdata.max_one_rm != null
-          ) {
-            percentage = Math.round(
-              rowdata.inclination * Math.log(rowdata.max_one_rm) +
-                rowdata.intercept
-            );
+          if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
+            percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
           }
           if (data.length == 0) {
             data.push({
@@ -1161,8 +1041,8 @@ const workout = {
                         reps: rowdata.reps,
                         weight: rowdata.weight,
                         duration: rowdata.duration,
-                        distance: rowdata.distance,
-                      },
+                        distance: rowdata.distance
+                      }
                     ],
                     workout_ability: {
                       max_one_rm: rowdata.max_one_rm,
@@ -1170,25 +1050,20 @@ const workout = {
                       max_volume: rowdata.max_volume,
                       total_reps: rowdata.total_reps,
                       max_weight: rowdata.max_weight,
-                      percentage: percentage,
-                    },
-                  },
-                ],
-              },
+                      percentage: percentage
+                    }
+                  }
+                ]
+              }
             });
-          } else if (
-            data[data.length - 1].session_id == rowdata.session_session_id
-          ) {
+          } else if (data[data.length - 1].session_id == rowdata.session_session_id) {
             const L = data[data.length - 1].session_detail.content.length;
-            if (
-              data[data.length - 1].session_detail.content[L - 1].workout_id ==
-              rowdata.workout_workout_id
-            ) {
+            if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
               data[data.length - 1].session_detail.content[L - 1].sets.push({
                 reps: rowdata.reps,
                 weight: rowdata.weight,
                 duration: rowdata.duration,
-                distance: rowdata.distance,
+                distance: rowdata.distance
               });
             } else {
               data[data.length - 1].session_detail.content.push({
@@ -1198,8 +1073,8 @@ const workout = {
                     reps: rowdata.reps,
                     weight: rowdata.weight,
                     duration: rowdata.duration,
-                    distance: rowdata.distance,
-                  },
+                    distance: rowdata.distance
+                  }
                 ],
                 workout_ability: {
                   max_one_rm: rowdata.max_one_rm,
@@ -1207,8 +1082,8 @@ const workout = {
                   max_volume: rowdata.max_volume,
                   total_reps: rowdata.total_reps,
                   max_weight: rowdata.max_weight,
-                  percentage: percentage,
-                },
+                  percentage: percentage
+                }
               });
             }
           } else {
@@ -1229,8 +1104,8 @@ const workout = {
                         reps: rowdata.reps,
                         weight: rowdata.weight,
                         duration: rowdata.duration,
-                        distance: rowdata.distance,
-                      },
+                        distance: rowdata.distance
+                      }
                     ],
                     workout_ability: {
                       max_one_rm: rowdata.max_one_rm,
@@ -1238,11 +1113,11 @@ const workout = {
                       max_volume: rowdata.max_volume,
                       total_reps: rowdata.total_reps,
                       max_weight: rowdata.max_weight,
-                      percentage: percentage,
-                    },
-                  },
-                ],
-              },
+                      percentage: percentage
+                    }
+                  }
+                ]
+              }
             });
           }
         });
@@ -1306,7 +1181,7 @@ const workout = {
   //         throw err;
   //     }
   // },
-  getWorkoutRecordTypeById: async (workout_id) => {
+  getWorkoutRecordTypeById: async workout_id => {
     const fields = "record_type";
     const query = `SELECT ${fields} FROM ${table_workout}
                         WHERE ${table_workout}.workout_id = ${workout_id}`;
@@ -1344,18 +1219,15 @@ const workout = {
       throw err;
     }
   },
-  getWorkoutRecordTotal: async (uid) => {
-    const fields =
-      "workout_workout_id, reps, weight, duration, distance, set_type, rpe, rest_time, session_session_id, created_at";
+  getWorkoutRecordTotal: async uid => {
+    const fields = "workout_workout_id, reps, weight, duration, distance, set_type, rpe, rest_time, session_session_id, created_at";
     const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
                         ORDER BY ${table_workoutlog}.workout_workout_id ASC, ${table_session}.created_at DESC, ${table_session}.session_id DESC, ${table_workoutlog}.set_order ASC`;
     try {
-      let result = JSON.parse(
-        JSON.stringify(await pool.queryParamSlave(query))
-      );
+      let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
       let temp = {};
-      await asyncForEach(result, async (rowdata) => {
+      await asyncForEach(result, async rowdata => {
         if (temp[rowdata.workout_workout_id] == undefined) {
           temp[rowdata.workout_workout_id] = [];
         }
@@ -1369,17 +1241,13 @@ const workout = {
               set_type: rowdata.set_type,
               rpe: rowdata.rpe,
               session_id: rowdata.session_session_id,
-              created_at: rowdata.created_at,
-            },
+              created_at: rowdata.created_at
+            }
           ]);
         } else if (
-          temp[rowdata.workout_workout_id][
-            temp[rowdata.workout_workout_id].length - 1
-          ][0].session_id == rowdata.session_session_id
+          temp[rowdata.workout_workout_id][temp[rowdata.workout_workout_id].length - 1][0].session_id == rowdata.session_session_id
         ) {
-          temp[rowdata.workout_workout_id][
-            temp[rowdata.workout_workout_id].length - 1
-          ].push({
+          temp[rowdata.workout_workout_id][temp[rowdata.workout_workout_id].length - 1].push({
             reps: rowdata.reps,
             weight: rowdata.weight,
             duration: rowdata.duration,
@@ -1387,7 +1255,7 @@ const workout = {
             set_type: rowdata.set_type,
             rpe: rowdata.rpe,
             session_id: rowdata.session_session_id,
-            created_at: rowdata.created_at,
+            created_at: rowdata.created_at
           });
         } else {
           temp[rowdata.workout_workout_id].push([
@@ -1399,8 +1267,8 @@ const workout = {
               set_type: rowdata.set_type,
               rpe: rowdata.rpe,
               session_id: rowdata.session_session_id,
-              created_at: rowdata.created_at,
-            },
+              created_at: rowdata.created_at
+            }
           ]);
         }
       });
@@ -1415,19 +1283,16 @@ const workout = {
     }
   },
   getWorkoutRecordById: async (workout_id, uid) => {
-    const fields =
-      "reps, weight, duration, distance, set_type, rpe, rest_time, session_session_id, created_at";
+    const fields = "reps, weight, duration, distance, set_type, rpe, rest_time, session_session_id, created_at";
     const query = `SELECT ${fields} FROM ${table_workoutlog}
                         INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_workoutlog}.workout_workout_id = ${workout_id} AND ${table_session}.is_deleted != 1
                         ORDER BY ${table_session}.created_at DESC, ${table_session}.session_id DESC, ${table_workoutlog}.set_order ASC`;
     try {
-      let result = JSON.parse(
-        JSON.stringify(await pool.queryParamSlave(query))
-      );
+      let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
       let rest_time = 0; // default;
       const restructure = async () => {
         let data = [];
-        await asyncForEach(result, async (rowdata) => {
+        await asyncForEach(result, async rowdata => {
           if (data.length == 0) {
             data.push([
               {
@@ -1438,12 +1303,10 @@ const workout = {
                 set_type: rowdata.set_type,
                 rpe: rowdata.rpe,
                 session_id: rowdata.session_session_id,
-                created_at: rowdata.created_at,
-              },
+                created_at: rowdata.created_at
+              }
             ]);
-          } else if (
-            data[data.length - 1][0].session_id == rowdata.session_session_id
-          ) {
+          } else if (data[data.length - 1][0].session_id == rowdata.session_session_id) {
             data[data.length - 1].push({
               reps: rowdata.reps,
               weight: rowdata.weight,
@@ -1452,7 +1315,7 @@ const workout = {
               set_type: rowdata.set_type,
               rpe: rowdata.rpe,
               session_id: rowdata.session_session_id,
-              created_at: rowdata.created_at,
+              created_at: rowdata.created_at
             });
           } else {
             data.push([
@@ -1464,8 +1327,8 @@ const workout = {
                 set_type: rowdata.set_type,
                 rpe: rowdata.rpe,
                 session_id: rowdata.session_session_id,
-                created_at: rowdata.created_at,
-              },
+                created_at: rowdata.created_at
+              }
             ]);
           }
         });
@@ -1483,7 +1346,7 @@ const workout = {
       throw err;
     }
   },
-  updateWorkoutPopularity: async (workout_id) => {
+  updateWorkoutPopularity: async workout_id => {
     const query = `UPDATE ${table_workout} SET popularity = popularity+1 WHERE workout_id="${workout_id}"`;
     try {
       const result = await pool.queryParamMaster(query);
@@ -1497,7 +1360,7 @@ const workout = {
       throw err;
     }
   },
-  checkWorkout: async (workout_id) => {
+  checkWorkout: async workout_id => {
     const query = `SELECT * FROM ${table_workout} WHERE workout_id="${workout_id}"`;
     try {
       const result = await pool.queryParamSlave(query);
@@ -1527,29 +1390,25 @@ const workout = {
                         INNER JOIN ${table_userinfo} ON DISTINCT_SESSION.userinfo_uid = ${table_userinfo}.uid
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
     try {
-      let result = JSON.parse(
-        JSON.stringify(await pool.queryParamSlave(query))
-      );
+      let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
       const restructure = async () => {
         let data = [];
-        await asyncForEach(result, async (rowdata) => {
+        await asyncForEach(result, async rowdata => {
           if (data.length == 0) {
             data.push([
               {
                 reps: rowdata.reps,
                 weight: rowdata.weight,
                 duration: rowdata.duration,
-                distance: rowdata.distance,
-              },
+                distance: rowdata.distance
+              }
             ]);
-          } else if (
-            data[data.length - 1][0].session_id == rowdata.session_session_id
-          ) {
+          } else if (data[data.length - 1][0].session_id == rowdata.session_session_id) {
             data[data.length - 1].push({
               reps: rowdata.reps,
               weight: rowdata.weight,
               duration: rowdata.duration,
-              distance: rowdata.distance,
+              distance: rowdata.distance
             });
           } else {
             data.push([
@@ -1557,8 +1416,8 @@ const workout = {
                 reps: rowdata.reps,
                 weight: rowdata.weight,
                 duration: rowdata.duration,
-                distance: rowdata.distance,
-              },
+                distance: rowdata.distance
+              }
             ]);
           }
         });
@@ -1595,15 +1454,11 @@ const workout = {
                         INNER JOIN ${table_userinfo} ON DISTINCT_SESSION.userinfo_uid = ${table_userinfo}.uid
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`;
     try {
-      let result = JSON.parse(
-        JSON.stringify(await pool.queryParamSlave(query))
-      );
+      let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
       const restructure = async () => {
         let data = [];
-        await asyncForEach(result, async (rowdata) => {
-          const timeDiffArr = await timeFunction.timeDiff_DHM(
-            rowdata.created_at
-          );
+        await asyncForEach(result, async rowdata => {
+          const timeDiffArr = await timeFunction.timeDiff_DHM(rowdata.created_at);
           if (data.length == 0) {
             data.push({
               name: rowdata.name,
@@ -1614,16 +1469,16 @@ const workout = {
                   reps: rowdata.reps,
                   weight: rowdata.weight,
                   duration: rowdata.duration,
-                  distance: rowdata.distance,
-                },
-              ],
+                  distance: rowdata.distance
+                }
+              ]
             });
           } else if (data[data.length - 1].session_id == rowdata.session_id) {
             data[data.length - 1].log.push({
               reps: rowdata.reps,
               weight: rowdata.weight,
               duration: rowdata.duration,
-              distance: rowdata.distance,
+              distance: rowdata.distance
             });
           } else {
             data.push({
@@ -1635,9 +1490,9 @@ const workout = {
                   reps: rowdata.reps,
                   weight: rowdata.weight,
                   duration: rowdata.duration,
-                  distance: rowdata.distance,
-                },
-              ],
+                  distance: rowdata.distance
+                }
+              ]
             });
           }
         });
@@ -1670,15 +1525,11 @@ const workout = {
                         INNER JOIN ${table_userinfo} ON DISTINCT_SESSION.userinfo_uid = ${table_userinfo}.uid
                         ORDER BY ${table_workoutlog}.session_session_id DESC, ${table_workoutlog}.set_order ASC`; // INNER JOIN ${table_follows} ON ${table_userinfo}.uid = ${table_follows}.follow_uid AND ${table_follows}.userinfo_uid = ${uid}
     try {
-      let result = JSON.parse(
-        JSON.stringify(await pool.queryParamSlave(query))
-      );
+      let result = JSON.parse(JSON.stringify(await pool.queryParamSlave(query)));
       const restructure = async () => {
         let data = [];
-        await asyncForEach(result, async (rowdata) => {
-          const timeDiffArr = await timeFunction.timeDiff_DHM(
-            rowdata.created_at
-          );
+        await asyncForEach(result, async rowdata => {
+          const timeDiffArr = await timeFunction.timeDiff_DHM(rowdata.created_at);
           if (data.length == 0) {
             data.push({
               name: rowdata.name,
@@ -1689,16 +1540,16 @@ const workout = {
                   reps: rowdata.reps,
                   weight: rowdata.weight,
                   duration: rowdata.duration,
-                  distance: rowdata.distance,
-                },
-              ],
+                  distance: rowdata.distance
+                }
+              ]
             });
           } else if (data[data.length - 1].session_id == rowdata.session_id) {
             data[data.length - 1].log.push({
               reps: rowdata.reps,
               weight: rowdata.weight,
               duration: rowdata.duration,
-              distance: rowdata.distance,
+              distance: rowdata.distance
             });
           } else {
             data.push({
@@ -1710,9 +1561,9 @@ const workout = {
                   reps: rowdata.reps,
                   weight: rowdata.weight,
                   duration: rowdata.duration,
-                  distance: rowdata.distance,
-                },
-              ],
+                  distance: rowdata.distance
+                }
+              ]
             });
           }
         });
@@ -1741,11 +1592,7 @@ const workout = {
       return true;
     } catch (error) {
       if (err.errno == 1062) {
-        console.log(
-          "updateUserWorkoutHistoryAdd Error : ",
-          err.errno,
-          err.code
-        );
+        console.log("updateUserWorkoutHistoryAdd Error : ", err.errno, err.code);
         return -1;
       }
       console.log("updateUserWorkoutHistoryAdd Error : ", err);
@@ -1759,11 +1606,7 @@ const workout = {
       return true;
     } catch (error) {
       if (err.errno == 1062) {
-        console.log(
-          "updateUserWorkoutHistoryFinish Error : ",
-          err.errno,
-          err.code
-        );
+        console.log("updateUserWorkoutHistoryFinish Error : ", err.errno, err.code);
         return -1;
       }
       console.log("updateUserWorkoutHistoryFinish Error : ", err);
@@ -1790,7 +1633,7 @@ const workout = {
         workout_id: workout_id,
         one_rm: null,
         total_days: null,
-        total_reps: null,
+        total_reps: null
       };
       if (result1.length > 0) data.total_days = result1[0].finish_num;
       if (result2.length > 0) data.one_rm = Math.round(result2[0].one_rm_MAX);
@@ -1805,19 +1648,15 @@ const workout = {
       throw err;
     }
   },
-  getSubstituteWorkout: async (workout_id) => {
+  getSubstituteWorkout: async workout_id => {
     const fields1 = "category, muscle_p, muscle_s1, tier";
     const query1 = `SELECT ${fields1} FROM ${table_workout}
                         WHERE workout_id = ${workout_id}`;
     try {
       const result1 = await pool.queryParamSlave(query1);
-      const fields2 = `workout_id, (0.6*("${
-        result1[0].category
-      }"=category) + 0.2*(${result1[0].muscle_p}=muscle_p) + 0.15*(${
+      const fields2 = `workout_id, (0.6*("${result1[0].category}"=category) + 0.2*(${result1[0].muscle_p}=muscle_p) + 0.15*(${
         result1[0].muscle_s1
-      }=muscle_s1) + ${Math.random() * 2 - 1}*(${
-        result1[0].tier
-      }=tier)) AS SCORE`;
+      }=muscle_s1) + ${Math.random() * 2 - 1}*(${result1[0].tier}=tier)) AS SCORE`;
       const query2 = `SELECT ${fields2} FROM ${table_workout}
                             WHERE workout_id != ${workout_id} AND workout_id != 135
                             ORDER BY SCORE DESC
@@ -1825,7 +1664,7 @@ const workout = {
       const result2 = await pool.queryParamSlave(query2);
       const restructure = async () => {
         let data = [];
-        await asyncForEach(result2, async (rowdata) => {
+        await asyncForEach(result2, async rowdata => {
           data.push(rowdata.workout_id);
         });
         return data;
@@ -1842,17 +1681,7 @@ const workout = {
     }
   },
 
-  getOneRmMaxListByWorkoutId: async (
-    workout_id,
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    group_condition,
-    period_condition,
-    page,
-    lang_code
-  ) => {
+  getOneRmMaxListByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition, page, lang_code) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
                                         WHERE sex = ${sex} AND
@@ -1882,13 +1711,7 @@ const workout = {
         : condition_period_day
     }
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
-                        ${
-                          group_condition == "all"
-                            ? ""
-                            : group_condition == "body"
-                            ? condition_group_body
-                            : condition_group_follow
-                        }
+                        ${group_condition == "all" ? "" : group_condition == "body" ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_one_rm := NULL) R
                         ORDER BY T.max_one_rm DESC) FINAL
                         LIMIT 15 OFFSET ${(page - 1) * 15}`;
@@ -1899,14 +1722,14 @@ const workout = {
         console.log("No Cache");
         return await pool.queryParamSlave(query);
       });
-      const final_data = data.map((rowdata) => {
+      const final_data = data.map(rowdata => {
         return {
           uid: rowdata.uid,
           name: rowdata.name,
           profile_url: rowdata.profile_url,
           instagram_id: rowdata.instagram_id,
           value: rowdata.max_one_rm,
-          rank: parseInt(rowdata.rank),
+          rank: parseInt(rowdata.rank)
         };
       });
 
@@ -1920,17 +1743,7 @@ const workout = {
       throw err;
     }
   },
-  getWeightMaxListByWorkoutId: async (
-    workout_id,
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    group_condition,
-    period_condition,
-    page,
-    lang_code
-  ) => {
+  getWeightMaxListByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition, page, lang_code) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
                                         WHERE sex = ${sex} AND
@@ -1960,13 +1773,7 @@ const workout = {
         : condition_period_day
     }
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
-                        ${
-                          group_condition == "all"
-                            ? ""
-                            : group_condition == "body"
-                            ? condition_group_body
-                            : condition_group_follow
-                        }
+                        ${group_condition == "all" ? "" : group_condition == "body" ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_weight := NULL) R
                         ORDER BY T.max_weight DESC) FINAL
                         LIMIT 15 OFFSET ${(page - 1) * 15}`;
@@ -1977,14 +1784,14 @@ const workout = {
         console.log("No Cache");
         return await pool.queryParamSlave(query);
       });
-      const final_data = data.map((rowdata) => {
+      const final_data = data.map(rowdata => {
         return {
           uid: rowdata.uid,
           name: rowdata.name,
           profile_url: rowdata.profile_url,
           instagram_id: rowdata.instagram_id,
           value: rowdata.max_weight,
-          rank: parseInt(rowdata.rank),
+          rank: parseInt(rowdata.rank)
         };
       });
 
@@ -1998,17 +1805,7 @@ const workout = {
       throw err;
     }
   },
-  getVolumeMaxListByWorkoutId: async (
-    workout_id,
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    group_condition,
-    period_condition,
-    page,
-    lang_code
-  ) => {
+  getVolumeMaxListByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition, page, lang_code) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
                                         WHERE sex = ${sex} AND
@@ -2038,13 +1835,7 @@ const workout = {
         : condition_period_day
     }
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
-                        ${
-                          group_condition == "all"
-                            ? ""
-                            : group_condition == "body"
-                            ? condition_group_body
-                            : condition_group_follow
-                        }
+                        ${group_condition == "all" ? "" : group_condition == "body" ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_volume := NULL) R
                         ORDER BY T.max_volume DESC) FINAL
                         LIMIT 15 OFFSET ${(page - 1) * 15}`;
@@ -2055,14 +1846,14 @@ const workout = {
         console.log("No Cache");
         return await pool.queryParamSlave(query);
       });
-      const final_data = data.map((rowdata) => {
+      const final_data = data.map(rowdata => {
         return {
           uid: rowdata.uid,
           name: rowdata.name,
           profile_url: rowdata.profile_url,
           instagram_id: rowdata.instagram_id,
           value: rowdata.max_volume,
-          rank: parseInt(rowdata.rank),
+          rank: parseInt(rowdata.rank)
         };
       });
 
@@ -2117,13 +1908,7 @@ const workout = {
         : condition_period_day
     }
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
-                        ${
-                          group_condition == "all"
-                            ? ""
-                            : group_condition == "body"
-                            ? condition_group_body
-                            : condition_group_follow
-                        }
+                        ${group_condition == "all" ? "" : group_condition == "body" ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @sum_total_sets := NULL) R
                         ORDER BY T.sum_total_sets DESC) FINAL
                         LIMIT 15 OFFSET ${(page - 1) * 15}`;
@@ -2134,14 +1919,14 @@ const workout = {
         console.log("No Cache");
         return await pool.queryParamSlave(query);
       });
-      const final_data = data.map((rowdata) => {
+      const final_data = data.map(rowdata => {
         return {
           uid: rowdata.uid,
           name: rowdata.name,
           profile_url: rowdata.profile_url,
           instagram_id: rowdata.instagram_id,
           value: rowdata.sum_total_sets,
-          rank: parseInt(rowdata.rank),
+          rank: parseInt(rowdata.rank)
         };
       });
 
@@ -2196,13 +1981,7 @@ const workout = {
         : condition_period_day
     }
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
-                        ${
-                          group_condition == "all"
-                            ? ""
-                            : group_condition == "body"
-                            ? condition_group_body
-                            : condition_group_follow
-                        }
+                        ${group_condition == "all" ? "" : group_condition == "body" ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @sum_total_volume := NULL) R
                         ORDER BY T.sum_total_volume DESC) FINAL
                         LIMIT 15 OFFSET ${(page - 1) * 15}`;
@@ -2213,14 +1992,14 @@ const workout = {
         console.log("No Cache");
         return await pool.queryParamSlave(query);
       });
-      const final_data = data.map((rowdata) => {
+      const final_data = data.map(rowdata => {
         return {
           uid: rowdata.uid,
           name: rowdata.name,
           profile_url: rowdata.profile_url,
           instagram_id: rowdata.instagram_id,
           value: rowdata.sum_total_volume,
-          rank: parseInt(rowdata.rank),
+          rank: parseInt(rowdata.rank)
         };
       });
 
@@ -2275,13 +2054,7 @@ const workout = {
         : condition_period_day
     }
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
-                        ${
-                          group_condition == "all"
-                            ? ""
-                            : group_condition == "body"
-                            ? condition_group_body
-                            : condition_group_follow
-                        }
+                        ${group_condition == "all" ? "" : group_condition == "body" ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @sum_total_reps := NULL) R
                         ORDER BY T.sum_total_reps DESC) FINAL
                         LIMIT 15 OFFSET ${(page - 1) * 15}`;
@@ -2292,14 +2065,14 @@ const workout = {
         console.log("No Cache");
         return await pool.queryParamSlave(query);
       });
-      const final_data = data.map((rowdata) => {
+      const final_data = data.map(rowdata => {
         return {
           uid: rowdata.uid,
           name: rowdata.name,
           profile_url: rowdata.profile_url,
           instagram_id: rowdata.instagram_id,
           value: rowdata.sum_total_reps,
-          rank: parseInt(rowdata.rank),
+          rank: parseInt(rowdata.rank)
         };
       });
 
@@ -2314,15 +2087,7 @@ const workout = {
     }
   },
 
-  getOneRmMaxRankByWorkoutId: async (
-    workout_id,
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    group_condition,
-    period_condition
-  ) => {
+  getOneRmMaxRankByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
                                         WHERE sex = ${sex} AND
@@ -2352,13 +2117,7 @@ const workout = {
         : condition_period_day
     }
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
-                        ${
-                          group_condition == "all"
-                            ? ""
-                            : group_condition == "body"
-                            ? condition_group_body
-                            : condition_group_follow
-                        }
+                        ${group_condition == "all" ? "" : group_condition == "body" ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_one_rm := NULL) R
                         ORDER BY T.max_one_rm DESC) RANK
                         WHERE RANK.uid = '${uid}'`;
@@ -2372,7 +2131,7 @@ const workout = {
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),
-            value: parseFloat(data[0].max_one_rm),
+            value: parseFloat(data[0].max_one_rm)
           }
         : { rank: null, value: null };
     } catch (err) {
@@ -2384,15 +2143,7 @@ const workout = {
       throw err;
     }
   },
-  getWeightMaxRankByWorkoutId: async (
-    workout_id,
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    group_condition,
-    period_condition
-  ) => {
+  getWeightMaxRankByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
                                         WHERE sex = ${sex} AND
@@ -2422,13 +2173,7 @@ const workout = {
         : condition_period_day
     }
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
-                        ${
-                          group_condition == "all"
-                            ? ""
-                            : group_condition == "body"
-                            ? condition_group_body
-                            : condition_group_follow
-                        }
+                        ${group_condition == "all" ? "" : group_condition == "body" ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_weight := NULL) R
                         ORDER BY T.max_weight DESC) RANK
                         WHERE RANK.uid = '${uid}'`;
@@ -2442,7 +2187,7 @@ const workout = {
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),
-            value: parseFloat(data[0].max_weight),
+            value: parseFloat(data[0].max_weight)
           }
         : { rank: null, value: null };
     } catch (err) {
@@ -2455,15 +2200,7 @@ const workout = {
     }
   },
 
-  getVolumeMaxRankByWorkoutId: async (
-    workout_id,
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    group_condition,
-    period_condition
-  ) => {
+  getVolumeMaxRankByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
                                         WHERE sex = ${sex} AND
@@ -2493,13 +2230,7 @@ const workout = {
         : condition_period_day
     }
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
-                        ${
-                          group_condition == "all"
-                            ? ""
-                            : group_condition == "body"
-                            ? condition_group_body
-                            : condition_group_follow
-                        }
+                        ${group_condition == "all" ? "" : group_condition == "body" ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @max_volume := NULL) R
                         ORDER BY T.max_volume DESC) RANK
                         WHERE RANK.uid = '${uid}'`;
@@ -2513,7 +2244,7 @@ const workout = {
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),
-            value: parseFloat(data[0].max_volume),
+            value: parseFloat(data[0].max_volume)
           }
         : { rank: null, value: null };
     } catch (err) {
@@ -2526,15 +2257,7 @@ const workout = {
     }
   },
 
-  getTotalSetsMaxRankByWorkoutId: async (
-    workout_id,
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    group_condition,
-    period_condition
-  ) => {
+  getTotalSetsMaxRankByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
                                         WHERE sex = ${sex} AND
@@ -2565,13 +2288,7 @@ const workout = {
         : condition_period_day
     }
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
-                        ${
-                          group_condition == "all"
-                            ? ""
-                            : group_condition == "body"
-                            ? condition_group_body
-                            : condition_group_follow
-                        }
+                        ${group_condition == "all" ? "" : group_condition == "body" ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @sum_total_sets := NULL) R
                         ORDER BY T.sum_total_sets DESC) RANK
                         WHERE RANK.uid = '${uid}'`;
@@ -2585,7 +2302,7 @@ const workout = {
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),
-            value: parseInt(data[0].sum_total_sets),
+            value: parseInt(data[0].sum_total_sets)
           }
         : { rank: null, value: null };
     } catch (err) {
@@ -2597,15 +2314,7 @@ const workout = {
       throw err;
     }
   },
-  getTotalVolumeMaxRankByWorkoutId: async (
-    workout_id,
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    group_condition,
-    period_condition
-  ) => {
+  getTotalVolumeMaxRankByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
                                         WHERE sex = ${sex} AND
@@ -2636,13 +2345,7 @@ const workout = {
         : condition_period_day
     }
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
-                        ${
-                          group_condition == "all"
-                            ? ""
-                            : group_condition == "body"
-                            ? condition_group_body
-                            : condition_group_follow
-                        }
+                        ${group_condition == "all" ? "" : group_condition == "body" ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @sum_total_volume := NULL) R
                         ORDER BY T.sum_total_volume DESC) RANK
                         WHERE RANK.uid = '${uid}'`;
@@ -2656,7 +2359,7 @@ const workout = {
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),
-            value: parseFloat(data[0].sum_total_volume),
+            value: parseFloat(data[0].sum_total_volume)
           }
         : { rank: null, value: null };
     } catch (err) {
@@ -2668,15 +2371,7 @@ const workout = {
       throw err;
     }
   },
-  getTotalRepsMaxRankByWorkoutId: async (
-    workout_id,
-    uid,
-    sex,
-    ageGroup,
-    weightGroup,
-    group_condition,
-    period_condition
-  ) => {
+  getTotalRepsMaxRankByWorkoutId: async (workout_id, uid, sex, ageGroup, weightGroup, group_condition, period_condition) => {
     const condition_group_body = `WHERE userinfo.uid
                                         IN (SELECT uid FROM userinfo
                                         WHERE sex = 0 AND
@@ -2707,13 +2402,7 @@ const workout = {
         : condition_period_day
     }
                         INNER JOIN ${table_userinfo} ON uid = userinfo_uid AND ${table_userinfo}.is_deleted = 0
-                        ${
-                          group_condition == "all"
-                            ? ""
-                            : group_condition == "body"
-                            ? condition_group_body
-                            : condition_group_follow
-                        }
+                        ${group_condition == "all" ? "" : group_condition == "body" ? condition_group_body : condition_group_follow}
                         GROUP BY ${table_userinfo}.name) T, (SELECT @curRank := 0, @sum_total_reps := NULL) R
                         ORDER BY T.sum_total_reps DESC) RANK
                         WHERE RANK.uid = '${uid}'`;
@@ -2727,7 +2416,7 @@ const workout = {
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),
-            value: parseInt(data[0].sum_total_reps),
+            value: parseInt(data[0].sum_total_reps)
           }
         : { rank: null, value: null };
     } catch (err) {
@@ -2739,52 +2428,42 @@ const workout = {
       throw err;
     }
   },
-  postFraudRankingReport: async (session_id) => {
+  postFraudRankingReport: async session_id => {
     const query = `UPDATE ${table_session} SET fraud_report_cnt = fraud_report_cnt + 1 WHERE session_id = ${session_id}`;
     try {
       await pool.queryParamMaster(query);
       return true;
     } catch (error) {
       if (err.errno == 1062) {
-        console.log(
-          "updateUserWorkoutHistoryFinish Error : ",
-          err.errno,
-          err.code
-        );
+        console.log("updateUserWorkoutHistoryFinish Error : ", err.errno, err.code);
         return -1;
       }
       console.log("updateUserWorkoutHistoryFinish Error : ", err);
       throw err;
     }
   },
-  getAllWorkoutMemo: async (uid) => {
+  getAllWorkoutMemo: async uid => {
     const query = `SELECT * FROM ${table_userWorkoutMemo}
                     WHERE userinfo_uid = "${uid}"
                     ORDER BY workout_workout_id, created_at`;
     try {
       const result = await pool.queryParamSlave(query);
       let data = [];
-      await asyncForEach(result, async (rowdata) => {
+      await asyncForEach(result, async rowdata => {
         if (data.length == 0) {
           data.push({
             workout_id: rowdata.workout_workout_id,
-            memo_detail: [
-              { content: rowdata.content, created_at: rowdata.created_at },
-            ],
+            memo_detail: [{ content: rowdata.content, created_at: rowdata.created_at }]
           });
-        } else if (
-          data[data.length - 1].workout_id == rowdata.workout_workout_id
-        ) {
+        } else if (data[data.length - 1].workout_id == rowdata.workout_workout_id) {
           data[data.length - 1].memo_detail.push({
             content: rowdata.content,
-            created_at: rowdata.created_at,
+            created_at: rowdata.created_at
           });
         } else {
           data.push({
             workout_id: rowdata.workout_workout_id,
-            memo_detail: [
-              { content: rowdata.content, created_at: rowdata.created_at },
-            ],
+            memo_detail: [{ content: rowdata.content, created_at: rowdata.created_at }]
           });
         }
       });
@@ -2798,6 +2477,75 @@ const workout = {
       throw err;
     }
   },
+  getWorkoutUserOneRmMax: async (uid, workout_id) => {
+    const query = `SELECT MAX(SessionDetail.one_rm) max_one_rm 
+                    FROM (SELECT (100 * ${table_workoutlog}.weight)/(48.8 + (53.8*EXP(-0.075 * ${table_workoutlog}.reps))) one_rm FROM ${table_workoutlog}
+                          INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}
+                            AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0) SessionDetail`;
+    try {
+      const result = await pool.queryParamSlave(query);
+      if (result.length == 0) {
+        return 0;
+      } else if (result[0].max_one_rm == null) {
+        return 0;
+      } else {
+        return result[0].max_one_rm;
+      }
+    } catch (error) {
+      if (err.errno == 1062) {
+        console.log("checkWorkout Error : ", err.errno, err.code);
+        return -1;
+      }
+      console.log("checkWorkout Error : ", err);
+      throw err;
+    }
+  },
+  getWorkoutUserRepMax: async (uid, workout_id) => {
+    const query = `SELECT MAX(SessionDetail.reps) max_reps
+                    FROM (SELECT reps FROM ${table_workoutlog}
+                          INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}
+                            AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0) SessionDetail`;
+    try {
+      const result = await pool.queryParamSlave(query);
+      if (result.length == 0) {
+        return 0;
+      } else if (result[0].max_reps == null) {
+        return 0;
+      } else {
+        return result[0].max_reps;
+      }
+    } catch (error) {
+      if (err.errno == 1062) {
+        console.log("checkWorkout Error : ", err.errno, err.code);
+        return -1;
+      }
+      console.log("checkWorkout Error : ", err);
+      throw err;
+    }
+  },
+  getWorkoutUserDurationMax: async (uid, workout_id) => {
+    const query = `SELECT MAX(SessionDetail.duration) max_duration
+                    FROM (SELECT duration FROM ${table_workoutlog}
+                          INNER JOIN ${table_session} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_workoutlog}.workout_workout_id = ${workout_id}
+                            AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted = 0 AND ${table_session}.is_fraud = 0) SessionDetail`;
+    try {
+      const result = await pool.queryParamSlave(query);
+      if (result.length == 0) {
+        return 0;
+      } else if (result[0].max_duration == null) {
+        return 0;
+      } else {
+        return result[0].max_duration;
+      }
+    } catch (error) {
+      if (err.errno == 1062) {
+        console.log("checkWorkout Error : ", err.errno, err.code);
+        return -1;
+      }
+      console.log("checkWorkout Error : ", err);
+      throw err;
+    }
+  }
 };
 
 module.exports = workout;
