@@ -914,6 +914,7 @@ const workout = {
           // }
           if (data.length == 0) {
             data.push({
+              uid: uid,
               session_id: rowdata.session_session_id,
               template_id: rowdata.templateUsers_id,
               template_name: rowdata.session_name != null ? rowdata.session_name : rowdata.template_name,
@@ -965,6 +966,7 @@ const workout = {
             }
           } else {
             data.push({
+              uid: uid,
               session_id: rowdata.session_session_id,
               template_id: rowdata.templateUsers_id,
               template_name: rowdata.session_name != null ? rowdata.session_name : rowdata.template_name,
@@ -2123,11 +2125,12 @@ const workout = {
                         WHERE RANK.uid = '${uid}'`;
 
     try {
-      const key = `onermmaxrank_${workout_id}_${group_condition}_${period_condition}`;
+      const key = `onermmaxrank_${uid}_${workout_id}_${group_condition}_${period_condition}`;
       const data = await cacheRanking.get(key, async () => {
         console.log("No Cache");
         return await pool.queryParamSlave(query);
       });
+      console.log(data);
       return data.length != 0
         ? {
             rank: parseInt(data[0].rank),
@@ -2179,7 +2182,7 @@ const workout = {
                         WHERE RANK.uid = '${uid}'`;
 
     try {
-      const key = `weightmaxrank_${workout_id}_${group_condition}_${period_condition}`;
+      const key = `weightmaxrank_${uid}_${workout_id}_${group_condition}_${period_condition}`;
       const data = await cacheRanking.get(key, async () => {
         console.log("No Cache");
         return await pool.queryParamSlave(query);
@@ -2236,7 +2239,7 @@ const workout = {
                         WHERE RANK.uid = '${uid}'`;
 
     try {
-      const key = `volumemaxrank_${workout_id}_${group_condition}_${period_condition}`;
+      const key = `volumemaxrank_${uid}_${workout_id}_${group_condition}_${period_condition}`;
       const data = await cacheRanking.get(key, async () => {
         console.log("No Cache");
         return await pool.queryParamSlave(query);
@@ -2294,7 +2297,7 @@ const workout = {
                         WHERE RANK.uid = '${uid}'`;
 
     try {
-      const key = `totalsetsmaxrank_${workout_id}_${group_condition}_${period_condition}`;
+      const key = `totalsetsmaxrank_${uid}_${workout_id}_${group_condition}_${period_condition}`;
       const data = await cacheRanking.get(key, async () => {
         console.log("No Cache");
         return await pool.queryParamSlave(query);
@@ -2351,7 +2354,7 @@ const workout = {
                         WHERE RANK.uid = '${uid}'`;
 
     try {
-      const key = `totalvolumemaxrank_${workout_id}_${group_condition}_${period_condition}`;
+      const key = `totalvolumemaxrank_${uid}_${workout_id}_${group_condition}_${period_condition}`;
       const data = await cacheRanking.get(key, async () => {
         console.log("No Cache");
         return await pool.queryParamSlave(query);
@@ -2408,7 +2411,7 @@ const workout = {
                         WHERE RANK.uid = '${uid}'`;
 
     try {
-      const key = `totalrepsmaxrank_${workout_id}_${group_condition}_${period_condition}`;
+      const key = `totalrepsmaxrank_${uid}_${workout_id}_${group_condition}_${period_condition}`;
       const data = await cacheRanking.get(key, async () => {
         console.log("No Cache");
         return await pool.queryParamSlave(query);
