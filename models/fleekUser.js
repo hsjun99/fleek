@@ -485,9 +485,9 @@ const fleekUser = {
       let wilks_score = null;
       if (!(benchpress_list.length == 0 || squat_list.length == 0 || deadlift_list.length == 0)) {
         const [benchpress_one_rm, squat_one_rm, deadlift_one_rm] = await Promise.all([
-          (await benchpress_list.reduce(async (prev, current) => (prev.max_one_rm > current.max_one_rm ? prev : current))).max_one_rm,
-          squat_list[0].max_one_rm,
-          (await deadlift_list.reduce(async (prev, current) => (prev.max_one_rm > current.max_one_rm ? prev : current))).max_one_rm
+          (await benchpress_list.reduce((prev, current) => (prev.max_one_rm > current.max_one_rm ? prev : current))).max_one_rm,
+          (await squat_list.reduce((prev, current) => (prev.max_one_rm > current.max_one_rm ? prev : current))).max_one_rm,
+          (await deadlift_list.reduce((prev, current) => (prev.max_one_rm > current.max_one_rm ? prev : current))).max_one_rm
         ]);
         wilks_score = await wilksScoreCalculator(benchpress_one_rm + squat_one_rm + deadlift_one_rm, sex, weight);
       }
@@ -674,13 +674,13 @@ const fleekUser = {
       throw err;
     }
   },
-  checkPrivacy: async (uid) => {
+  checkPrivacy: async uid => {
     const fields = "privacy_setting";
     const query = `SELECT ${fields} FROM ${table1} 
                     WHERE uid = '${uid}'`;
     try {
       const result = await pool.queryParamSlave(query);
-      return result[0].privacy_setting
+      return result[0].privacy_setting;
     } catch (err) {
       if (err.errno == 1062) {
         console.log("getWorkoutMaxOneRm ERROR: ", err.errno, err.code);
@@ -689,7 +689,7 @@ const fleekUser = {
       console.log("getWorkoutMaxOneRm ERROR: ", err);
       throw err;
     }
-  },
+  }
 };
 
 module.exports = fleekUser;
