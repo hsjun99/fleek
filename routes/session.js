@@ -19,4 +19,6 @@ router.delete("/book", AuthUser.checkToken, sessionController.unbookSession);
 
 router.post("/transfer/:session_id", AuthUser.checkToken, sessionController.transferSession);
 
+router.get("/sessiondetail/:session_id", AuthUser.checkToken, sessionController.getSessionDetail);
+
 module.exports = router;

@@ -158,5 +158,16 @@ module.exports = {
 
     await Workout.postWorkoutInfoSyncFirebase(uid, update_time);
     await Session.postUserHistorySyncFirebase(uid, update_time);
+  },
+  getSessionDetail: async (req, res) => {
+    const uid = req.uid;
+    const session_id = req.params.session_id;
+
+    const { sex, ageGroup, weightGroup } = await User.getProfile(uid);
+
+    const sessionUserHistoryData = await Workout.getUserHistoryDataBySession(uid, sex, ageGroup, weightGroup, session_id);
+
+    // Success
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_SESSION_SUCCESS, sessionUserHistoryData));
   }
 };
