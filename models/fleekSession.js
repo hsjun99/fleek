@@ -253,7 +253,7 @@ const session = {
   //     throw err;
   //   }
   // },
-  modifySessionData: async (uid, session_id, name, body_weight, data, start_time, total_time, device = null) => {
+  modifySessionData: async (uid, session_id, name, body_weight, data, start_time, total_time, device = null, session_review) => {
     const fields3 =
       "reps, weight, duration, distance, iswarmup, workout_order, set_order, max_heart_rate, super_set_label, rest_time, set_type, rpe, workout_workout_id, session_session_id";
     const fields4 =
@@ -377,12 +377,22 @@ const session = {
         session_total_distance += total_distance;
         session_total_duration += total_duration;
       });
-
       // UPDATE SESSION TABLE
+      const values6 = [
+        session_review,
+        name,
+        session_total_volume,
+        session_total_sets,
+        session_total_reps,
+        session_total_distance,
+        session_total_duration,
+        total_time,
+        start_time
+      ];
       const query6 = `UPDATE ${table_session}
-                            SET name = '${name}', session_total_volume = ${session_total_volume}, session_total_sets = ${session_total_sets}, session_total_reps = ${session_total_reps}, session_total_distance = ${session_total_distance}, session_total_duration = ${session_total_duration}, total_time = ${total_time}, start_time = "${start_time}"
+                            SET session_review = ?, name = ?, session_total_volume = ?, session_total_sets = ?, session_total_reps = ?, session_total_distance = ?, session_total_duration = ?, total_time = ?, start_time = ?
                             WHERE ${table_session}.session_id = ${session_id}`;
-      await connection.query(query6);
+      await connection.query(query6, values6);
     };
     try {
       transactionArr.push(ts1);
@@ -410,18 +420,30 @@ const session = {
     total_time,
     device = null,
     feedback_content = null,
-    feedback_rating = null
+    feedback_rating = null,
+    session_review
   ) => {
     const fields1 =
-      "userinfo_uid, created_at, start_time, name, templateUsers_template_id, total_time, device, feedback_content, feedback_rating";
+      "userinfo_uid, created_at, start_time, name, templateUsers_template_id, total_time, device, feedback_content, feedback_rating, session_review";
     const fields2 =
       "reps, weight, duration, distance, iswarmup, workout_order, set_order, max_heart_rate, super_set_label, rest_time, set_type, rpe, workout_workout_id, session_session_id";
     const fields4 =
       "max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at";
-    const questions1 = "?, ?, ?, ?, ?, ?, ?, ?, ?";
+    const questions1 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
     const questions2 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
     const questions4 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
-    const values1 = [uid, created_at, start_time, session_name, template_id, total_time, device, feedback_content, feedback_rating];
+    const values1 = [
+      uid,
+      created_at,
+      start_time,
+      session_name,
+      template_id,
+      total_time,
+      device,
+      feedback_content,
+      feedback_rating,
+      session_review
+    ];
     const query0 = `UPDATE ${table_userinfo}
                         SET last_session_finish = '${created_at}' WHERE uid = '${uid}'`;
     // Insert into Session Table
@@ -612,6 +634,23 @@ const session = {
                         WHERE ${table_session}.userinfo_uid = "${uid}"`;
     try {
       await pool.queryParamMaster(query);
+      return true;
+    } catch (err) {
+      if (err.errno == 1062) {
+        console.log("deleteSession ERROR: ", err.errno, err.code);
+        return -1;
+      }
+      console.log("deleteSession ERROR: ", err);
+      throw err;
+    }
+  },
+  postSessionReview: async (uid, sessionId, sessionReview) => {
+    const value = [sessionReview];
+    const query = `UPDATE ${table_session}
+                    SET session_review = ?
+                    WHERE ${table_session}.userinfo_uid = "${uid}" AND ${table_session}.session_id = ${sessionId}`;
+    try {
+      await pool.queryParamArrMaster(query, value);
       return true;
     } catch (err) {
       if (err.errno == 1062) {

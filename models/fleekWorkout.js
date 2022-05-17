@@ -19,6 +19,7 @@ const table_userWorkoutMemo = "userWorkoutMemo";
 var admin = require("firebase-admin");
 
 const CacheService = require("../modules/cache.service");
+const { rowdataWorkoutTable } = require("../modules/function/aboutLanguage");
 const ttl = 60 * 60 * 1; // cache for 1 Hour
 const cache = new CacheService(ttl); // Create a new cache service instance
 
@@ -623,7 +624,7 @@ const workout = {
     }
   },
   getUserHistoryDataBySession: async (uid, sex, ageGroup, weightGroup, session_id) => {
-    const fields = `${table_session}.name AS session_name, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.rpe, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.super_set_label, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name AS template_name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.start_time, ${table_session}.total_time, inclination, intercept`;
+    const fields = `${table_session}.name AS session_name, ${table_session}.session_review, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.rpe, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.super_set_label, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name AS template_name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.start_time, ${table_session}.total_time, inclination, intercept`;
     const query = `SELECT ${fields} FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.session_id = ${session_id}
                         LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = ${table_session}.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
@@ -641,6 +642,15 @@ const workout = {
           if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
             percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
           }
+          if (rowdata.session_review != null && rowdata.session_review.length != 0) {
+            try {
+              rowdata.session_review = JSON.parse(rowdata.session_review);
+            } catch (error) {
+              rowdata.session_review = null;
+            }
+          } else {
+            rowdata.session_review = null;
+          }
           if (data.length == 0) {
             data.push({
               session_id: rowdata.session_session_id,
@@ -650,6 +660,7 @@ const workout = {
                 created_at: rowdata.created_at,
                 start_time: rowdata.start_time,
                 total_workout_time: rowdata.total_time,
+                session_review: rowdata.session_review,
                 content: [
                   {
                     workout_id: rowdata.workout_workout_id,
@@ -719,6 +730,7 @@ const workout = {
                 created_at: rowdata.created_at,
                 start_time: rowdata.start_time,
                 total_workout_time: rowdata.total_time,
+                session_review: rowdata.session_review,
                 content: [
                   {
                     workout_id: rowdata.workout_workout_id,
@@ -895,7 +907,7 @@ const workout = {
     }
   },
   getUserHistoryDataAll: async (uid, sex, ageGroup, weightGroup) => {
-    const fields = `${table_session}.name AS session_name, ${table_session}.device, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.super_set_label, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name AS template_name, workout_order, set_order, ${table_session}.created_at, ${table_session}.start_time, ${table_session}.total_time, inclination, intercept`;
+    const fields = `${table_session}.name AS session_name, ${table_session}.device, ${table_session}.session_review, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.super_set_label, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name AS template_name, workout_order, set_order, ${table_session}.created_at, ${table_session}.start_time, ${table_session}.total_time, inclination, intercept`;
     const query = `SELECT ${fields} FROM ${table_session}
                         INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.is_deleted != 1
                         LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
@@ -912,6 +924,15 @@ const workout = {
           // if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
           //     percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
           // }
+          if (rowdata.session_review != null && rowdata.session_review.length != 0) {
+            try {
+              rowdata.session_review = JSON.parse(rowdata.session_review);
+            } catch (error) {
+              rowdata.session_review = null;
+            }
+          } else {
+            rowdata.session_review = null;
+          }
           if (data.length == 0) {
             data.push({
               uid: uid,
@@ -923,6 +944,7 @@ const workout = {
                 start_time: rowdata.start_time,
                 created_at: rowdata.created_at,
                 total_workout_time: rowdata.total_time,
+                session_review: rowdata.session_review,
                 content: [
                   {
                     workout_id: rowdata.workout_workout_id,
@@ -975,6 +997,7 @@ const workout = {
                 start_time: rowdata.start_time,
                 created_at: rowdata.created_at,
                 total_workout_time: rowdata.total_time,
+                session_review: rowdata.session_review,
                 content: [
                   {
                     workout_id: rowdata.workout_workout_id,
@@ -1007,135 +1030,135 @@ const workout = {
       throw err;
     }
   },
-  getUserHistoryDataPartial: async (uid, sex, ageGroup, weightGroup, mobileLastUpdateTime) => {
-    const fields = `${table_session}.device, ${table_session}.is_deleted, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id,  ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time, inclination, intercept`;
-    const query = `SELECT ${fields} FROM ${table_session}
-                        INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.last_update IS NOT NULL AND ${table_session}.last_update > ${mobileLastUpdateTime}
-                        LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = ${table_session}.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
-                        LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
-                        LEFT JOIN ${table_equation} ON ${table_equation}.workout_workout_id = ${table_workoutlog}.workout_workout_id AND (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}")
-                        ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
+  // getUserHistoryDataPartial: async (uid, sex, ageGroup, weightGroup, mobileLastUpdateTime) => {
+  //   const fields = `${table_session}.device, ${table_session}.is_deleted, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id,  ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time, inclination, intercept`;
+  //   const query = `SELECT ${fields} FROM ${table_session}
+  //                       INNER JOIN ${table_workoutlog} ON ${table_session}.session_id = ${table_workoutlog}.session_session_id AND ${table_session}.userinfo_uid = '${uid}' AND ${table_session}.last_update IS NOT NULL AND ${table_session}.last_update > ${mobileLastUpdateTime}
+  //                       LEFT JOIN ${table_workoutAbility} ON ${table_workoutAbility}.session_session_id = ${table_session}.session_id AND ${table_workoutAbility}.workout_workout_id = ${table_workoutlog}.workout_workout_id
+  //                       LEFT JOIN ${table_templateUsers} ON ${table_templateUsers}.templateUsers_id = ${table_session}.templateUsers_template_id
+  //                       LEFT JOIN ${table_equation} ON ${table_equation}.workout_workout_id = ${table_workoutlog}.workout_workout_id AND (${table_equation}.sex="${sex}" AND (${table_equation}.age="${ageGroup}" OR ${table_equation}.age=8) AND ${table_equation}.weight="${weightGroup}")
+  //                       ORDER BY ${table_session}.created_at ASC, ${table_session}.session_id ASC, ${table_workoutlog}.workout_order ASC, ${table_workoutlog}.set_order ASC`;
 
-    try {
-      let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
-      const restructure = async () => {
-        let data = [];
-        await asyncForEach(result, async rowdata => {
-          let percentage = null;
-          if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
-            percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
-          }
-          if (data.length == 0) {
-            data.push({
-              session_id: rowdata.session_session_id,
-              template_id: rowdata.templateUsers_id,
-              template_name: rowdata.name,
-              device: rowdata.device,
-              is_deleted: rowdata.is_deleted,
-              session_detail: {
-                date: rowdata.created_at,
-                total_workout_time: rowdata.total_time,
-                content: [
-                  {
-                    workout_id: rowdata.workout_workout_id,
-                    sets: [
-                      {
-                        reps: rowdata.reps,
-                        weight: rowdata.weight,
-                        duration: rowdata.duration,
-                        distance: rowdata.distance
-                      }
-                    ],
-                    workout_ability: {
-                      max_one_rm: rowdata.max_one_rm,
-                      total_volume: rowdata.total_volume,
-                      max_volume: rowdata.max_volume,
-                      total_reps: rowdata.total_reps,
-                      max_weight: rowdata.max_weight,
-                      percentage: percentage
-                    }
-                  }
-                ]
-              }
-            });
-          } else if (data[data.length - 1].session_id == rowdata.session_session_id) {
-            const L = data[data.length - 1].session_detail.content.length;
-            if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
-              data[data.length - 1].session_detail.content[L - 1].sets.push({
-                reps: rowdata.reps,
-                weight: rowdata.weight,
-                duration: rowdata.duration,
-                distance: rowdata.distance
-              });
-            } else {
-              data[data.length - 1].session_detail.content.push({
-                workout_id: rowdata.workout_workout_id,
-                sets: [
-                  {
-                    reps: rowdata.reps,
-                    weight: rowdata.weight,
-                    duration: rowdata.duration,
-                    distance: rowdata.distance
-                  }
-                ],
-                workout_ability: {
-                  max_one_rm: rowdata.max_one_rm,
-                  total_volume: rowdata.total_volume,
-                  max_volume: rowdata.max_volume,
-                  total_reps: rowdata.total_reps,
-                  max_weight: rowdata.max_weight,
-                  percentage: percentage
-                }
-              });
-            }
-          } else {
-            data.push({
-              session_id: rowdata.session_session_id,
-              template_id: rowdata.templateUsers_id,
-              template_name: rowdata.name,
-              device: rowdata.device,
-              is_deleted: rowdata.is_deleted,
-              session_detail: {
-                date: rowdata.created_at,
-                total_workout_time: rowdata.total_time,
-                content: [
-                  {
-                    workout_id: rowdata.workout_workout_id,
-                    sets: [
-                      {
-                        reps: rowdata.reps,
-                        weight: rowdata.weight,
-                        duration: rowdata.duration,
-                        distance: rowdata.distance
-                      }
-                    ],
-                    workout_ability: {
-                      max_one_rm: rowdata.max_one_rm,
-                      total_volume: rowdata.total_volume,
-                      max_volume: rowdata.max_volume,
-                      total_reps: rowdata.total_reps,
-                      max_weight: rowdata.max_weight,
-                      percentage: percentage
-                    }
-                  }
-                ]
-              }
-            });
-          }
-        });
-        return data;
-      };
-      const data = await restructure();
-      return data;
-    } catch (err) {
-      if (err.errno == 1062) {
-        console.log("getWorkoutRecordById ERROR: ", err.errno, err.code);
-        return -1;
-      }
-      console.log("getWorkoutRecordById ERROR: ", err);
-      throw err;
-    }
-  },
+  //   try {
+  //     let result = JSON.parse(JSON.stringify(await pool.queryParamMaster(query)));
+  //     const restructure = async () => {
+  //       let data = [];
+  //       await asyncForEach(result, async rowdata => {
+  //         let percentage = null;
+  //         if (rowdata.inclination != null && rowdata.intercept != null && rowdata.max_one_rm != 0 && rowdata.max_one_rm != null) {
+  //           percentage = Math.round(rowdata.inclination * Math.log(rowdata.max_one_rm) + rowdata.intercept);
+  //         }
+  //         if (data.length == 0) {
+  //           data.push({
+  //             session_id: rowdata.session_session_id,
+  //             template_id: rowdata.templateUsers_id,
+  //             template_name: rowdata.name,
+  //             device: rowdata.device,
+  //             is_deleted: rowdata.is_deleted,
+  //             session_detail: {
+  //               date: rowdata.created_at,
+  //               total_workout_time: rowdata.total_time,
+  //               content: [
+  //                 {
+  //                   workout_id: rowdata.workout_workout_id,
+  //                   sets: [
+  //                     {
+  //                       reps: rowdata.reps,
+  //                       weight: rowdata.weight,
+  //                       duration: rowdata.duration,
+  //                       distance: rowdata.distance
+  //                     }
+  //                   ],
+  //                   workout_ability: {
+  //                     max_one_rm: rowdata.max_one_rm,
+  //                     total_volume: rowdata.total_volume,
+  //                     max_volume: rowdata.max_volume,
+  //                     total_reps: rowdata.total_reps,
+  //                     max_weight: rowdata.max_weight,
+  //                     percentage: percentage
+  //                   }
+  //                 }
+  //               ]
+  //             }
+  //           });
+  //         } else if (data[data.length - 1].session_id == rowdata.session_session_id) {
+  //           const L = data[data.length - 1].session_detail.content.length;
+  //           if (data[data.length - 1].session_detail.content[L - 1].workout_id == rowdata.workout_workout_id) {
+  //             data[data.length - 1].session_detail.content[L - 1].sets.push({
+  //               reps: rowdata.reps,
+  //               weight: rowdata.weight,
+  //               duration: rowdata.duration,
+  //               distance: rowdata.distance
+  //             });
+  //           } else {
+  //             data[data.length - 1].session_detail.content.push({
+  //               workout_id: rowdata.workout_workout_id,
+  //               sets: [
+  //                 {
+  //                   reps: rowdata.reps,
+  //                   weight: rowdata.weight,
+  //                   duration: rowdata.duration,
+  //                   distance: rowdata.distance
+  //                 }
+  //               ],
+  //               workout_ability: {
+  //                 max_one_rm: rowdata.max_one_rm,
+  //                 total_volume: rowdata.total_volume,
+  //                 max_volume: rowdata.max_volume,
+  //                 total_reps: rowdata.total_reps,
+  //                 max_weight: rowdata.max_weight,
+  //                 percentage: percentage
+  //               }
+  //             });
+  //           }
+  //         } else {
+  //           data.push({
+  //             session_id: rowdata.session_session_id,
+  //             template_id: rowdata.templateUsers_id,
+  //             template_name: rowdata.name,
+  //             device: rowdata.device,
+  //             is_deleted: rowdata.is_deleted,
+  //             session_detail: {
+  //               date: rowdata.created_at,
+  //               total_workout_time: rowdata.total_time,
+  //               content: [
+  //                 {
+  //                   workout_id: rowdata.workout_workout_id,
+  //                   sets: [
+  //                     {
+  //                       reps: rowdata.reps,
+  //                       weight: rowdata.weight,
+  //                       duration: rowdata.duration,
+  //                       distance: rowdata.distance
+  //                     }
+  //                   ],
+  //                   workout_ability: {
+  //                     max_one_rm: rowdata.max_one_rm,
+  //                     total_volume: rowdata.total_volume,
+  //                     max_volume: rowdata.max_volume,
+  //                     total_reps: rowdata.total_reps,
+  //                     max_weight: rowdata.max_weight,
+  //                     percentage: percentage
+  //                   }
+  //                 }
+  //               ]
+  //             }
+  //           });
+  //         }
+  //       });
+  //       return data;
+  //     };
+  //     const data = await restructure();
+  //     return data;
+  //   } catch (err) {
+  //     if (err.errno == 1062) {
+  //       console.log("getWorkoutRecordById ERROR: ", err.errno, err.code);
+  //       return -1;
+  //     }
+  //     console.log("getWorkoutRecordById ERROR: ", err);
+  //     throw err;
+  //   }
+  // },
   // getUserHistoryDataBySessionId: async (uid, sessionId, sex, ageGroup, weightGroup) => {
   //     const fields = `${table_session}.device, ${table_workoutlog}.reps, ${table_workoutlog}.weight, ${table_workoutlog}.duration, ${table_workoutlog}.distance, ${table_workoutlog}.workout_workout_id, ${table_workoutlog}.max_heart_rate, ${table_workoutlog}.session_session_id, ${table_templateUsers}.templateUsers_id, ${table_templateUsers}.name, workout_order, set_order, max_one_rm, total_volume, max_volume, total_reps, max_weight, ${table_session}.created_at, ${table_session}.total_time, inclination, intercept`;
   //     const query = `SELECT ${fields} FROM ${table_session}

@@ -9,16 +9,16 @@ const ageGroupClassifier = require("../modules/classifier/ageGroupClassifier")
 const weightGroupClassifier =  require("../modules/classifier/weightGroupClassifier");
 
 module.exports = {
-    getData: async(req, res) => {
-        const uid = req.uid;
-        const myRecord = await Dashboard.getDashboardRecords(uid);
-        const myFavoriteWorkouts = await Dashboard.getFavoriteWorkouts(uid);
-        // DB Error Handling
-        if (myRecord == -1 || myFavoriteWorkouts == -1) {
-            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_DASHBOARD_FAIL));
-        }
+    // getData: async(req, res) => {
+    //     const uid = req.uid;
+    //     const myRecord = await Dashboard.getDashboardRecords(uid);
+    //     const myFavoriteWorkouts = await Dashboard.getFavoriteWorkouts(uid);
+    //     // DB Error Handling
+    //     if (myRecord == -1 || myFavoriteWorkouts == -1) {
+    //         return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_DASHBOARD_FAIL));
+    //     }
 
-        // Success
-        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS, {my_record: myRecord, my_favorite_workouts: myFavoriteWorkouts}));
-    }
+    //     // Success
+    //     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_DASHBOARD_SUCCESS, {my_record: myRecord, my_favorite_workouts: myFavoriteWorkouts}));
+    // }
 }

@@ -5,7 +5,6 @@ const AuthUser = require("../middlewares/authUser");
 const AuthUserWear = require("../middlewares/authUserWear");
 const userController = require("../controllers/userController");
 const userHistoryController = require("../controllers/userHistoryController");
-const { Auth } = require("../modules/auth/firebaseAuth");
 
 router.get("/profile", AuthUser.checkToken, userController.getProfile);
 

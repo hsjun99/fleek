@@ -1,9 +1,9 @@
-var express = require("express");
-var router = express.Router();
+// var express = require("express");
+// var router = express.Router();
 
-const AuthUser = require("../middlewares/authUser");
-const dashboardController = require("../controllers/dashboardController");
+// const AuthUser = require("../middlewares/authUser");
+// const dashboardController = require("../controllers/dashboardController");
 
-router.get("/getdata", AuthUser.checkToken, dashboardController.getData);
+// router.get("/getdata", AuthUser.checkToken, dashboardController.getData);
 
-module.exports = router;
+// module.exports = router;
