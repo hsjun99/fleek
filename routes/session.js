@@ -21,4 +21,6 @@ router.post("/transfer/:session_id", AuthUser.checkToken, sessionController.tran
 
 router.get("/sessiondetail/:session_id", AuthUser.checkToken, sessionController.getSessionDetail);
 
+router.put("/review/:session_id", AuthUser.checkToken, sessionController.postSessionReview);
+
 module.exports = router;

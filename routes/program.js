@@ -1,8 +1,8 @@
-var express = require("express");
-var router = express.Router();
+// var express = require("express");
+// var router = express.Router();
 
-const AuthUser = require("../middlewares/authUser");
-const programController = require("../controllers/programController");
+// const AuthUser = require("../middlewares/authUser");
+// const programController = require("../controllers/programController");
 
 //router.post('/user', AuthUser.checkToken, templateController.savetemplate);
 
@@ -16,4 +16,4 @@ const programController = require("../controllers/programController");
 
 //router.delete('/user/:template_id', AuthUser.checkToken, templateController.deleteUserTemplate);
 
-module.exports = router;
+// module.exports = router;

@@ -12,7 +12,7 @@ let Workout = require("../models/fleekWorkout");
 module.exports = {
   saveSession: async (req, res) => {
     const uid = req.uid;
-    const data = req.body;
+    let data = req.body;
     const device = req.headers.device; // For Watch And Wear
     const now = moment();
     const { sex, weight, ageGroup, weightGroup } = await User.getProfile(uid);
@@ -33,7 +33,8 @@ module.exports = {
       data.total_time,
       device,
       data.feedback_content,
-      data.feedback_rating
+      data.feedback_rating,
+      JSON.stringify(data.session_review)
     );
     // DB Error Handling
     if (sessionIdx == -1) {
@@ -74,7 +75,6 @@ module.exports = {
     const device = req.headers.device; // For Watch And Wear
 
     const { sex, weight, ageGroup, weightGroup } = await User.getProfile(uid);
-
     const result = await Session.modifySessionData(
       uid,
       data.session_id,
@@ -83,7 +83,8 @@ module.exports = {
       data.session,
       data.start_time,
       data.total_time,
-      device
+      device,
+      JSON.stringify(data.session_review)
     );
     // DB Error Handling
     if (result != true) {
@@ -169,5 +170,24 @@ module.exports = {
 
     // Success
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.DELETE_SESSION_SUCCESS, sessionUserHistoryData));
+  },
+  postSessionReview: async (req, res) => {
+    const uid = req.uid;
+    const sessionId = req.params.session_id;
+    const data = req.body;
+
+    const result = await Session.postSessionReview(uid, sessionId, JSON.stringify(data));
+
+    // DB Error Handling
+    if (result != true) {
+      return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
+    }
+
+    let update_time = Math.floor(Date.now() / 1000);
+
+    // Success
+    res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.WRITE_SESSION_SUCCESS, update_time));
+
+    await Session.postUserHistorySyncFirebase(uid, update_time);
   }
 };
