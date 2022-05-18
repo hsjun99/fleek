@@ -518,6 +518,88 @@ const template = {
       throw err;
     }
   },
+  getOneUserTemplate: async (templateId) => {
+    const fields =
+      "name, templateUsers_id, template_type, super_set_label, workout_workout_id, rest_time, lastdate, workout_detail";
+    const query = `SELECT ${fields} FROM ${table_templateUsers}
+                        INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.templateUsers_id = ${templateId}`;
+    const durationToInt = async (set) => {
+      set.distance = parseInt(set.distance);
+      return set;
+    };
+
+    try {
+      const result = await pool.queryParamSlave(query);
+      const restructure = async () => {
+        let data = [];
+        await asyncForEach(result, async (rowdata) => {
+          let workout_detail = JSON.parse(rowdata.workout_detail);
+          await Promise.all(
+            workout_detail.map(async (set_detail, index) => {
+              delete workout_detail[index]["is_done"];
+              // If set_type is not defined in workout_detail
+              if (!("set_type" in set_detail)) {
+                workout_detail[index]["set_type"] = 0;
+              }
+              if (!("rpe" in set_detail)) {
+                workout_detail[index]["rpe"] = null;
+              }
+            })
+          );
+          if (data.length == 0) {
+            data.push({
+              name: rowdata.name,
+              template_type: rowdata.template_type,
+              template_id: rowdata.templateUsers_id,
+              last_date: rowdata.lastdate,
+              detail: [
+                {
+                  workout_id: rowdata.workout_workout_id,
+                  super_set_label: rowdata.super_set_label,
+                  rest_time: rowdata.rest_time,
+                  workout_detail: workout_detail,
+                },
+              ],
+            });
+          } else if (
+            data[data.length - 1].template_id == rowdata.templateUsers_id
+          ) {
+            data[data.length - 1].detail.push({
+              workout_id: rowdata.workout_workout_id,
+              super_set_label: rowdata.super_set_label,
+              rest_time: rowdata.rest_time,
+              workout_detail: workout_detail,
+            });
+          } else {
+            data.push({
+              name: rowdata.name,
+              template_type: rowdata.template_type,
+              template_id: rowdata.templateUsers_id,
+              last_date: rowdata.lastdate,
+              detail: [
+                {
+                  workout_id: rowdata.workout_workout_id,
+                  super_set_label: rowdata.super_set_label,
+                  rest_time: rowdata.rest_time,
+                  workout_detail: workout_detail,
+                },
+              ],
+            });
+          }
+        });
+        return data;
+      };
+      const data = await restructure();
+      return data;
+    } catch (err) {
+      if (err.errno == 1062) {
+        console.log("getUserTemplate ERROR: ", err.errno, err.code);
+        return -1;
+      }
+      console.log("getUserTemplate ERROR: ", err);
+      throw err;
+    }
+  },
   getUserTemplate: async (uid) => {
     const fields =
       "name, templateUsers_id, template_type, super_set_label, workout_workout_id, rest_time, lastdate, workout_detail";

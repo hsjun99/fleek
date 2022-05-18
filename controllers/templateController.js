@@ -21,7 +21,20 @@ module.exports = {
 
         await Template.postTemplateSyncFirebase(uid, update_time);
     },
+    getOneUserTemplate: async (req, res) => {
+        const templateId = req.params.template_id;
+        let templateData;
+        // Get User Template Data
+        templateData = await Template.getOneUserTemplate(templateId);
+        // DB Error Handling
+        if (templateData == -1) {
+            return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERTEMPLATE_FAIL));
+        }
+        // Success
+        res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERTEMPLATE_SUCCESS, templateData));
+    },
     getUserTemplate: async (req, res) => {
+        console.log('hello')
         const uid = req.uid;
         let templateData;
         // Get User Template Data
