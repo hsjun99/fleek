@@ -10,7 +10,7 @@ router.post("/user", AuthUser.checkToken, templateController.savetemplate);
 
 router.get("/user", AuthUser.checkToken, templateController.getUserTemplate);
 
-router.get("/user/:template_id", AuthUser.checkToken, templateController.getOneUserTemplate);
+router.get("/user/one/:template_id", AuthUser.checkToken, templateController.getOneUserTemplate);
 
 router.get("/user/wear", AuthUserWear.checkUid, templateController.getUserTemplateWear);
 

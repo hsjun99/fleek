@@ -34,7 +34,6 @@ module.exports = {
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERTEMPLATE_SUCCESS, templateData));
     },
     getUserTemplate: async (req, res) => {
-        console.log('hello')
         const uid = req.uid;
         let templateData;
         // Get User Template Data
