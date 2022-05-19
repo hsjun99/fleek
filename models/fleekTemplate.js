@@ -686,7 +686,7 @@ const template = {
     const fields =
       "name, templateUsers_id, super_set_label, workout_workout_id, is_kilogram, is_meter, rest_time, workout_detail";
     const query = `SELECT ${fields} FROM ${table_templateUsers}
-                        INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_idAND ${table_templateUsers}.userinfo_uid = '${uid}' AND ${table_templateUsers}.is_deleted != 1`;
+                        INNER JOIN ${table_templateUsersDetails} ON ${table_templateUsers}.templateUsers_id = ${table_templateUsersDetails}.templateUsers_template_id AND ${table_templateUsers}.userinfo_uid = '${uid}' AND ${table_templateUsers}.is_deleted != 1`;
     const fields2 = "korean, english, record_type, is_custom";
     const durationToInt = async (set) => {
       set.distance = parseInt(set.distance);

@@ -47,12 +47,11 @@ module.exports = {
         res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_USERTEMPLATE_SUCCESS, templateData, update_time));
     },
     getUserTemplateWear: async (req, res) => {
-        console.log('hello');
         const uid = req.uid;
         const langCode = req.lang_code;
         let templateData;
         // Get User Template Data
-        // templateData = await Template.getUserTemplateWear(uid, langCode);
+        templateData = await Template.getUserTemplateWear(uid, langCode);
         // DB Error Handling
         if (templateData == -1) {
             return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.READ_USERTEMPLATE_FAIL));
