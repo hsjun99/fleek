@@ -143,9 +143,11 @@ module.exports = {
   },
   updateSetting: async (req, res) => {
     const uid = req.uid;
+    const langCode = req.lang_code;
     let data = req.body;
 
-    if (data.lang_code == undefined || data.lang_code == null) data.lang_code = 1;
+    // if (data.lang_code == undefined || data.lang_code == null) data.lang_code = 1;
+    data.lang_code = langCode;
 
     const result = await User.updateSetting(uid, data);
 
