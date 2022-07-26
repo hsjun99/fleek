@@ -6,5 +6,4 @@ const adminController = require("../controllers/adminController");
 
 router.get("/faq", AuthUser.checkToken, adminController.getFaqBoard);
 
-
 module.exports = router;
