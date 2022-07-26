@@ -5,5 +5,6 @@ const AuthUser = require("../middlewares/authUser");
 const adminController = require("../controllers/adminController");
 
 router.get("/faq", AuthUser.checkToken, adminController.getFaqBoard);
-s
+
+
 module.exports = router;
