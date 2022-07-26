@@ -26,7 +26,7 @@ const table_sessionBook = "sessionBook";
 var admin = require("firebase-admin");
 
 const CacheService = require("../modules/cache.service");
-const ttl = 5; // cache for 1 Hour
+const ttl = 60; // cache for 1 Minute
 const cache = new CacheService(ttl); // Create a new cache service instance
 
 const session = {
