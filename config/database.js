@@ -29,7 +29,7 @@ const DB_slave = async () => {
         port: configAWS.port_slave,
         user: configAWS.user_slave,
         password: configAWS.password_slave,
-        connectionLimit: 16,
+        connectionLimit: 24,
         database: configAWS.database_slave
       };
       resolve(mysql.createPool(configDB));
