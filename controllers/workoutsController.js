@@ -505,56 +505,56 @@ module.exports = {
     res.status(statusCode.OK).send(util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS));
   },
   getWorkoutRankingInfo: async (req, res) => {
-    const uid = req.uid;
-    const lang_code = req.lang_code;
+    // const uid = req.uid;
+    // const lang_code = req.lang_code;
 
-    const workout_id = req.params.workout_id;
-    const { type, group, period, page } = req.query;
+    // const workout_id = req.params.workout_id;
+    // const { type, group, period, page } = req.query;
 
-    let data;
+    // let data;
 
-    const { sex, ageGroup, weightGroup } = await getUserInfo(uid);
+    // const { sex, ageGroup, weightGroup } = await getUserInfo(uid);
 
-    switch (type) {
-      case "onermmax":
-        data = await Promise.all([
-          await Workout.getOneRmMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page, lang_code),
-          await Workout.getOneRmMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)
-        ]);
-        break;
-      case "weightmax":
-        data = await Promise.all([
-          await Workout.getWeightMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page, lang_code),
-          await Workout.getWeightMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)
-        ]);
-        break;
-      case "volumemax":
-        data = await Promise.all([
-          await Workout.getVolumeMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page, lang_code),
-          await Workout.getVolumeMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)
-        ]);
-        break;
-      case "totalsets":
-        data = await Promise.all([
-          await Workout.getTotalSetsMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page, lang_code),
-          await Workout.getTotalSetsMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)
-        ]);
-        break;
-      case "totalvolume":
-        data = await Promise.all([
-          await Workout.getTotalVolumeMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page, lang_code),
-          await Workout.getTotalVolumeMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)
-        ]);
-        break;
-      case "totalreps":
-        data = await Promise.all([
-          await Workout.getTotalRepsMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page, lang_code),
-          await Workout.getTotalRepsMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)
-        ]);
-        break;
-      default:
-        break;
-    }
+    // switch (type) {
+    //   case "onermmax":
+    //     data = await Promise.all([
+    //       await Workout.getOneRmMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page, lang_code),
+    //       await Workout.getOneRmMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)
+    //     ]);
+    //     break;
+    //   case "weightmax":
+    //     data = await Promise.all([
+    //       await Workout.getWeightMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page, lang_code),
+    //       await Workout.getWeightMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)
+    //     ]);
+    //     break;
+    //   case "volumemax":
+    //     data = await Promise.all([
+    //       await Workout.getVolumeMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page, lang_code),
+    //       await Workout.getVolumeMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)
+    //     ]);
+    //     break;
+    //   case "totalsets":
+    //     data = await Promise.all([
+    //       await Workout.getTotalSetsMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page, lang_code),
+    //       await Workout.getTotalSetsMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)
+    //     ]);
+    //     break;
+    //   case "totalvolume":
+    //     data = await Promise.all([
+    //       await Workout.getTotalVolumeMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page, lang_code),
+    //       await Workout.getTotalVolumeMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)
+    //     ]);
+    //     break;
+    //   case "totalreps":
+    //     data = await Promise.all([
+    //       await Workout.getTotalRepsMaxListByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period, page, lang_code),
+    //       await Workout.getTotalRepsMaxRankByWorkoutId(workout_id, uid, sex, ageGroup, weightGroup, group, period)
+    //     ]);
+    //     break;
+    //   default:
+    //     break;
+    // }
 
     // Success
     // res.status(statusCode.OK).send(
