@@ -557,11 +557,18 @@ module.exports = {
     }
 
     // Success
+    // res.status(statusCode.OK).send(
+    //   util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, {
+    //     rank: data[1].rank,
+    //     value: data[1].value,
+    //     rank_list: data[0]
+    //   })
+    // );
     res.status(statusCode.OK).send(
       util.success(statusCode.OK, resMessage.READ_WORKOUTALGORITHM_SUCCESS, {
-        rank: data[1].rank,
-        value: data[1].value,
-        rank_list: data[0]
+        rank: null,
+        value: null,
+        rank_list: []
       })
     );
   },
