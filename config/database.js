@@ -13,7 +13,7 @@ const DB_master = async () => {
         user: configAWS.user_master,
         password: configAWS.password_master,
         database: configAWS.database_master,
-        connectionLimit: 7,
+        connectionLimit: 6,
         charset: "utf8mb4"
       };
       resolve(mysql.createPool(configDB));
