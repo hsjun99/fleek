@@ -78,21 +78,22 @@ module.exports = {
     const last_session_id = req.params.last_session_id;
     const langCode = req.lang_code;
     let data;
-    if (last_session_id == "init") {
-      data = await Session.getFirstSessionBatchData(uid, langCode);
-    } else {
-      data = await Session.getNextSessionBatchData(
-        uid,
-        last_session_id,
-        langCode
-      );
-    }
+    data = [];
+//     if (last_session_id == "init") {
+//       data = await Session.getFirstSessionBatchData(uid, langCode);
+//     } else {
+//       data = await Session.getNextSessionBatchData(
+//         uid,
+//         last_session_id,
+//         langCode
+//       );
+//     }
     // DB Error Handling
-    if (data == -1) {
-      return res
-        .status(statusCode.DB_ERROR)
-        .send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
-    }
+//     if (data == -1) {
+//       return res
+//         .status(statusCode.DB_ERROR)
+//         .send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
+//     }
     // Success
     res
       .status(statusCode.OK)
