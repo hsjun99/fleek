@@ -260,7 +260,6 @@ const session = {
       "max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at";
     const questions5 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
     const questions6 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
-
     const fields4 =
       "userinfo_uid, created_at, start_time, name, templateUsers_template_id, total_time, device, feedback_content, feedback_rating, session_review";
     const questions4 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
