@@ -828,49 +828,48 @@ const template = {
     }
   },
   updateUserTemplate: async (uid, template_id, name, data) => {
-    const fields2 =
-      "workout_order, super_set_label, workout_workout_id, is_kilogram, is_meter, rest_time, templateUsers_template_id, workout_detail";
-    const questions2 = "?, ?, ?, ?, ?, ?, ?, ?";
+    const fields3 = "name, lastdate, userinfo_uid, template_type, is_deleted";
+    const questions3 = "?, ?, ?, ?, ?";
 
-    const query1 = `DELETE T_details
-                        FROM ${table_templateUsersDetails} T_details
-                        INNER JOIN ${table_templateUsers} ON T_details.templateUsers_template_id = ${table_templateUsers}.templateUsers_id AND ${table_templateUsers}.userinfo_uid = '${uid}'
-                        WHERE T_details.templateUsers_template_id=${template_id}`;
-    const query2 = `INSERT INTO ${table_templateUsersDetails}(${fields2}) VALUES(${questions2})`;
-    const query3 = `UPDATE ${table_templateUsers} SET name='${name}'
-                        WHERE ${table_templateUsers}.templateUsers_id = '${template_id}' AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
-    const query4 = `UPDATE ${table_templateUsers} SET is_deleted = 1
-                        WHERE ${table_templateUsers}.templateUsers_id = '${template_id}' AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
+    const fields4 =
+      "workout_order, super_set_label, workout_workout_id, is_kilogram, is_meter, rest_time, templateUsers_template_id, workout_detail";
+    const questions4 = "?, ?, ?, ?, ?, ?, ?, ?";
+
+    const query1 = `UPDATE ${table_templateUsers} SET is_deleted = 1
+                      WHERE ${table_templateUsers}.templateUsers_id = '${template_id}' AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
+    const query2 = `SELECT * FROM ${table_templateUsers}
+                    WHERE templateUsers_id = '${template_id}'`;
+    const query3 = `INSERT INTO ${table_templateUsers}(${fields3}) VALUES(${questions3})`;
+    const query4 = `INSERT INTO ${table_templateUsersDetails}(${fields4}) VALUES(${questions4})`;
 
     // Transactions
     let transactionArr = new Array();
+    let new_template_id;
     const ts1 = async connection => {
       await connection.query(query1);
     };
     const ts2 = async connection => {
+      const result2 = await connection.query(query2);
+      const result3 = await connection.query(query3, [name, result2[0].lastdate, result2[0].userinfo_uid, result2[0].template_type, 0]);
+      new_template_id = result3.insertId;
+    };
+    const ts3 = async connection => {
       let cnt = 1;
       await asyncForEach(data, async workout => {
         if (workout.super_set_label == null || workout.super_set_label == undefined) {
           workout.super_set_label = 0;
         }
-        await connection.query(query2, [
+        await connection.query(query4, [
           cnt++,
           workout.super_set_label,
           workout.workout_id,
           workout.is_kilogram,
           workout.is_meter,
           workout.rest_time,
-          Number(template_id),
+          Number(new_template_id),
           JSON.stringify(workout.workout_detail)
         ]);
       });
-    };
-    const ts3 = async connection => {
-      if (data.length == 0) {
-        await connection.query(query4);
-      } else {
-        await connection.query(query3);
-      }
     };
 
     try {
@@ -888,6 +887,67 @@ const template = {
       throw err;
     }
   },
+  // updateUserTemplate: async (uid, template_id, name, data) => {
+  //   const fields2 =
+  //     "workout_order, super_set_label, workout_workout_id, is_kilogram, is_meter, rest_time, templateUsers_template_id, workout_detail";
+  //   const questions2 = "?, ?, ?, ?, ?, ?, ?, ?";
+
+  //   const query1 = `DELETE T_details
+  //                       FROM ${table_templateUsersDetails} T_details
+  //                       INNER JOIN ${table_templateUsers} ON T_details.templateUsers_template_id = ${table_templateUsers}.templateUsers_id AND ${table_templateUsers}.userinfo_uid = '${uid}'
+  //                       WHERE T_details.templateUsers_template_id=${template_id}`;
+  //   const query2 = `INSERT INTO ${table_templateUsersDetails}(${fields2}) VALUES(${questions2})`;
+  //   const query3 = `UPDATE ${table_templateUsers} SET name='${name}'
+  //                       WHERE ${table_templateUsers}.templateUsers_id = '${template_id}' AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
+  //   const query4 = `UPDATE ${table_templateUsers} SET is_deleted = 1
+  //                       WHERE ${table_templateUsers}.templateUsers_id = '${template_id}' AND ${table_templateUsers}.userinfo_uid = '${uid}'`;
+
+  //   // Transactions
+  //   let transactionArr = new Array();
+  //   const ts1 = async connection => {
+  //     await connection.query(query1);
+  //   };
+  //   const ts2 = async connection => {
+  //     let cnt = 1;
+  //     await asyncForEach(data, async workout => {
+  //       if (workout.super_set_label == null || workout.super_set_label == undefined) {
+  //         workout.super_set_label = 0;
+  //       }
+  //       await connection.query(query2, [
+  //         cnt++,
+  //         workout.super_set_label,
+  //         workout.workout_id,
+  //         workout.is_kilogram,
+  //         workout.is_meter,
+  //         workout.rest_time,
+  //         Number(template_id),
+  //         JSON.stringify(workout.workout_detail)
+  //       ]);
+  //     });
+  //   };
+  //   const ts3 = async connection => {
+  //     if (data.length == 0) {
+  //       await connection.query(query4);
+  //     } else {
+  //       await connection.query(query3);
+  //     }
+  //   };
+
+  //   try {
+  //     transactionArr.push(ts1);
+  //     transactionArr.push(ts2);
+  //     transactionArr.push(ts3);
+  //     await pool.Transaction(transactionArr);
+  //     return template_id;
+  //   } catch (err) {
+  //     if (err.errno == 1062) {
+  //       console.log("updateUserTemplate ERROR: ", err.errno, err.code);
+  //       return -1;
+  //     }
+  //     console.log("updateUserTemplate ERROR: ", err);
+  //     throw err;
+  //   }
+  // },
   // updateUserTemplateFromSession: async(uid, template_id, data) => {
   //     const fields0 = '';
   //     const fields2 = 'workout_order, super_set_label, workout_workout_id, is_kilogram, is_meter, rest_time, templateUsers_template_id, workout_detail';
