@@ -877,7 +877,7 @@ const template = {
       transactionArr.push(ts2);
       transactionArr.push(ts3);
       await pool.Transaction(transactionArr);
-      return template_id;
+      return new_template_id;
     } catch (err) {
       if (err.errno == 1062) {
         console.log("updateUserTemplate ERROR: ", err.errno, err.code);

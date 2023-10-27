@@ -418,7 +418,7 @@ const session = {
       transactionArr.push(ts2);
       transactionArr.push(ts3);
       await pool.Transaction(transactionArr);
-      return true;
+      return new_session_id;
     } catch (err) {
       if (err.errno == 1062) {
         console.log("postSessionData ERROR: ", err.errno, err.code);
