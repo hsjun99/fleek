@@ -253,205 +253,49 @@ const session = {
   //     throw err;
   //   }
   // },
-  // modifySessionData: async (uid, session_id, name, body_weight, data, start_time, total_time, device = null, session_review) => {
-  //   const fields5 =
-  //     "reps, weight, duration, distance, iswarmup, workout_order, set_order, max_heart_rate, super_set_label, rest_time, set_type, rpe, workout_workout_id, session_session_id";
-  //   const fields6 =
-  //     "max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at";
-  //   const questions5 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
-  //   const questions6 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
-  //   const fields4 =
-  //     "userinfo_uid, created_at, start_time, name, templateUsers_template_id, total_time, device, feedback_content, feedback_rating, session_review";
-  //   const questions4 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
-
-  //   const query1 = `UPDATE ${table_session} SET is_deleted = 1
-  //                     WHERE ${table_session}.session_id = '${session_id}'`;
-  //   const query2 = `DELETE FROM ${table_workoutAbility}
-  //                     WHERE session_session_id = ${session_id} AND userinfo_uid = '${uid}'`;
-  //   const query3 = `SELECT * FROM ${table_session}
-  //                     WHERE session_id = '${session_id}'`;
-  //   const query4 = `INSERT INTO ${table_session}(${fields4}) VALUES(${questions4})`;
-  //   const query5 = `INSERT INTO ${table_workoutlog}(${fields5}) VALUES(${questions5})`;
-  //   const query6 = `INSERT INTO ${table_workoutAbility}(${fields6}) VALUES(${questions6})`;
-  //   // Transactions
-  //   let transactionArr = new Array();
-  //   let new_session_id;
-  //   const ts1 = async connection => {
-  //     await connection.query(query1);
-  //   };
-  //   const ts2 = async connection => {
-  //     // DELETE Initial Workout Ability
-  //     await connection.query(query2);
-  //     const result3 = await connection.query(query3);
-  //     const result4 = await connection.query(query4, [
-  //       result3[0].userinfo_uid,
-  //       result3[0].created_at,
-  //       result3[0].start_time,
-  //       result3[0].name,
-  //       result3[0].templateUsers_template_id,
-  //       result3[0].total_time,
-  //       result3[0].device,
-  //       result3[0].feedback_content,
-  //       result3[0].feedback_rating,
-  //       result3[0].session_review
-  //     ]);
-  //     new_session_id = result4.insertId;
-  //   };
-  //   const ts3 = async connection => {
-  //     let session_total_volume = 0,
-  //       session_total_sets = 0,
-  //       session_total_reps = 0;
-  //     let session_total_distance = 0,
-  //       session_total_duration = 0;
-  //     await asyncForEach(data, async workouts => {
-  //       let max_one_rm = 0,
-  //         total_volume = 0,
-  //         max_volume = 0,
-  //         total_reps = 0,
-  //         max_weight = 0;
-  //       let max_reps = 0,
-  //         max_duration = 0,
-  //         max_speed = 0,
-  //         total_distance = 0,
-  //         total_duration = 0;
-  //       // Get Multiplier from Workout Table
-  //       const fields9 = "multiplier, record_type";
-  //       const query9 = `SELECT ${fields9} FROM ${table_workout}
-  //                               WHERE ${table_workout}.workout_id = ${workouts.workout_id}`;
-  //       const result9 = await pool.queryParamArrSlave(query9);
-  //       if (workouts.super_set_label == null || workouts.super_set_label == undefined) workouts.super_set_label = 0;
-  //       await asyncForEach(workouts.detail, async sets => {
-  //         // INSERT NEW Workout Logs
-  //         await connection.query(query5, [
-  //           sets.reps,
-  //           sets.weight,
-  //           sets.duration,
-  //           sets.distance,
-  //           sets.iswarmup,
-  //           workouts.workout_order,
-  //           sets.set_order,
-  //           workouts.max_heart_rate,
-  //           workouts.super_set_label,
-  //           workouts.rest_time,
-  //           sets.set_type,
-  //           sets.rpe,
-  //           workouts.workout_id,
-  //           new_session_id
-  //         ]);
-  //         if (result9[0].record_type == 4) {
-  //           total_volume += sets.reps * (sets.weight + body_weight);
-  //           max_volume = Math.max(max_volume, sets.reps * (sets.weight + body_weight));
-  //         } else if (result9[0].record_type == 5) {
-  //           total_volume += sets.reps * body_weight;
-  //           max_volume = Math.max(max_volume, sets.reps * body_weight);
-  //         } else if (result9[0].record_type == 6) {
-  //           total_volume += sets.reps * (body_weight - sets.weight);
-  //           max_volume = Math.max(max_volume, sets.reps * (body_weight - sets.weight));
-  //         } else {
-  //           total_volume += sets.reps * sets.weight * result9[0].multiplier;
-  //           max_volume = Math.max(max_volume, sets.reps * sets.weight * result9[0].multiplier);
-  //         }
-  //         max_one_rm = Math.max(max_one_rm, await oneRmCalculator(sets.weight, sets.reps));
-  //         total_reps += sets.reps;
-  //         max_weight = Math.max(max_weight, sets.weight);
-
-  //         max_reps = Math.max(max_reps, sets.reps);
-  //         max_duration = Math.max(max_duration, sets.duration);
-  //         total_distance += sets.distance;
-  //         total_duration += sets.duration;
-  //         if (sets.distance != 0 && sets.distance != null && sets.duration != 0 && sets.duration != null) {
-  //           max_speed = Math.max(max_speed, sets.distance / (sets.duration / 60));
-  //         }
-  //       });
-  //       await connection.query(query6, [
-  //         max_one_rm,
-  //         total_volume,
-  //         max_volume,
-  //         total_reps,
-  //         max_weight,
-  //         max_reps,
-  //         total_distance,
-  //         total_duration,
-  //         max_speed,
-  //         max_duration,
-  //         workouts.workout_id,
-  //         uid,
-  //         new_session_id,
-  //         start_time
-  //       ]);
-  //       /*
-  //               // Update UserWorkoutHistory Table - finish_num
-  //               const fields11 = 'add_num, finish_num, userinfo_uid, workout_workout_id';
-  //               const questions11 = `?, ?, ?, ?`;
-  //               const values11 = [0, 0, uid, workouts.workout_id];
-  //               const query11 = `INSERT IGNORE INTO ${table_userWorkoutHistory}(${fields11}) VALUES(${questions11})`;
-  //               const query5 = `UPDATE ${table_userWorkoutHistory} SET finish_num = finish_num+1 WHERE userinfo_uid = "${uid}" AND workout_workout_id="${workouts.workout_id}"`;
-  //               await connection.query(query11, values11);
-  //               await connection.query(query5);
-  //               */
-
-  //       session_total_volume += total_volume;
-  //       session_total_sets += workouts.detail.length;
-  //       session_total_reps += total_reps;
-  //       session_total_distance += total_distance;
-  //       session_total_duration += total_duration;
-  //     });
-  //     // UPDATE SESSION TABLE
-  //     const values7 = [
-  //       session_review,
-  //       name,
-  //       session_total_volume,
-  //       session_total_sets,
-  //       session_total_reps,
-  //       session_total_distance,
-  //       session_total_duration,
-  //       total_time,
-  //       start_time
-  //     ];
-  //     const query7 = `UPDATE ${table_session}
-  //                           SET session_review = ?, name = ?, session_total_volume = ?, session_total_sets = ?, session_total_reps = ?, session_total_distance = ?, session_total_duration = ?, total_time = ?, start_time = ?
-  //                           WHERE ${table_session}.session_id = ${new_session_id}`;
-  //     await connection.query(query7, values7);
-  //   };
-  //   try {
-  //     transactionArr.push(ts1);
-  //     transactionArr.push(ts2);
-  //     transactionArr.push(ts3);
-  //     await pool.Transaction(transactionArr);
-  //     return true;
-  //   } catch (err) {
-  //     if (err.errno == 1062) {
-  //       console.log("postSessionData ERROR: ", err.errno, err.code);
-  //       return -1;
-  //     }
-  //     console.log("postSessionData ERROR: ", err);
-  //     throw err;
-  //   }
-  // },
   modifySessionData: async (uid, session_id, name, body_weight, data, start_time, total_time, device = null, session_review) => {
-    const fields3 =
+    const fields5 =
       "reps, weight, duration, distance, iswarmup, workout_order, set_order, max_heart_rate, super_set_label, rest_time, set_type, rpe, workout_workout_id, session_session_id";
-    const fields4 =
+    const fields6 =
       "max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at";
-    const questions3 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
-    const questions4 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
+    const questions5 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
+    const questions6 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
+    const fields4 =
+      "userinfo_uid, created_at, start_time, name, templateUsers_template_id, total_time, device, feedback_content, feedback_rating, session_review";
+    const questions4 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
 
-    const query1 = `DELETE FROM ${table_workoutlog}
-                        WHERE session_session_id = ${session_id}`;
+    const query1 = `UPDATE ${table_session} SET is_deleted = 1
+                      WHERE ${table_session}.session_id = '${session_id}'`;
     const query2 = `DELETE FROM ${table_workoutAbility}
-                        WHERE session_session_id = ${session_id} AND userinfo_uid = '${uid}'`;
-    const query3 = `INSERT INTO ${table_workoutlog}(${fields3}) VALUES(${questions3})`;
-    const query4 = `INSERT INTO ${table_workoutAbility}(${fields4}) VALUES(${questions4})`;
-
+                      WHERE session_session_id = ${session_id} AND userinfo_uid = '${uid}'`;
+    const query3 = `SELECT * FROM ${table_session}
+                      WHERE session_id = '${session_id}'`;
+    const query4 = `INSERT INTO ${table_session}(${fields4}) VALUES(${questions4})`;
+    const query5 = `INSERT INTO ${table_workoutlog}(${fields5}) VALUES(${questions5})`;
+    const query6 = `INSERT INTO ${table_workoutAbility}(${fields6}) VALUES(${questions6})`;
     // Transactions
     let transactionArr = new Array();
+    let new_session_id;
     const ts1 = async connection => {
-      // DELETE Intitial Workout Logs
       await connection.query(query1);
     };
     const ts2 = async connection => {
       // DELETE Initial Workout Ability
       await connection.query(query2);
+      const result3 = await connection.query(query3);
+      const result4 = await connection.query(query4, [
+        result3[0].userinfo_uid,
+        result3[0].created_at,
+        result3[0].start_time,
+        result3[0].name,
+        result3[0].templateUsers_template_id,
+        result3[0].total_time,
+        result3[0].device,
+        result3[0].feedback_content,
+        result3[0].feedback_rating,
+        result3[0].session_review
+      ]);
+      new_session_id = result4.insertId;
     };
     const ts3 = async connection => {
       let session_total_volume = 0,
@@ -478,7 +322,7 @@ const session = {
         if (workouts.super_set_label == null || workouts.super_set_label == undefined) workouts.super_set_label = 0;
         await asyncForEach(workouts.detail, async sets => {
           // INSERT NEW Workout Logs
-          await connection.query(query3, [
+          await connection.query(query5, [
             sets.reps,
             sets.weight,
             sets.duration,
@@ -492,7 +336,7 @@ const session = {
             sets.set_type,
             sets.rpe,
             workouts.workout_id,
-            session_id
+            new_session_id
           ]);
           if (result9[0].record_type == 4) {
             total_volume += sets.reps * (sets.weight + body_weight);
@@ -519,7 +363,7 @@ const session = {
             max_speed = Math.max(max_speed, sets.distance / (sets.duration / 60));
           }
         });
-        await connection.query(query4, [
+        await connection.query(query6, [
           max_one_rm,
           total_volume,
           max_volume,
@@ -532,7 +376,7 @@ const session = {
           max_duration,
           workouts.workout_id,
           uid,
-          session_id,
+          new_session_id,
           start_time
         ]);
         /*
@@ -553,7 +397,7 @@ const session = {
         session_total_duration += total_duration;
       });
       // UPDATE SESSION TABLE
-      const values6 = [
+      const values7 = [
         session_review,
         name,
         session_total_volume,
@@ -564,10 +408,10 @@ const session = {
         total_time,
         start_time
       ];
-      const query6 = `UPDATE ${table_session}
+      const query7 = `UPDATE ${table_session}
                             SET session_review = ?, name = ?, session_total_volume = ?, session_total_sets = ?, session_total_reps = ?, session_total_distance = ?, session_total_duration = ?, total_time = ?, start_time = ?
-                            WHERE ${table_session}.session_id = ${session_id}`;
-      await connection.query(query6, values6);
+                            WHERE ${table_session}.session_id = ${new_session_id}`;
+      await connection.query(query7, values7);
     };
     try {
       transactionArr.push(ts1);
@@ -584,6 +428,162 @@ const session = {
       throw err;
     }
   },
+  // modifySessionData: async (uid, session_id, name, body_weight, data, start_time, total_time, device = null, session_review) => {
+  //   const fields3 =
+  //     "reps, weight, duration, distance, iswarmup, workout_order, set_order, max_heart_rate, super_set_label, rest_time, set_type, rpe, workout_workout_id, session_session_id";
+  //   const fields4 =
+  //     "max_one_rm, total_volume, max_volume, total_reps, max_weight, max_reps, total_distance, total_duration, max_speed, max_duration, workout_workout_id, userinfo_uid, session_session_id, created_at";
+  //   const questions3 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
+  //   const questions4 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
+
+  //   const query1 = `DELETE FROM ${table_workoutlog}
+  //                       WHERE session_session_id = ${session_id}`;
+  //   const query2 = `DELETE FROM ${table_workoutAbility}
+  //                       WHERE session_session_id = ${session_id} AND userinfo_uid = '${uid}'`;
+  //   const query3 = `INSERT INTO ${table_workoutlog}(${fields3}) VALUES(${questions3})`;
+  //   const query4 = `INSERT INTO ${table_workoutAbility}(${fields4}) VALUES(${questions4})`;
+
+  //   // Transactions
+  //   let transactionArr = new Array();
+  //   const ts1 = async connection => {
+  //     // DELETE Intitial Workout Logs
+  //     await connection.query(query1);
+  //   };
+  //   const ts2 = async connection => {
+  //     // DELETE Initial Workout Ability
+  //     await connection.query(query2);
+  //   };
+  //   const ts3 = async connection => {
+  //     let session_total_volume = 0,
+  //       session_total_sets = 0,
+  //       session_total_reps = 0;
+  //     let session_total_distance = 0,
+  //       session_total_duration = 0;
+  //     await asyncForEach(data, async workouts => {
+  //       let max_one_rm = 0,
+  //         total_volume = 0,
+  //         max_volume = 0,
+  //         total_reps = 0,
+  //         max_weight = 0;
+  //       let max_reps = 0,
+  //         max_duration = 0,
+  //         max_speed = 0,
+  //         total_distance = 0,
+  //         total_duration = 0;
+  //       // Get Multiplier from Workout Table
+  //       const fields9 = "multiplier, record_type";
+  //       const query9 = `SELECT ${fields9} FROM ${table_workout}
+  //                               WHERE ${table_workout}.workout_id = ${workouts.workout_id}`;
+  //       const result9 = await pool.queryParamArrSlave(query9);
+  //       if (workouts.super_set_label == null || workouts.super_set_label == undefined) workouts.super_set_label = 0;
+  //       await asyncForEach(workouts.detail, async sets => {
+  //         // INSERT NEW Workout Logs
+  //         await connection.query(query3, [
+  //           sets.reps,
+  //           sets.weight,
+  //           sets.duration,
+  //           sets.distance,
+  //           sets.iswarmup,
+  //           workouts.workout_order,
+  //           sets.set_order,
+  //           workouts.max_heart_rate,
+  //           workouts.super_set_label,
+  //           workouts.rest_time,
+  //           sets.set_type,
+  //           sets.rpe,
+  //           workouts.workout_id,
+  //           session_id
+  //         ]);
+  //         if (result9[0].record_type == 4) {
+  //           total_volume += sets.reps * (sets.weight + body_weight);
+  //           max_volume = Math.max(max_volume, sets.reps * (sets.weight + body_weight));
+  //         } else if (result9[0].record_type == 5) {
+  //           total_volume += sets.reps * body_weight;
+  //           max_volume = Math.max(max_volume, sets.reps * body_weight);
+  //         } else if (result9[0].record_type == 6) {
+  //           total_volume += sets.reps * (body_weight - sets.weight);
+  //           max_volume = Math.max(max_volume, sets.reps * (body_weight - sets.weight));
+  //         } else {
+  //           total_volume += sets.reps * sets.weight * result9[0].multiplier;
+  //           max_volume = Math.max(max_volume, sets.reps * sets.weight * result9[0].multiplier);
+  //         }
+  //         max_one_rm = Math.max(max_one_rm, await oneRmCalculator(sets.weight, sets.reps));
+  //         total_reps += sets.reps;
+  //         max_weight = Math.max(max_weight, sets.weight);
+
+  //         max_reps = Math.max(max_reps, sets.reps);
+  //         max_duration = Math.max(max_duration, sets.duration);
+  //         total_distance += sets.distance;
+  //         total_duration += sets.duration;
+  //         if (sets.distance != 0 && sets.distance != null && sets.duration != 0 && sets.duration != null) {
+  //           max_speed = Math.max(max_speed, sets.distance / (sets.duration / 60));
+  //         }
+  //       });
+  //       await connection.query(query4, [
+  //         max_one_rm,
+  //         total_volume,
+  //         max_volume,
+  //         total_reps,
+  //         max_weight,
+  //         max_reps,
+  //         total_distance,
+  //         total_duration,
+  //         max_speed,
+  //         max_duration,
+  //         workouts.workout_id,
+  //         uid,
+  //         session_id,
+  //         start_time
+  //       ]);
+  //       /*
+  //               // Update UserWorkoutHistory Table - finish_num
+  //               const fields11 = 'add_num, finish_num, userinfo_uid, workout_workout_id';
+  //               const questions11 = `?, ?, ?, ?`;
+  //               const values11 = [0, 0, uid, workouts.workout_id];
+  //               const query11 = `INSERT IGNORE INTO ${table_userWorkoutHistory}(${fields11}) VALUES(${questions11})`;
+  //               const query5 = `UPDATE ${table_userWorkoutHistory} SET finish_num = finish_num+1 WHERE userinfo_uid = "${uid}" AND workout_workout_id="${workouts.workout_id}"`;
+  //               await connection.query(query11, values11);
+  //               await connection.query(query5);
+  //               */
+
+  //       session_total_volume += total_volume;
+  //       session_total_sets += workouts.detail.length;
+  //       session_total_reps += total_reps;
+  //       session_total_distance += total_distance;
+  //       session_total_duration += total_duration;
+  //     });
+  //     // UPDATE SESSION TABLE
+  //     const values6 = [
+  //       session_review,
+  //       name,
+  //       session_total_volume,
+  //       session_total_sets,
+  //       session_total_reps,
+  //       session_total_distance,
+  //       session_total_duration,
+  //       total_time,
+  //       start_time
+  //     ];
+  //     const query6 = `UPDATE ${table_session}
+  //                           SET session_review = ?, name = ?, session_total_volume = ?, session_total_sets = ?, session_total_reps = ?, session_total_distance = ?, session_total_duration = ?, total_time = ?, start_time = ?
+  //                           WHERE ${table_session}.session_id = ${session_id}`;
+  //     await connection.query(query6, values6);
+  //   };
+  //   try {
+  //     transactionArr.push(ts1);
+  //     transactionArr.push(ts2);
+  //     transactionArr.push(ts3);
+  //     await pool.Transaction(transactionArr);
+  //     return true;
+  //   } catch (err) {
+  //     if (err.errno == 1062) {
+  //       console.log("postSessionData ERROR: ", err.errno, err.code);
+  //       return -1;
+  //     }
+  //     console.log("postSessionData ERROR: ", err);
+  //     throw err;
+  //   }
+  // },
   postSessionData: async (
     uid,
     body_weight,
