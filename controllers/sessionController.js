@@ -75,7 +75,7 @@ module.exports = {
     const device = req.headers.device; // For Watch And Wear
 
     const { sex, weight, ageGroup, weightGroup } = await User.getProfile(uid);
-    const new_session_id = await Session.modifySessionData(
+    const result = await Session.modifySessionData(
       uid,
       data.session_id,
       data.name,
@@ -87,10 +87,10 @@ module.exports = {
       JSON.stringify(data.session_review)
     );
     // DB Error Handling
-    // if (result != true) {
-    //   return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
-    // }
-    const sessionUserHistoryData = await Workout.getUserHistoryDataBySession(uid, sex, ageGroup, weightGroup, new_session_id);
+    if (result != true) {
+      return res.status(statusCode.DB_ERROR).send(util.fail(statusCode.DB_ERROR, resMessage.WRITE_SESSION_FAIL));
+    }
+    const sessionUserHistoryData = await Workout.getUserHistoryDataBySession(uid, sex, ageGroup, weightGroup, data.session_id);
 
     let update_time = Math.floor(Date.now() / 1000);
 

@@ -162,7 +162,7 @@ module.exports = {
         util.success(
           statusCode.OK,
           resMessage.UPDATE_USERTEMPLATE_SUCCESS,
-          [await Template.getUserTemplateByTemplateId(result)],
+          [await Template.getUserTemplateByTemplateId(template_id)],
           update_time
         )
       );
